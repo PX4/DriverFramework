@@ -45,7 +45,7 @@ static pthread_t g_tid;
 
 static HRTWorkerThread *g_instance = NULL;
 
-static pthread_mutex_t g_hrt_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 
 // Static Functions
@@ -167,7 +167,7 @@ void HRTWorkerThread::process(void)
 		next = 10000000;
 		work_itr  = m_work.begin();
 
-		std::cout << "Before While\n";
+		std::cout << "Before While ---\n";
 		while (work_itr != m_work.end()) {
 			elapsed = HRTAbsoluteTime() - work_itr->get()->m_queue_time;
 			std::cout << "Process work item elapsed = " << elapsed << "\n";
@@ -175,11 +175,14 @@ void HRTWorkerThread::process(void)
 			if (elapsed >= work_itr->get()->m_delay) {
 				std::cout << "Elapsed\n";
 				std::shared_ptr<WorkItem> dequeuedWork = *work_itr;
-				work_itr = m_work.erase(work_itr);
 
 				// Mutex is recursive so the WorkItem can be rescheduled
 				// while the lock is held
+				hrtUnlock();
 				dequeuedWork->m_callback(dequeuedWork->m_arg);
+				hrtLock();
+
+				work_itr = m_work.erase(work_itr);
 
 			} else {
 				std::cout << "Not expired (delay = " << work_itr->get()->m_delay << "\n";
@@ -204,6 +207,7 @@ void HRTWorkerThread::process(void)
 		ts.tv_nsec = nanosecs % 1000000000;
 		
 		// Wait until next expiry or until a new item is rescheduled
+		std::cout << "Waiting...\n";
 		int rc = pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		std::cout << " rc = " << rc << "\n";
 		hrtUnlock();
