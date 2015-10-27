@@ -33,84 +33,79 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include<memory>
-#include<map>
-#include<list>
-#include<string>
-#include<stdint.h>
+#include <string>
 
-uint64_t HRTAbsoluteTime();
-
-typedef void *WorkHandle;
-
-typedef void (*workCallback)(void *arg, WorkHandle wh);
-
-class WorkItem
+class DriverObj
 {
 public:
-	WorkItem(workCallback callback, void *arg, uint32_t delay) : 
-		m_arg(arg),
-		m_queue_time(0),
-		m_callback(callback),
-		m_delay(delay)
+	DriverObj(string name) : 
+		m_name(name)
 	{}
-	~WorkItem() {}
 
-	void reschedule();
+	~DriverObj() {}
 
-	void updateStats(unsigned int cur_usec);
-	void resetStats();
+	virtual int initialize() = 0;
 
-	void *		m_arg;
-	uint64_t	m_queue_time;
-	workCallback	m_callback;
-	uint32_t	m_delay;
-	WorkHandle	m_handle;
+	virtual int ioctl(int datatype, void *data) = 0;
 
-	// statistics
-	unsigned long m_last;
-	unsigned long m_min;
-	unsigned long m_max;
-	unsigned long m_total;
-	unsigned long m_count;
+	const string &getName()
+	{
+		return m_name;
+	}
+private:
+	string m_name;
+	unsigned int id;
 };
 
-class WorkItemMgr
+class I2CDriverObj : public DriverObj
 {
 public:
-	static WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	static void destroy(WorkHandle handle);
-	static bool reschedule(WorkHandle handle);
+	I2CDriverObj(string name, string path, int flags) : 
+		DriverObj(name),
+		m_path(path),
+		m_flags(flags)
+	{}
 
+	~DriverObj() {}
+
+	virtual int initialize()
+	{
+		m_fd = open(m_name.c_str, m_flags);
+
+		return (m_fd >= 0);
+	}
+
+	virtual int ioctl(int datatype, void *data)
+	{
+		return ::ioctl(m_fd, datatype, data);
+	}
+	
 private:
-	std::map<WorkHandle, WorkItem> m_work_items;
-}
+	string m_path;
+	int m_flags;
+	int m_fd;
+};
 
-class HRTWorkerThread
+class VirtDriverObj : public DriverObj
 {
 public:
-	static HRTWorkerThread *instance(void);
+	VirtDriverObj(string name, string path) : 
+		DriverObj(name),
+		m_path(path)
+	{}
 
-	int init(void);
-	void cleanup(void);
+	~VirtDriverObj() {}
 
-	void scheduleWorkItem(WorkItem item);
+	virtual int ioctl(int datatype, void *data) = 0;
+};
 
-	void enableStats(bool enable);
-
-	static void *process_trampoline(void *);
+class DriverMgr
+{    
+	static DriverObj *getDriverObjByName(const string &name, unsigned int instance);
+	static DriverObj *getDriverObjByID(unsigned long id);
 
 private:
-	HRTWorkerThread(void) {}
-	~HRTWorkerThread(void) {}
-
-	void process(void);
-
-	void hrtLock(void);
-	void hrtUnlock(void);
-
-	std::list<WorkHandle>	m_work;
-
-	bool m_enable_stats = false;
+	DriverMgr() {}
+	~DriverMgr() {}
 };
 

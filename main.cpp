@@ -1,14 +1,14 @@
 #include<iostream>
 #include"HRTWorkerThread.hpp"
 
-class Worker
+class AccelSim : public VirtDriverObj
 {
 public:
-	Worker() 
+	AccelSim() 
 	{
 		_w = std::make_shared<WorkItem>(callbackFunc, this, 1000000);
 	}
-	~Worker() {}
+	~AccelSim() {}
 
 	static void doWork()
 	{
@@ -16,7 +16,7 @@ public:
 		wt->scheduleWorkItem(_w);
 	}
 
-	static void *worker_main(void *arg)
+	static void *accelSim_main(void *arg)
 	{
 		g_instance = new Worker();
 
@@ -28,11 +28,9 @@ public:
 private:
 	static std::shared_ptr<WorkItem> _w;
 
-	static void callbackFunc(void *arg)
+	static void measure(void *arg)
 	{
-		std::cout << "In callback\n";
-
-		// Reschedule the work
+		// Reschedule next sensor read
 		HRTWorkerThread *wt = HRTWorkerThread::instance();
 		Worker *me = (Worker *)arg;
 		wt->scheduleWorkItem(me->_w);
