@@ -143,8 +143,10 @@ void HRTWorkerThread::scheduleWorkItem(std::shared_ptr<WorkItem> item)
 {
 	std::cout << "HRTWorkerThread::scheduleWorkItem\n";
 	hrtLock();
+	std::cout << "Add WorkItem\n";
 	m_work.push_back(item);
 	item->m_queue_time = HRTAbsoluteTime();
+	std::cout << "Signal\n";
 	pthread_cond_signal(&g_reschedule_cond);
 	hrtUnlock();
 }
@@ -195,15 +197,15 @@ void HRTWorkerThread::process(void)
 
 		// pthread_cond_timedwait uses absolute time
 		timespec ts;
-        	clock_gettime(CLOCK_MONOTONIC, &ts);
-		//uint64_t nanosecs = (ts.tv_nsec + ((next % 1000000)*1000));
-		//uint32_t secs = nanosecs / 1000000000;
-		//ts.tv_sec += next/1000000 + secs; 
-		//ts.tv_nsec = nanosecs % 1000000000;
-		ts.tv_sec += 2; 
+        	clock_gettime(CLOCK_REALTIME, &ts);
+		uint64_t nanosecs = (ts.tv_nsec + ((next % 1000000)*1000));
+		uint32_t secs = nanosecs / 1000000000;
+		ts.tv_sec += next/1000000 + secs; 
+		ts.tv_nsec = nanosecs % 1000000000;
 		
 		// Wait until next expiry or until a new item is rescheduled
-		int rc = pthread_cond_wait(&g_reschedule_cond, &g_hrt_lock);
+		int rc = pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
+		std::cout << " rc = " << rc << "\n";
 		hrtUnlock();
 	}
 }

@@ -10,14 +10,23 @@ public:
 	}
 	~Worker() {}
 
-	void doWork()
+	static void doWork()
 	{
 		HRTWorkerThread *wt = HRTWorkerThread::instance();
 		wt->scheduleWorkItem(_w);
 	}
 
+	static void *worker_main(void *arg)
+	{
+		g_instance = new Worker();
+
+		g_instance->doWork();
+
+		return NULL;
+	}
+
 private:
-	std::shared_ptr<WorkItem> _w;
+	static std::shared_ptr<WorkItem> _w;
 
 	static void callbackFunc(void *arg)
 	{
@@ -28,18 +37,24 @@ private:
 		Worker *me = (Worker *)arg;
 		wt->scheduleWorkItem(me->_w);
 	}
+	static Worker *g_instance;
 };
+
+std::shared_ptr<WorkItem> Worker::_w;
+
+Worker *Worker::g_instance = nullptr;
 
 int main()
 {
+	pthread_t tid;
 	HRTWorkerThread *wt = HRTWorkerThread::instance();
 
 	wt->init();
 
-	Worker wrkr;
+	int ret = pthread_create(&tid, NULL, Worker::worker_main, NULL);
+	void *val;
 
-	wrkr.doWork();
-
+	pthread_join(tid, &val);
 	wt->cleanup();
 
 	return 0;
