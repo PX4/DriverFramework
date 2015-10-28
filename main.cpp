@@ -1,59 +1,74 @@
 #include<iostream>
-#include"HRTWorkerThread.hpp"
+#include<unistd.h>
+#include"DriverFramework.hpp"
+#include"DriverObj.hpp"
+
+using namespace DriverFramework;
 
 class AccelSim : public VirtDriverObj
 {
 public:
-	AccelSim() 
-	{
-		_w = std::make_shared<WorkItem>(callbackFunc, this, 1000000);
-	}
+	AccelSim() :
+		VirtDriverObj("AccelSim", "/dev/accel0"),
+		m_work_handle(0)
+	{}
 	~AccelSim() {}
 
-	static void doWork()
+	int initialize(void)
 	{
-		HRTWorkerThread *wt = HRTWorkerThread::instance();
-		wt->scheduleWorkItem(_w);
+		m_work_handle = WorkItemMgr::create(measure, this, 1000000);
+		WorkItemMgr::schedule(m_work_handle);
+		return 0;
 	}
 
-	static void *accelSim_main(void *arg)
+	int ioctl(int datatype, void *data)
 	{
-		g_instance = new Worker();
+		return 0;
+	}
 
-		g_instance->doWork();
+	static void *main(void *arg)
+	{
+		if (m_instance != nullptr)
+			return nullptr;
 
-		return NULL;
+		m_instance = new AccelSim();
+		m_instance->initialize();
+
+		return nullptr;
 	}
 
 private:
-	static std::shared_ptr<WorkItem> _w;
-
-	static void measure(void *arg)
+	static void measure(void *arg, const WorkHandle wh)
 	{
-		// Reschedule next sensor read
-		HRTWorkerThread *wt = HRTWorkerThread::instance();
-		Worker *me = (Worker *)arg;
-		wt->scheduleWorkItem(me->_w);
+		std::cout << "Measure\n";
+		WorkItemMgr::schedule(wh);
 	}
-	static Worker *g_instance;
+
+	static AccelSim *m_instance;
+	WorkHandle m_work_handle;
 };
 
-std::shared_ptr<WorkItem> Worker::_w;
-
-Worker *Worker::g_instance = nullptr;
+AccelSim *AccelSim::m_instance = nullptr;
 
 int main()
 {
 	pthread_t tid;
-	HRTWorkerThread *wt = HRTWorkerThread::instance();
 
-	wt->init();
+	int ret = DriverFramework::initialize();
+	if (ret < 0) {
+		return ret;
+	}
 
-	int ret = pthread_create(&tid, NULL, Worker::worker_main, NULL);
+	ret = pthread_create(&tid, NULL, AccelSim::main, NULL);
+	if (ret < 0) {
+		return ret;
+	}
+
 	void *val;
-
 	pthread_join(tid, &val);
-	wt->cleanup();
+
+	//DriverFramework::waitForShutdown();
+	while(1) sleep(1);
 
 	return 0;
 }

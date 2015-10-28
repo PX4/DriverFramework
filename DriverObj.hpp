@@ -34,11 +34,13 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <string>
+#include <sys/ioctl.h>
+#include <fcntl.h>
 
 class DriverObj
 {
 public:
-	DriverObj(string name) : 
+	DriverObj(std::string name) : 
 		m_name(name)
 	{}
 
@@ -48,29 +50,29 @@ public:
 
 	virtual int ioctl(int datatype, void *data) = 0;
 
-	const string &getName()
+	const std::string &getName()
 	{
 		return m_name;
 	}
 private:
-	string m_name;
+	std::string m_name;
 	unsigned int id;
 };
 
 class I2CDriverObj : public DriverObj
 {
 public:
-	I2CDriverObj(string name, string path, int flags) : 
+	I2CDriverObj(std::string name, std::string path, int flags) : 
 		DriverObj(name),
 		m_path(path),
 		m_flags(flags)
 	{}
 
-	~DriverObj() {}
+	~I2CDriverObj() {}
 
 	virtual int initialize()
 	{
-		m_fd = open(m_name.c_str, m_flags);
+		m_fd = ::open(m_path.c_str(), m_flags);
 
 		return (m_fd >= 0);
 	}
@@ -81,7 +83,7 @@ public:
 	}
 	
 private:
-	string m_path;
+	std::string m_path;
 	int m_flags;
 	int m_fd;
 };
@@ -89,7 +91,7 @@ private:
 class VirtDriverObj : public DriverObj
 {
 public:
-	VirtDriverObj(string name, string path) : 
+	VirtDriverObj(std::string name, std::string path) : 
 		DriverObj(name),
 		m_path(path)
 	{}
@@ -97,11 +99,12 @@ public:
 	~VirtDriverObj() {}
 
 	virtual int ioctl(int datatype, void *data) = 0;
+	std::string m_path;
 };
 
 class DriverMgr
 {    
-	static DriverObj *getDriverObjByName(const string &name, unsigned int instance);
+	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
 	static DriverObj *getDriverObjByID(unsigned long id);
 
 private:

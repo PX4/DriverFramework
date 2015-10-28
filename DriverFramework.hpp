@@ -33,84 +33,46 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include<memory>
-#include<map>
-#include<list>
-#include<string>
-#include<stdint.h>
+#include <stdint.h>
+#include <time.h>
 
-uint64_t HRTAbsoluteTime();
+namespace DriverFramework {
 
-typedef void *WorkHandle;
+//-----------------------------------------------------------------------
+// Types
+//-----------------------------------------------------------------------
+typedef uint32_t WorkHandle;
 
 typedef void (*workCallback)(void *arg, WorkHandle wh);
 
-class WorkItem
+
+//-----------------------------------------------------------------------
+// Functions
+//-----------------------------------------------------------------------
+
+// Get the offset time from startup
+uint64_t offsetTime(void);
+
+// convert offset time to absolute time
+timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
+
+
+// Initialize the driver framework
+// This function must be called before any of the functions below
+int initialize(void);
+
+// Terminate the driver framework
+void shutdown(void);
+
+// Block until shutdown requested
+void waitForShutdown();
+
+namespace WorkItemMgr
 {
-public:
-	WorkItem(workCallback callback, void *arg, uint32_t delay) : 
-		m_arg(arg),
-		m_queue_time(0),
-		m_callback(callback),
-		m_delay(delay)
-	{}
-	~WorkItem() {}
-
-	void reschedule();
-
-	void updateStats(unsigned int cur_usec);
-	void resetStats();
-
-	void *		m_arg;
-	uint64_t	m_queue_time;
-	workCallback	m_callback;
-	uint32_t	m_delay;
-	WorkHandle	m_handle;
-
-	// statistics
-	unsigned long m_last;
-	unsigned long m_min;
-	unsigned long m_max;
-	unsigned long m_total;
-	unsigned long m_count;
+	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
+	void destroy(WorkHandle handle);
+	bool schedule(WorkHandle handle);
 };
 
-class WorkItemMgr
-{
-public:
-	static WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	static void destroy(WorkHandle handle);
-	static bool reschedule(WorkHandle handle);
-
-private:
-	std::map<WorkHandle, WorkItem> m_work_items;
-}
-
-class HRTWorkerThread
-{
-public:
-	static HRTWorkerThread *instance(void);
-
-	int init(void);
-	void cleanup(void);
-
-	void scheduleWorkItem(WorkItem item);
-
-	void enableStats(bool enable);
-
-	static void *process_trampoline(void *);
-
-private:
-	HRTWorkerThread(void) {}
-	~HRTWorkerThread(void) {}
-
-	void process(void);
-
-	void hrtLock(void);
-	void hrtUnlock(void);
-
-	std::list<WorkHandle>	m_work;
-
-	bool m_enable_stats = false;
 };
 
