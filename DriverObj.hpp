@@ -34,8 +34,11 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <string>
-#include <sys/ioctl.h>
-#include <fcntl.h>
+#include "DriverFramework.hpp"
+
+#pragma once
+
+namespace DriverFramework {
 
 class DriverObj
 {
@@ -54,61 +57,14 @@ public:
 	{
 		return m_name;
 	}
+
+	unsigned int getId()
+	{
+		return m_id;
+	}
 private:
 	std::string m_name;
-	unsigned int id;
+	unsigned int m_id;
 };
 
-class I2CDriverObj : public DriverObj
-{
-public:
-	I2CDriverObj(std::string name, std::string path, int flags) : 
-		DriverObj(name),
-		m_path(path),
-		m_flags(flags)
-	{}
-
-	~I2CDriverObj() {}
-
-	virtual int initialize()
-	{
-		m_fd = ::open(m_path.c_str(), m_flags);
-
-		return (m_fd >= 0);
-	}
-
-	virtual int ioctl(int datatype, void *data)
-	{
-		return ::ioctl(m_fd, datatype, data);
-	}
-	
-private:
-	std::string m_path;
-	int m_flags;
-	int m_fd;
 };
-
-class VirtDriverObj : public DriverObj
-{
-public:
-	VirtDriverObj(std::string name, std::string path) : 
-		DriverObj(name),
-		m_path(path)
-	{}
-
-	~VirtDriverObj() {}
-
-	virtual int ioctl(int datatype, void *data) = 0;
-	std::string m_path;
-};
-
-class DriverMgr
-{    
-	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
-	static DriverObj *getDriverObjByID(unsigned long id);
-
-private:
-	DriverMgr() {}
-	~DriverMgr() {}
-};
-

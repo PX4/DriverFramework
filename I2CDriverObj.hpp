@@ -33,48 +33,42 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <stdint.h>
-#include <time.h>
+#include <string>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include "DriverObj.hpp"
 
 #pragma once
 
 namespace DriverFramework {
 
-//-----------------------------------------------------------------------
-// Types
-//-----------------------------------------------------------------------
-typedef uint32_t WorkHandle;
-
-typedef void (*workCallback)(void *arg, WorkHandle wh);
-
-
-//-----------------------------------------------------------------------
-// Functions
-//-----------------------------------------------------------------------
-
-// Get the offset time from startup
-uint64_t offsetTime(void);
-
-// convert offset time to absolute time
-timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
-
-
-// Initialize the driver framework
-// This function must be called before any of the functions below
-int initialize(void);
-
-// Terminate the driver framework
-void shutdown(void);
-
-// Block until shutdown requested
-void waitForShutdown();
-
-namespace WorkItemMgr
+class I2CDriverObj : public DriverObj
 {
-	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	void destroy(WorkHandle handle);
-	bool schedule(WorkHandle handle);
+public:
+	I2CDriverObj(std::string name, std::string path, int flags) : 
+		DriverObj(name),
+		m_path(path),
+		m_flags(flags)
+	{}
+
+	~I2CDriverObj() {}
+
+	virtual int initialize()
+	{
+		m_fd = ::open(m_path.c_str(), m_flags);
+
+		return (m_fd >= 0);
+	}
+
+	virtual int ioctl(int datatype, void *data)
+	{
+		return ::ioctl(m_fd, datatype, data);
+	}
+	
+private:
+	std::string m_path;
+	int m_flags;
+	int m_fd;
 };
 
 };
-

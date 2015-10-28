@@ -33,48 +33,69 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <stdint.h>
-#include <time.h>
+#include <stdio.h>
+#include <list>
+#include "DriverFramework.hpp"
+#include "DriverMgr.hpp"
 
-#pragma once
+using namespace DriverFramework;
 
-namespace DriverFramework {
+// TODO add missing locking
 
-//-----------------------------------------------------------------------
-// Types
-//-----------------------------------------------------------------------
-typedef uint32_t WorkHandle;
+static std::list<DriverFramework::DriverObj *> *g_driver_list = nullptr;
 
-typedef void (*workCallback)(void *arg, WorkHandle wh);
-
-
-//-----------------------------------------------------------------------
-// Functions
-//-----------------------------------------------------------------------
-
-// Get the offset time from startup
-uint64_t offsetTime(void);
-
-// convert offset time to absolute time
-timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
-
-
-// Initialize the driver framework
-// This function must be called before any of the functions below
-int initialize(void);
-
-// Terminate the driver framework
-void shutdown(void);
-
-// Block until shutdown requested
-void waitForShutdown();
-
-namespace WorkItemMgr
+int DriverMgr::initialize(void)
 {
-	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	void destroy(WorkHandle handle);
-	bool schedule(WorkHandle handle);
-};
+	g_driver_list = new std::list<DriverFramework::DriverObj *>;
+	if (g_driver_list == nullptr) {
+		return -1;
+	}
+	return 0;
+}
 
-};
+void DriverMgr::finalize(void)
+{
+	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	while (it != g_driver_list->end()) {
+		g_driver_list->erase(it);
+	}
+}
+
+void DriverMgr::registerDriver(DriverObj *obj)
+{
+	g_driver_list->push_back(obj);
+}
+
+void DriverMgr::unRegisterDriver(DriverObj *obj)
+{
+	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	while (it != g_driver_list->end()) {
+		if (*it == obj) {
+			g_driver_list->erase(it);
+			break;
+		}
+	}
+}
+
+DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int instance)
+{
+	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	while (it != g_driver_list->end()) {
+		if ((*it)->getName() == name) {
+			return *it;
+		}
+	}
+	return nullptr;
+}
+
+DriverObj *DriverMgr::getDriverObjByID(unsigned long id)
+{
+	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	while (it != g_driver_list->end()) {
+		if ((*it)->getId() == id) {
+			return *it;
+		}
+	}
+	return nullptr;
+}
 

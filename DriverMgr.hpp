@@ -35,45 +35,22 @@
 *************************************************************************/
 #include <stdint.h>
 #include <time.h>
+#include "DriverObj.hpp"
 
 #pragma once
 
 namespace DriverFramework {
 
-//-----------------------------------------------------------------------
-// Types
-//-----------------------------------------------------------------------
-typedef uint32_t WorkHandle;
+namespace DriverMgr
+{    
+	int initialize(void);
+	void finalize(void);
 
-typedef void (*workCallback)(void *arg, WorkHandle wh);
+	void registerDriver(DriverObj *obj);
+	void unRegisterDriver(DriverObj *obj);
 
-
-//-----------------------------------------------------------------------
-// Functions
-//-----------------------------------------------------------------------
-
-// Get the offset time from startup
-uint64_t offsetTime(void);
-
-// convert offset time to absolute time
-timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
-
-
-// Initialize the driver framework
-// This function must be called before any of the functions below
-int initialize(void);
-
-// Terminate the driver framework
-void shutdown(void);
-
-// Block until shutdown requested
-void waitForShutdown();
-
-namespace WorkItemMgr
-{
-	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	void destroy(WorkHandle handle);
-	bool schedule(WorkHandle handle);
+	DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
+	DriverObj *getDriverObjByID(unsigned long id);
 };
 
 };

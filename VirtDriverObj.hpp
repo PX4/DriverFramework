@@ -33,48 +33,25 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <stdint.h>
-#include <time.h>
+#include <string>
+#include "DriverObj.hpp"
 
 #pragma once
 
 namespace DriverFramework {
 
-//-----------------------------------------------------------------------
-// Types
-//-----------------------------------------------------------------------
-typedef uint32_t WorkHandle;
-
-typedef void (*workCallback)(void *arg, WorkHandle wh);
-
-
-//-----------------------------------------------------------------------
-// Functions
-//-----------------------------------------------------------------------
-
-// Get the offset time from startup
-uint64_t offsetTime(void);
-
-// convert offset time to absolute time
-timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
-
-
-// Initialize the driver framework
-// This function must be called before any of the functions below
-int initialize(void);
-
-// Terminate the driver framework
-void shutdown(void);
-
-// Block until shutdown requested
-void waitForShutdown();
-
-namespace WorkItemMgr
+class VirtDriverObj : public DriverObj
 {
-	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	void destroy(WorkHandle handle);
-	bool schedule(WorkHandle handle);
+public:
+	VirtDriverObj(std::string name, std::string path) : 
+		DriverObj(name),
+		m_path(path)
+	{}
+
+	~VirtDriverObj() {}
+
+	virtual int ioctl(int datatype, void *data) = 0;
+	std::string m_path;
 };
 
 };
-

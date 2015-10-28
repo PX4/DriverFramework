@@ -33,12 +33,15 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <iostream>
+#include <stdio.h>
 #include <list>
 #include <map>
 #include <pthread.h>
 #include "DriverFramework.hpp"
+#include "DriverObj.hpp"
+#include "DriverMgr.hpp"
 
+#define SHOW_STATS 1
 
 namespace DriverFramework {
 
@@ -72,6 +75,7 @@ public:
 
 	void updateStats(unsigned int cur_usec);
 	void resetStats();
+	void dumpStats();
 
 	void *		m_arg;
 	uint64_t	m_queue_time;
@@ -95,7 +99,7 @@ public:
 	static int initialize(void);
 	static void finalize(void);
 
-	void scheduleWorkItem(WorkItem &item);
+	void scheduleWorkItem(WorkItem *item);
 
 	void shutdown(void);
 	void enableStats(bool enable);
@@ -112,7 +116,7 @@ private:
 	void hrtLock(void);
 	void hrtUnlock(void);
 
-	std::list<WorkItem>	m_work;
+	std::list<WorkItem *>	m_work;
 
 	bool m_enable_stats = false;
 	bool m_exit_requested = false;
@@ -183,15 +187,20 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 *************************************************************************/
 void DriverFramework::shutdown()
 {
-	std::cout << "DriverFramework::shutdown\n";
 	// Stop the HRT queue thread
 	HRTWorkQueue *wq = HRTWorkQueue::instance();
 	if (wq) {
 		wq->shutdown();
 	}
 
-	// Free the resources
+	// Free the HRTWorkQueue resources
 	HRTWorkQueue::finalize();
+
+	// Free the WorkItemMgr resources
+	WorkItemMgr::finalize();
+
+	// Free the DriverMgr resources
+	DriverMgr::finalize();
 
 	// allow Framework to exit
 	pthread_mutex_lock(&g_framework_exit);
@@ -201,18 +210,15 @@ void DriverFramework::shutdown()
 
 int DriverFramework::initialize()
 {
-	std::cout << "DriverFramework::initialize\n";
 	int ret = HRTWorkQueue::initialize();
 	if (ret < 0) {
 		return ret;
 	}
-#if 0
-	ret = DriverFramework::DriverMgr::initialize();
+	ret = DriverMgr::initialize();
 	if (ret < 0) {
 		return ret-10;
 	}
-#endif
-	ret = DriverFramework::WorkItemMgr::initialize();
+	ret = WorkItemMgr::initialize();
 	if (ret < 0) {
 		return ret-20;
 	}
@@ -221,7 +227,6 @@ int DriverFramework::initialize()
 
 void DriverFramework::waitForShutdown()
 {
-	std::cout << "DriverFramework::waitForShutdown\n";
 	// Block until shutdown requested
 	pthread_mutex_lock(&g_framework_exit);
 	pthread_cond_wait(&g_framework_cond, &g_framework_exit);
@@ -233,7 +238,7 @@ void DriverFramework::waitForShutdown()
 *************************************************************************/
 void WorkItem::updateStats(unsigned int cur_usec)
 {
-	unsigned int delay = (m_last == ~0x0UL) ? cur_usec : (cur_usec - m_last);
+	unsigned long delay = (m_last == ~0x0UL) ? (cur_usec - m_queue_time) : (cur_usec - m_last);
 
 	if (delay < m_min) {
 		m_min = delay;
@@ -245,6 +250,12 @@ void WorkItem::updateStats(unsigned int cur_usec)
 	m_total += delay;
 	m_count += 1;
 	m_last = cur_usec;
+
+#if SHOW_STATS == 1
+	if ((m_count % 100) == 99) {
+		dumpStats();
+	}
+#endif
 }
 
 void WorkItem::resetStats() 
@@ -256,6 +267,12 @@ void WorkItem::resetStats()
 	m_count = 0;
 }
 
+void WorkItem::dumpStats() 
+{
+	printf("Stats for id=%d callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
+		m_handle, m_callback, m_count, m_total/m_count, m_min, m_max);
+}
+
 /*************************************************************************
   HRTWorkQueue
 *************************************************************************/
@@ -263,7 +280,6 @@ HRTWorkQueue *HRTWorkQueue::m_instance = NULL;
 
 void *HRTWorkQueue::process_trampoline(void *arg)
 {
-	std::cout << "HRTWorkQueue::process_trampoline\n";
 	if (m_instance) {
 		m_instance->process();
 	}
@@ -283,7 +299,6 @@ int HRTWorkQueue::initialize(void)
 		return -2;
 	}
 
-	std::cout << "HRTWorkQueue::initialize\n";
 	// Create a lock for handling the work queue
 	if (pthread_mutex_init(&g_hrt_lock, NULL) != 0)
 	{
@@ -297,7 +312,6 @@ int HRTWorkQueue::initialize(void)
 
 void HRTWorkQueue::finalize(void)
 {
-	std::cout << "HRTWorkQueue::cleanup\n";
 	pthread_join(g_tid, NULL);
 	HRTWorkQueue *wq = HRTWorkQueue::instance();
 	if (wq) {
@@ -311,21 +325,17 @@ void HRTWorkQueue::finalize(void)
 	}
 }
 
-void HRTWorkQueue::scheduleWorkItem(WorkItem &item)
+void HRTWorkQueue::scheduleWorkItem(WorkItem *item)
 {
-	std::cout << "HRTWorkQueue::scheduleWorkItem\n";
 	hrtLock();
-	std::cout << "Add WorkItem\n";
 	m_work.push_back(item);
-	item.m_queue_time = offsetTime();
-	std::cout << "Signal\n";
+	item->m_queue_time = offsetTime();
 	pthread_cond_signal(&g_reschedule_cond);
 	hrtUnlock();
 }
 
 void HRTWorkQueue::clearAll()
 {
-	std::cout << "HRTWorkQueue::clearAll\n";
 	hrtLock();
 	m_work.clear();
 	hrtUnlock();
@@ -341,14 +351,12 @@ void HRTWorkQueue::shutdown(void)
 
 void HRTWorkQueue::process(void)
 {
-	std::cout << "HRTWorkQueue::process\n";
-	std::list<WorkItem>::iterator work_itr;
+	std::list<WorkItem *>::iterator work_itr;
 	uint64_t delta;
 	uint64_t next;
 	uint64_t elapsed;
 	uint64_t remaining;
 	timespec ts;
-	timespec ts2;
 	uint64_t now;
 
 	for(;!m_exit_requested;) {
@@ -358,28 +366,25 @@ void HRTWorkQueue::process(void)
 		next = 10000000;
 		work_itr = m_work.begin();
 
-		std::cout << "Before While --- \n";
 		now = offsetTime();
 		while (work_itr != m_work.end()) {
 			now = offsetTime();
-			elapsed = now - work_itr->m_queue_time;
-			std::cout << "Process work item elapsed = " << elapsed << " " << work_itr->m_delay << "\n";
+			elapsed = now - (*work_itr)->m_queue_time;
 
-			if (elapsed >= work_itr->m_delay) {
-				std::cout << "Elapsed\n";
-				WorkItem &dequeuedWork = *work_itr;
+			if (elapsed >= (*work_itr)->m_delay) {
+				WorkItem *dequeuedWork = *work_itr;
 
 				// Mutex is recursive so the WorkItem can be rescheduled
 				// while the lock is held
+				dequeuedWork->updateStats(now);
 				hrtUnlock();
-				dequeuedWork.m_callback(dequeuedWork.m_arg, dequeuedWork.m_handle);
+				dequeuedWork->m_callback(dequeuedWork->m_arg, dequeuedWork->m_handle);
 				hrtLock();
 
 				work_itr = m_work.erase(work_itr);
 
 			} else {
-				std::cout << "Not expired (delay = " << work_itr->m_delay << "\n";
-				remaining = work_itr->m_delay - elapsed;
+				remaining = (*work_itr)->m_delay - elapsed;
 				if (remaining < next) {
 					next = remaining;
 				}
@@ -389,28 +394,23 @@ void HRTWorkQueue::process(void)
 			}
 		}
 
-		std::cout << "Next = " << next << "\n";
 
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now+next);
 		
 		// Wait until next expiry or until a new item is rescheduled
-		std::cout << "Waiting...\n";
 		int rc = pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
-		std::cout << " rc = " << rc << "\n";
 		hrtUnlock();
 	}
 }
 
 void HRTWorkQueue::hrtLock()
 {
-	std::cout << "lock\n";
 	pthread_mutex_lock(&g_hrt_lock);
 }
 
 void HRTWorkQueue::hrtUnlock()
 {
-	std::cout << "unlock\n";
 	pthread_mutex_unlock(&g_hrt_lock);
 }
 
@@ -438,12 +438,10 @@ void WorkItemMgr::finalize()
 
 WorkHandle WorkItemMgr::create(workCallback cb, void *arg, uint32_t delay)
 {
-	std::cout << "WorkItemMgr::create\n";
 	static WorkHandle i=1000;
 	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
 	++i;
   	g_work_items->insert (it, std::pair<WorkHandle,WorkItem>(i, WorkItem(cb, arg, delay, i)));
-	std::cout << "Handle = " << i << "\n";
 	return i;
 }
 
@@ -458,11 +456,11 @@ void WorkItemMgr::destroy(WorkHandle handle)
 
 bool WorkItemMgr::schedule(WorkHandle handle)
 {
-	std::cout << "WorkItemMgr::schedule " << handle << "\n";
 	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->find(handle);
 	bool ret = it != g_work_items->end();
 	if (ret) {
-		HRTWorkQueue::instance()->scheduleWorkItem(it->second);
+		HRTWorkQueue::instance()->scheduleWorkItem(&(it->second));
 	}
 	return ret;
 }
+

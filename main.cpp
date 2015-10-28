@@ -1,7 +1,7 @@
-#include<iostream>
-#include<unistd.h>
-#include"DriverFramework.hpp"
-#include"DriverObj.hpp"
+#include <stdio.h>
+#include <unistd.h>
+#include "DriverFramework.hpp"
+#include "VirtDriverObj.hpp"
 
 using namespace DriverFramework;
 
@@ -16,7 +16,7 @@ public:
 
 	int initialize(void)
 	{
-		m_work_handle = WorkItemMgr::create(measure, this, 1000000);
+		m_work_handle = WorkItemMgr::create(measure, this, 10000);
 		WorkItemMgr::schedule(m_work_handle);
 		return 0;
 	}
@@ -40,7 +40,6 @@ public:
 private:
 	static void measure(void *arg, const WorkHandle wh)
 	{
-		std::cout << "Measure\n";
 		WorkItemMgr::schedule(wh);
 	}
 
