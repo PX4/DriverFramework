@@ -352,7 +352,6 @@ void HRTWorkQueue::shutdown(void)
 void HRTWorkQueue::process(void)
 {
 	std::list<WorkItem *>::iterator work_itr;
-	uint64_t delta;
 	uint64_t next;
 	uint64_t elapsed;
 	uint64_t remaining;
@@ -399,7 +398,7 @@ void HRTWorkQueue::process(void)
 		ts = offsetTimeToAbsoluteTime(now+next);
 		
 		// Wait until next expiry or until a new item is rescheduled
-		int rc = pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
+		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();
 	}
 }
