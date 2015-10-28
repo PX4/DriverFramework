@@ -1,7 +1,15 @@
-all: test
+all: build
 
-test: DriverFramework.cpp DriverMgr.cpp main.cpp
-	clang++ -std=c++11 -Wall $^ -o $@ -lpthread
+.PHONY: build
+generate:
+	mkdir -p build
+	cd build && cmake ..
 
+build: generate
+	cd build && make
+
+run: build
+	cd build && test/testapp
+	
 clean:
-	rm -f test
+	rm -rf build
