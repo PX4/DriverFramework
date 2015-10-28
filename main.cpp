@@ -67,8 +67,7 @@ int main()
 	void *val;
 	pthread_join(tid, &val);
 
-	//DriverFramework::waitForShutdown();
-	while(1) sleep(1);
+	DriverFramework::waitForShutdown();
 
 	return 0;
 }
