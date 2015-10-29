@@ -118,6 +118,6 @@ int main()
 
 	DriverFramework::shutdown();
 
-	DF_LOG_INFO("Test %s", (ret == PressureTester::TEST_PASS) ? "PASSES" : "FAILED");
+	DF_LOG_INFO("Test %s", (ret == PressureTester::TEST_PASS) ? "PASSED" : "FAILED");
 	return ret;
 }
