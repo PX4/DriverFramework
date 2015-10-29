@@ -47,6 +47,8 @@ typedef uint32_t WorkHandle;
 
 typedef void (*workCallback)(void *arg, WorkHandle wh);
 
+// Substitute error logging here
+#define DF_LOG_ERR(FMT, ...)  printf(FMT "/n", ##__VA_ARGS__)
 
 //-----------------------------------------------------------------------
 // Functions

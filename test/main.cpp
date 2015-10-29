@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "DriverFramework.hpp"
 #include "VirtDriverObj.hpp"
 
@@ -14,16 +15,21 @@ public:
 	{}
 	~AccelSim() {}
 
-	int initialize(void)
+	virtual int open(int flags, mode_t mode)
 	{
 		m_work_handle = WorkItemMgr::create(measure, this, 10000);
 		WorkItemMgr::schedule(m_work_handle);
 		return 0;
 	}
 
-	int ioctl(int datatype, void *data)
-	{
+	virtual int close(void) {
+		WorkItemMgr::destroy(m_work_handle);
 		return 0;
+	}
+
+	virtual int ioctl(unsigned long request, void *data)
+	{
+		return -1;
 	}
 
 	static void *main(void *arg)
@@ -32,7 +38,7 @@ public:
 			return nullptr;
 
 		m_instance = new AccelSim();
-		m_instance->initialize();
+		m_instance->open(O_RDWR, 0);
 
 		return nullptr;
 	}

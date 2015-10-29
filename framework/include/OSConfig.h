@@ -33,35 +33,6 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <string>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include "DriverObj.hpp"
-
 #pragma once
 
-namespace DriverFramework {
-
-class I2CDriverObj : public DriverObj
-{
-public:
-	I2CDriverObj(std::string name, std::string path) : 
-		DriverObj(name),
-		m_path(path)
-	{}
-
-	~I2CDriverObj() {}
-
-	virtual int open(int flags, mode_t mode);
-	virtual int close();
-	virtual int ioctl(unsigned long request, void *data);
-
-	int readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int writeReg(uint8_t address, uint8_t *out_buffer, int length);
-
-private:
-	std::string m_path;
-	int m_fd = 0;
-};
-
-};
+#define MAX_LEN_TRANSMIT_BUFFER_IN_BYTES 128

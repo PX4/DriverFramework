@@ -49,9 +49,9 @@ public:
 
 	~DriverObj() {}
 
-	virtual int initialize() = 0;
-
-	virtual int ioctl(int datatype, void *data) = 0;
+	virtual int open(int flags, mode_t mode) = 0;
+	virtual int close() = 0;
+	virtual int ioctl(unsigned long request, void *data) = 0;
 
 	const std::string &getName()
 	{
