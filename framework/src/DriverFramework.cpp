@@ -269,7 +269,7 @@ void WorkItem::resetStats()
 
 void WorkItem::dumpStats() 
 {
-	printf("Stats for id=%d callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
+	DF_LOG_INFO("Stats for id=%d callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
 		m_handle, m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
