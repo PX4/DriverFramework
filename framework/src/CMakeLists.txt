@@ -34,6 +34,7 @@
 add_library(driver_framework
 	DriverFramework.cpp
 	DriverMgr.cpp
+	SyncObj.cpp
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

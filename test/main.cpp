@@ -16,26 +16,17 @@ public:
 	{}
 	~AccelSim() {}
 
-	virtual int open(int flags)
+	virtual int start(void)
 	{
-		if (flags == O_RDONLY) {
-			m_work_handle = WorkItemMgr::create(measure, this, 10000);
-			WorkItemMgr::schedule(m_work_handle);
-			return 0;
-		}
-		errno = EPERM;
-		return -1;
-	}
-
-	virtual int close(void) {
-		WorkItemMgr::destroy(m_work_handle);
-		m_work_handle=0;
+		m_work_handle = WorkItemMgr::create(measure, this, 10000);
+		WorkItemMgr::schedule(m_work_handle);
 		return 0;
 	}
 
-	virtual int ioctl(unsigned long request, void *data)
-	{
-		return -1;
+	virtual int stop(void) {
+		WorkItemMgr::destroy(m_work_handle);
+		m_work_handle=0;
+		return 0;
 	}
 
 private:
@@ -60,7 +51,7 @@ int main()
 	AccelSim asim(ACCEL_DEV_PATH);
 
 	// Start polling the sensor
-	asim.open(O_RDONLY);
+	asim.start();
 
 	DriverFramework::waitForShutdown();
 

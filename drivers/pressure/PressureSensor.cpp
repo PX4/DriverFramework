@@ -38,9 +38,9 @@
 using namespace DriverFramework;
 
 
-int PressureSensor::open(int flags)
+int PressureSensor::start()
 {
-	int ret = I2CDriverObj::open(flags);
+	int ret = I2CDriverObj::start();
 	if (ret != 0) {
 		return ret;
 	}
@@ -52,10 +52,10 @@ int PressureSensor::open(int flags)
 	return ret;
 }
 
-int PressureSensor::close()
+int PressureSensor::stop()
 {
 	WorkItemMgr::destroy(m_work_handle);
-	return I2CDriverObj::close();
+	return I2CDriverObj::stop();
 }
 
 void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
@@ -65,12 +65,12 @@ void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
 
 int PressureSensor::getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required)
 {
-	pthread_mutex_lock(&m_lock);
+	m_synchronize.lock();
 	if (is_new_data_required) {
-		pthread_cond_wait(&m_new_data_cond, &m_lock);
+		m_synchronize.waitOnSignal();
 	}
 	out_data = m_sensor_data;
-	pthread_mutex_unlock(&m_lock);
+	m_synchronize.unlock();
 
 	return 1;
 }
@@ -97,11 +97,13 @@ void PressureSensor::workCallback(void *arg, WorkHandle wh)
 
 void PressureSensor::readSensor(void)
 {
-	pthread_mutex_lock(&m_lock);
+	m_synchronize.lock();
+
 	m_sensor_data.pressure_in_pa = getPressure();
 	m_sensor_data.temperature_in_c = getTemperature();
 	m_sensor_data.last_read_time_in_usecs = DriverFramework::offsetTime();
 	m_sensor_data.sensor_read_counter++;
-	pthread_cond_signal(&m_new_data_cond);
-	pthread_mutex_unlock(&m_lock);
+
+	m_synchronize.signal();
+	m_synchronize.unlock();
 }

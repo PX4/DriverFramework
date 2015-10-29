@@ -31,7 +31,6 @@ private:
 	WorkHandle	m_work_handle = 0;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
-	bool		m_result = false;
 	struct pressure_sensor_data m_sensor_data;
 
 	int		m_pass;
@@ -83,7 +82,7 @@ int PressureTester::run(void) {
 	DF_LOG_INFO("Entering: run");
 
 	// Open the pressure sensor
-	int ret = m_sensor.open(O_RDONLY);
+	int ret = m_sensor.start();
 	if (ret != 0)
 	{
 		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s", 
@@ -101,7 +100,7 @@ int PressureTester::run(void) {
 
 	wait();
 	DF_LOG_INFO("Closing pressure sensor\n");
-	m_sensor.close();
+	m_sensor.stop();
 	return m_pass;
 }
 

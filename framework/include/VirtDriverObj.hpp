@@ -50,7 +50,6 @@ public:
 
 	~VirtDriverObj() {}
 
-	virtual int ioctl(unsigned long request, void *data) = 0;
 	std::string m_path;
 };
 

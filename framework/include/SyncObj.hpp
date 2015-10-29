@@ -33,35 +33,25 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <string>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include "DriverObj.hpp"
 
 #pragma once
 
-namespace DriverFramework {
+#include <pthread.h>
 
-class I2CDriverObj : public DriverObj
+class SyncObj
 {
 public:
-	I2CDriverObj(std::string name, std::string path) : 
-		DriverObj(name),
-		m_path(path)
-	{}
+	SyncObj();
+	~SyncObj();
 
-	~I2CDriverObj() {}
+	void lock();
+	void unlock();
 
-	virtual int start();
-	virtual int stop();
-
-protected:
-	int readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int writeReg(uint8_t address, uint8_t *out_buffer, int length);
+	void waitOnSignal(void);
+	void signal(void);
 
 private:
-	std::string m_path;
-	int m_fd = 0;
+	pthread_mutex_t m_lock;
+	pthread_cond_t	m_new_data_cond;
 };
 
-};

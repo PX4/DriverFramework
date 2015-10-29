@@ -34,6 +34,7 @@
 #pragma once
 
 #include <pthread.h>
+#include "SyncObj.hpp"
 #include "I2CDriverObj.hpp"
 
 #define PRESSURE_DEVICE_PATH "/dev/i2c-2"
@@ -60,12 +61,8 @@ public:
 		I2CDriverObj("PressureSensor", device_path)
 	{}
 
-	virtual int open(int flags);
-	virtual int close(void);
-	virtual int ioctl(unsigned long request, void *data)
-	{
-		return -1;
-	}
+	virtual int start(void);
+	virtual int stop(void);
 
 	void setAltimeter(float altimeter_setting_in_mbars);
 
@@ -89,9 +86,8 @@ private:
 
 	unsigned int 	m_sample_interval = 1000; // usec
 
-	pthread_mutex_t	m_lock 		= PTHREAD_MUTEX_INITIALIZER;
-	pthread_cond_t	m_new_data_cond = PTHREAD_COND_INITIALIZER;
-
 	WorkHandle m_work_handle = 0;
+
+	SyncObj m_synchronize;
 };
 

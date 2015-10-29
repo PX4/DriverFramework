@@ -33,35 +33,35 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <string>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include "DriverObj.hpp"
+#include "SyncObj.hpp"
 
-#pragma once
-
-namespace DriverFramework {
-
-class I2CDriverObj : public DriverObj
+SyncObj::SyncObj()
 {
-public:
-	I2CDriverObj(std::string name, std::string path) : 
-		DriverObj(name),
-		m_path(path)
-	{}
+	m_lock = PTHREAD_MUTEX_INITIALIZER;
+	m_new_data_cond = PTHREAD_COND_INITIALIZER;
+}
 
-	~I2CDriverObj() {}
+SyncObj::~SyncObj()
+{
+}
 
-	virtual int start();
-	virtual int stop();
+void SyncObj::lock()
+{
+	pthread_mutex_lock(&m_lock);
+}
 
-protected:
-	int readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int writeReg(uint8_t address, uint8_t *out_buffer, int length);
+void SyncObj::unlock()
+{
+	pthread_mutex_unlock(&m_lock);
+}
 
-private:
-	std::string m_path;
-	int m_fd = 0;
-};
+void SyncObj::waitOnSignal(void)
+{
+	pthread_cond_wait(&m_new_data_cond, &m_lock);
+}
 
-};
+void SyncObj::signal(void)
+{
+	pthread_cond_signal(&m_new_data_cond);
+}
+

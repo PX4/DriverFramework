@@ -44,20 +44,15 @@
 
 using namespace DriverFramework;
 
-int I2CDriverObj::open(int flags)
+int I2CDriverObj::start()
 {
-	m_fd = ::open(m_path.c_str(), flags);
+	m_fd = ::open(m_path.c_str(), O_RDWR);
 	return (m_fd < 0) ? m_fd : 0;
 }
 
-int I2CDriverObj::close()
+int I2CDriverObj::stop()
 {
 	return  ::close(m_fd);
-}
-
-int I2CDriverObj::ioctl(unsigned long request, void *data)
-{
-	return  ::ioctl(m_fd, request, data);
 }
 
 int I2CDriverObj::readReg(uint8_t address, uint8_t *out_buffer, int length)
