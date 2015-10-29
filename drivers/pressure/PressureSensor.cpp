@@ -31,104 +31,77 @@
  *
  ****************************************************************************/
 
-#pragma once
-
-#include "VirtDriverObj"
+#include <pthread.h>
+#include "DriverFramework.hpp"
+#include "PressureSensor.hpp"
 
 using namespace DriverFramework;
 
-/**
- * The sensor independent data structure containing pressure values.
- */
-struct pressure_sensor_data
+
+int PressureSensor::open(int flags)
 {
-	int32_t  t_fine; 			/*! used internally to calculate a temperature compensated pressure value. */
-	uint32_t pressure_in_pa; 		/*! current pressure in Pascals */
-	float    temperature_in_c; 		/*! current temperature in C at which the pressure was read */
-	uint32_t sensor_read_counter;		/*! the total number of pressure sensor readings since the system was started */
-	uint64_t last_read_time_in_usecs; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
-	uint64_t error_count; 			/*! the total number of errors detected when reading the pressure, since the system was started */
-};
-
-class PressureSensor : public VirtDriverObj
-{
-public:
-	PressureSensor(const char device_path); :
-
-	int open();
-	int close();
-
-	int readReg(int fildes, uint8_t address, uint8_t *out_buffer, int length);
-	int writeReg(int fildes, uint8_t address, uint8_t *in_buffer, int length);
-
-	// Return pressure in pascals
-	uint32_t getPressure(deviceHandle handle);
-
-	// Get temperature in degrees C
-	float getTemperature(deviceHandle handle);
-
-	int setAltimeter(deviceHandle handle, float altimeter_setting_in_mbars);
-
-	int getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required);
-
-private:
-	pthread_mutex_t	m_lock;
-	m_device_path(device_path)
-	deviceHandle m_handle;
-};
-
-int PressureSensor::readReg(int fildes, uint8_t address, uint8_t *out_buffer, int length)
-{
-	struct dspal_i2c_ioctl_combined_write_read ioctl_write_read;
-	uint8_t write_buffer[1];
-
-	if (fildes == 0) {
-		printf("error: i2c bus is not yet opened\n");
-		return -1;
+	int ret = I2CDriverObj::open(flags);
+	if (ret != 0) {
+		return ret;
 	}
 
-	/* Save the address of the register to read from in the write buffer for the combined write. */
-	write_buffer[0] = address;
-	ioctl_write_read.write_buf = write_buffer;
-	ioctl_write_read.write_buf_len = 1;
-	ioctl_write_read.read_buf = out_buffer;
-	ioctl_write_read.read_buf_len = length;
-	int bytes_written = ioctl(fildes, I2C_IOCTL_RDWR, &ioctl_write_read);
-	if (bytes_written != length) {
-		PX4_ERR(
-				"error: read register reports a read of %d bytes, but attempted to set %d bytes",
-				bytes_written, length);
-		return -1;
-	}
+	// Start polling the sensor
+	m_work_handle = WorkItemMgr::create(workCallback, this, m_sample_interval);
+	WorkItemMgr::schedule(m_work_handle);
 
+	return ret;
+}
+
+int PressureSensor::close()
+{
+	WorkItemMgr::destroy(m_work_handle);
+	return I2CDriverObj::close();
+}
+
+void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
+{
+	m_altimeter_mbars = altimeter_setting_in_mbars;
+}
+
+int PressureSensor::getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required)
+{
+	pthread_mutex_lock(&m_lock);
+	if (is_new_data_required) {
+		pthread_cond_wait(&m_new_data_cond, &m_lock);
+	}
+	out_data = m_sensor_data;
+	pthread_mutex_unlock(&m_lock);
+
+	return 1;
+}
+
+uint32_t PressureSensor::getPressure()
+{
+	// TBD
 	return 0;
 }
-int PressureSensor::writeReg(int fildes, uint8_t address, uint8_t *in_buffer,
-		int length) {
-	uint8_t write_buffer[MAX_LEN_TRANSMIT_BUFFER_IN_BYTES];
 
-	/*
-	 * Verify that the length of the caller's buffer does not exceed the local stack
-	 * buffer with one additional byte for the register ID.
-	 */
-	if (length + 1 > MAX_LEN_TRANSMIT_BUFFER_IN_BYTES) {
-		PX4_ERR("error: caller's buffer exceeds size of local buffer");
-		return -1;
-	}
-	if (fildes == 0) {
-		PX4_ERR("error: i2c bus is not yet opened");
-		return -1;
-	}
+float PressureSensor::getTemperature()
+{
+	// TBD
+	return 0.0;
+}
 
-	/* Save the address of the register to read from in the write buffer for the combined write. */
-	write_buffer[0] = address;
-	memcpy(&write_buffer[1], in_buffer, length);
-	int bytes_written = write(fildes, (char *) write_buffer, length + 1);
-	if (bytes_written != length + 1) {
-		PX4_ERR("error: i2c write failed. Reported %d bytes written",
-				bytes_written);
-		return -1;
-	}
+void PressureSensor::workCallback(void *arg, WorkHandle wh)
+{
+	PressureSensor *me = (PressureSensor *)arg;
 
-	return 0;
+	me->readSensor();
+	WorkItemMgr::schedule(wh);
+}
+
+void PressureSensor::readSensor(void)
+{
+	pthread_mutex_lock(&m_lock);
+	m_sensor_data.pressure_in_pa = getPressure();
+	m_sensor_data.temperature_in_c = getTemperature();
+	m_sensor_data.last_read_time_in_usecs = DriverFramework::offsetTime();
+	m_sensor_data.sensor_read_counter++;
+	pthread_cond_signal(&m_new_data_cond);
+	pthread_mutex_unlock(&m_lock);
 }

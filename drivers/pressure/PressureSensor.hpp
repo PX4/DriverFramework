@@ -33,9 +33,10 @@
 
 #pragma once
 
-#include "I2CDriverObj"
+#include <pthread.h>
+#include "I2CDriverObj.hpp"
 
-using namespace DriverFramework;
+#define PRESSURE_DEVICE_PATH "/dev/i2c-2"
 
 /**
  * The sensor independent data structure containing pressure values.
@@ -50,29 +51,47 @@ struct pressure_sensor_data
 	uint64_t error_count; 			/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
+using namespace DriverFramework;
+
 class PressureSensor : public I2CDriverObj
 {
 public:
-	PressureSensor(const char device_path); :
+	PressureSensor(const char *device_path) :
+		I2CDriverObj("PressureSensor", device_path)
+	{}
 
-	int open();
-	int close();
+	virtual int open(int flags);
+	virtual int close(void);
+	virtual int ioctl(unsigned long request, void *data)
+	{
+		return -1;
+	}
 
-	int readReg(int fildes, uint8_t address, uint8_t *out_buffer, int length);
-	int writeReg(int fildes, uint8_t address, uint8_t *in_buffer, int length);
-
-	// Return pressure in pascals
-	uint32_t getPressure(deviceHandle handle);
-
-	// Get temperature in degrees C
-	float getTemperature(deviceHandle handle);
-
-	int setAltimeter(deviceHandle handle, float altimeter_setting_in_mbars);
+	void setAltimeter(float altimeter_setting_in_mbars);
 
 	int getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required);
 
 private:
-	pthread_mutex_t	m_lock;
-	m_device_path(device_path)
-	deviceHandle m_handle;
+
+	static void workCallback(void *arg, WorkHandle wh);
+
+	void readSensor(void);
+
+	// Return pressure in pascals
+	uint32_t getPressure();
+
+	// Get temperature in degrees C
+	float getTemperature();
+
+	struct pressure_sensor_data m_sensor_data;
+
+	float 		m_altimeter_mbars;
+
+	unsigned int 	m_sample_interval = 1000; // usec
+
+	pthread_mutex_t	m_lock 		= PTHREAD_MUTEX_INITIALIZER;
+	pthread_cond_t	m_new_data_cond = PTHREAD_COND_INITIALIZER;
+
+	WorkHandle m_work_handle = 0;
 };
+

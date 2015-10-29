@@ -52,7 +52,7 @@ public:
 
 	~I2CDriverObj() {}
 
-	virtual int open(int flags, mode_t mode);
+	virtual int open(int flags);
 	virtual int close();
 	virtual int ioctl(unsigned long request, void *data);
 

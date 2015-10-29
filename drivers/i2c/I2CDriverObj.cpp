@@ -44,9 +44,9 @@
 
 using namespace DriverFramework;
 
-int I2CDriverObj::open(int flags, mode_t mode)
+int I2CDriverObj::open(int flags)
 {
-	m_fd = ::open(m_path.c_str(), flags, mode);
+	m_fd = ::open(m_path.c_str(), flags);
 	return (m_fd < 0) ? m_fd : 0;
 }
 

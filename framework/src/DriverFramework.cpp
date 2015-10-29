@@ -316,8 +316,6 @@ void HRTWorkQueue::finalize(void)
 	HRTWorkQueue *wq = HRTWorkQueue::instance();
 	if (wq) {
 		wq->clearAll();
-		WorkItemMgr::finalize();
-
 		pthread_mutex_destroy(&g_hrt_lock);
 
 		delete wq;
@@ -424,12 +422,12 @@ int WorkItemMgr::initialize()
 
 void WorkItemMgr::finalize()
 {
-	while(g_work_items->begin() != g_work_items->end())
+	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
+	while(it != g_work_items->end())
 	{
-		std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
-		
 		// Remove the element from the map
 		g_work_items->erase(it);
+		it = g_work_items->begin();
 	}
 	delete g_work_items;
 	g_work_items = nullptr;

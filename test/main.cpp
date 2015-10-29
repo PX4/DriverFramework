@@ -6,41 +6,36 @@
 
 using namespace DriverFramework;
 
+#define ACCEL_DEV_PATH "/dev/accel0"
+
 class AccelSim : public VirtDriverObj
 {
 public:
-	AccelSim() :
-		VirtDriverObj("AccelSim", "/dev/accel0"),
-		m_work_handle(0)
+	AccelSim(const char *dev_path) :
+		VirtDriverObj("AccelSim", dev_path)
 	{}
 	~AccelSim() {}
 
-	virtual int open(int flags, mode_t mode)
+	virtual int open(int flags)
 	{
-		m_work_handle = WorkItemMgr::create(measure, this, 10000);
-		WorkItemMgr::schedule(m_work_handle);
-		return 0;
+		if (flags == O_RDONLY) {
+			m_work_handle = WorkItemMgr::create(measure, this, 10000);
+			WorkItemMgr::schedule(m_work_handle);
+			return 0;
+		}
+		errno = EPERM;
+		return -1;
 	}
 
 	virtual int close(void) {
 		WorkItemMgr::destroy(m_work_handle);
+		m_work_handle=0;
 		return 0;
 	}
 
 	virtual int ioctl(unsigned long request, void *data)
 	{
 		return -1;
-	}
-
-	static void *main(void *arg)
-	{
-		if (m_instance != nullptr)
-			return nullptr;
-
-		m_instance = new AccelSim();
-		m_instance->open(O_RDWR, 0);
-
-		return nullptr;
 	}
 
 private:
@@ -50,27 +45,22 @@ private:
 	}
 
 	static AccelSim *m_instance;
-	WorkHandle m_work_handle;
+	WorkHandle m_work_handle	= 0;
 };
 
 AccelSim *AccelSim::m_instance = nullptr;
 
 int main()
 {
-	pthread_t tid;
-
 	int ret = DriverFramework::initialize();
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = pthread_create(&tid, NULL, AccelSim::main, NULL);
-	if (ret < 0) {
-		return ret;
-	}
+	AccelSim asim(ACCEL_DEV_PATH);
 
-	void *val;
-	pthread_join(tid, &val);
+	// Start polling the sensor
+	asim.open(O_RDONLY);
 
 	DriverFramework::waitForShutdown();
 

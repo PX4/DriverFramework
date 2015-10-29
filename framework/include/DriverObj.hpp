@@ -49,7 +49,7 @@ public:
 
 	~DriverObj() {}
 
-	virtual int open(int flags, mode_t mode) = 0;
+	virtual int open(int flags) = 0;
 	virtual int close() = 0;
 	virtual int ioctl(unsigned long request, void *data) = 0;
 

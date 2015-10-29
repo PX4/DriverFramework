@@ -31,38 +31,19 @@
 #
 ############################################################################
 
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-
-set(version_major 0)
-set(version_minor 1)
-set(version_patch 0)
-set(version "${version_major}.${version_minor}.${version_patch}")
-set(package-contact "charlebm@gmail.com")
-
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
-
 include_directories(
-	framework/include
-	os/qurt/include
+	../
 	)
 
-set(framework_library
-	driver_framework
+add_executable(pressure_test
+	main.cpp
 	)
 
-set(driver_libraries
-	i2c
-	pressure
+target_link_libraries(pressure_test
+	-Wl,--start-group
+	${framework_library}
+	${driver_libraries}
+	pthread
+	-Wl,--end-group
 	)
-
-# Add framework library
-add_subdirectory(framework/src)
-
-# Add driver libraries
-foreach(driver ${driver_libraries})
-	add_subdirectory(drivers/${driver})
-endforeach()
-
-add_subdirectory(test)
-
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
