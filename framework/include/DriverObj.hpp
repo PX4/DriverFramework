@@ -1,4 +1,5 @@
 /**********************************************************************
+* Copyright (c) 2012 Lorenz Meier
 * Copyright (c) 2015 Mark Charlebois
 * 
 * All rights reserved.
@@ -35,19 +36,57 @@
 *************************************************************************/
 #include <string>
 #include "DriverFramework.hpp"
+#include "DriverMgr.hpp"
 
 #pragma once
 
 namespace DriverFramework {
 
+// Re-use Device ID types from PX4
+enum DeviceBusType {
+	DeviceBusType_UNKNOWN = 0,
+	DeviceBusType_I2C     = 1,
+	DeviceBusType_SPI     = 2,
+	DeviceBusType_UAVCAN  = 3,
+	DeviceBusType_VIRT    = 4,
+};
+
+/*
+  broken out device elements. The bitfields are used to keep
+  the overall value small enough to fit in a float accurately,
+  which makes it possible to transport over the MAVLink
+  parameter protocol without loss of information.
+ */
+struct DeviceStructure {
+	enum DeviceBusType bus_type : 3;
+		uint8_t bus: 5;    // which instance of the bus type
+		uint8_t address;   // address on the bus (eg. I2C address)
+		uint8_t devtype;   // device class specific device type
+};
+
+union DeviceId {
+	struct DeviceStructure dev_id_s;
+	uint32_t dev_id;
+};
+
 class DriverObj
 {
 public:
-	DriverObj(std::string name) : 
-		m_name(name)
-	{}
+	DriverObj(std::string name, DeviceBusType bus_type) : 
+		m_name(name),
+		m_registered(false)
+	{
+		m_id.dev_id_s.bus = 0;
+		m_id.dev_id_s.address = 0;
+		m_id.dev_id_s.devtype = bus_type;
+	}
 
-	~DriverObj() {}
+	virtual ~DriverObj() 
+	{
+		if (isRegistered()) {
+			DriverMgr::unRegisterDriver(this);
+		}
+	}
 
 	virtual int start() = 0;
 	virtual int stop() = 0;
@@ -57,13 +96,26 @@ public:
 		return m_name;
 	}
 
-	unsigned int getId()
+	union DeviceId getId()
 	{
 		return m_id;
 	}
+
+	bool isRegistered()
+	{
+		return m_registered;
+	}
+
 private:
+	friend DriverMgr;
+
+	// Disallow copy
+	DriverObj(const DriverObj&);
+
 	std::string m_name;
-	unsigned int m_id;
+	union DeviceId m_id;
+
+	bool m_registered;
 };
 
 };

@@ -43,17 +43,8 @@
 
 #define SHOW_STATS 1
 
-namespace DriverFramework {
-
-namespace WorkMgr {
-
-int initialize(void);
-void finalize(void);
-
-};
-};
-
 using namespace DriverFramework;
+
 //-----------------------------------------------------------------------
 // Types
 //-----------------------------------------------------------------------
@@ -183,9 +174,9 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 //-----------------------------------------------------------------------
 
 /*************************************************************************
-  DriverFramework
+  Framework
 *************************************************************************/
-void DriverFramework::shutdown()
+void Framework::shutdown()
 {
 	// Stop the HRT queue thread
 	HRTWorkQueue *wq = HRTWorkQueue::instance();
@@ -208,7 +199,7 @@ void DriverFramework::shutdown()
 	pthread_mutex_unlock(&g_framework_exit);
 }
 
-int DriverFramework::initialize()
+int Framework::initialize()
 {
 	int ret = HRTWorkQueue::initialize();
 	if (ret < 0) {
@@ -225,7 +216,7 @@ int DriverFramework::initialize()
 	return 0;
 }
 
-void DriverFramework::waitForShutdown()
+void Framework::waitForShutdown()
 {
 	// Block until shutdown requested
 	pthread_mutex_lock(&g_framework_exit);

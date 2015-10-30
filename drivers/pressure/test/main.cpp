@@ -106,7 +106,7 @@ int PressureTester::run(void) {
 
 int main()
 {
-	int ret = DriverFramework::initialize();
+	int ret = Framework::initialize();
 	if (ret < 0) {
 		return ret;
 	}
@@ -115,7 +115,7 @@ int main()
 
 	ret = pt.run();
 
-	DriverFramework::shutdown();
+	Framework::shutdown();
 
 	DF_LOG_INFO("Test %s", (ret == PressureTester::TEST_PASS) ? "PASSED" : "FAILED");
 	return ret;

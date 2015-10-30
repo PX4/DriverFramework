@@ -31,6 +31,10 @@
 #
 ############################################################################
 
+include_directories(
+	./
+	)
+
 add_executable(testapp
 	${CMAKE_SOURCE_DIR}/test/main.cpp
 	)

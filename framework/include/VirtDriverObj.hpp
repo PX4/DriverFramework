@@ -44,12 +44,13 @@ class VirtDriverObj : public DriverObj
 {
 public:
 	VirtDriverObj(std::string name, std::string path) : 
-		DriverObj(name),
+		DriverObj(name, DeviceBusType_VIRT),
 		m_path(path)
 	{}
 
-	~VirtDriverObj() {}
+	virtual ~VirtDriverObj() {}
 
+protected:
 	std::string m_path;
 };
 

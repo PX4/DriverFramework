@@ -36,13 +36,22 @@
 #include <stdio.h>
 #include <list>
 #include "DriverFramework.hpp"
+#include "DriverObj.hpp"
 #include "DriverMgr.hpp"
 
 using namespace DriverFramework;
 
-// TODO add missing locking
+// TODO add missing locking and reimplement with map
+// This is meant just to work for now. It hs not been optimized yet.
 
 static std::list<DriverFramework::DriverObj *> *g_driver_list = nullptr;
+
+DriverHandle::~DriverHandle()
+{
+	if(isValid()) {
+		DriverMgr::releaseHandle(*this);
+	}
+}
 
 int DriverMgr::initialize(void)
 {
@@ -61,9 +70,17 @@ void DriverMgr::finalize(void)
 	}
 }
 
-void DriverMgr::registerDriver(DriverObj *obj)
+int DriverMgr::registerDriver(DriverObj *obj)
 {
+	const std::string &name = obj->getName();
+	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+	while (it != g_driver_list->end()) {
+		if ( name == (*it)->getName()) {
+			return -1;
+		}
+	}
 	g_driver_list->push_back(obj);
+	return 0;
 }
 
 void DriverMgr::unRegisterDriver(DriverObj *obj)
@@ -71,6 +88,7 @@ void DriverMgr::unRegisterDriver(DriverObj *obj)
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (*it == obj) {
+			(*it)->m_registered = false;
 			g_driver_list->erase(it);
 			break;
 		}
@@ -88,14 +106,54 @@ DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int i
 	return nullptr;
 }
 
-DriverObj *DriverMgr::getDriverObjByID(unsigned long id)
+DriverObj *DriverMgr::getDriverObjByID(union DeviceId id)
 {
+	m_lock.lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
-		if ((*it)->getId() == id) {
-			return *it;
+		if ((*it)->getId().dev_id == id.dev_id) {
+			m_lock.unlock();
+			break;
 		}
 	}
-	return nullptr;
+	m_lock.unlock();
+	return (it == g_driver_list->end()) ? nullptr : *it;
+}
+
+DriverObj *DriverMgr::getDriverByHandle(DriverHandle h)
+{
+	if (h.m_handle != nullptr) {
+		std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+		while (it != g_driver_list->end()) {
+			if (h.m_handle == *it)
+				break;
+		}
+	return (it == g_driver_list->end()) ? nullptr : *it;
+}
+
+DriverHandle DriverMgr::getHandle(const char *dev_path)
+{
+	string name(dev_path);
+	DriverHandle h;
+
+	const std::string &name = obj->getName();
+	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+	while (it != g_driver_list->end()) {
+		if ( name == (*it)->getName()) {
+			// Device is registered
+			driver->incrementRefcount();
+			h.m_handle = *it;
+		}
+	}
+	return h;
+}
+
+void DriverMgr::releaseHandle(DriverHandle &handle)
+{
+	DriverObj *driver = DriverMgr::getDriverByHandle(h);
+	if (driver) {
+		driver->decrementRefcount();
+		handle.m_handle = nullptr;
+	}
 }
 

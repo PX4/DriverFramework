@@ -2,58 +2,45 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "DriverFramework.hpp"
-#include "VirtDriverObj.hpp"
+#include "DriverMgr.hpp"
+#include "testdriver.hpp"
 
 using namespace DriverFramework;
 
-#define ACCEL_DEV_PATH "/dev/accel0"
-
-class AccelSim : public VirtDriverObj
-{
-public:
-	AccelSim(const char *dev_path) :
-		VirtDriverObj("AccelSim", dev_path)
-	{}
-	~AccelSim() {}
-
-	virtual int start(void)
-	{
-		m_work_handle = WorkMgr::create(measure, this, 10000);
-		WorkMgr::schedule(m_work_handle);
-		return 0;
-	}
-
-	virtual int stop(void) {
-		WorkMgr::destroy(m_work_handle);
-		m_work_handle=0;
-		return 0;
-	}
-
-private:
-	static void measure(void *arg, const WorkHandle wh)
-	{
-		WorkMgr::schedule(wh);
-	}
-
-	static AccelSim *m_instance;
-	WorkHandle m_work_handle	= 0;
-};
-
-AccelSim *AccelSim::m_instance = nullptr;
-
 int main()
 {
-	int ret = DriverFramework::initialize();
+	int ret = Framework::initialize();
 	if (ret < 0) {
 		return ret;
 	}
 
-	AccelSim asim(ACCEL_DEV_PATH);
+	TestDriver test(TEST_DRIVER_DEV_PATH);
 
-	// Start polling the sensor
-	asim.start();
+	// Start the driver
+	test.start();
 
-	DriverFramework::waitForShutdown();
+	sleep(1);
+
+	DriverHandle h = DriverMgr::getHandle(TEST_DRIVER_DEV_PATH);
+	if (!h.isValid()) {
+		printf("Failed to open %s (%d)\n", TEST_DRIVER_DEV_PATH, h.getError());
+	}
+	else {
+		TestMessage message[5];
+		int count = TestDriver::readMessages(h, message, 5);
+		if (count < 0) {
+			printf("Failed to read from adcsim (%d)\n", h.getError());
+		}
+		else {
+			printf("Read %d messages\n", count);
+			for (int i=0; i<count; i++) {
+				printf("message %d: %d\n", i, message[i].val);
+			}
+		}
+	}
+	test.stop();
+
+	Framework::waitForShutdown();
 
 	return 0;
 }

@@ -46,11 +46,11 @@ class I2CDriverObj : public DriverObj
 {
 public:
 	I2CDriverObj(std::string name, std::string path) : 
-		DriverObj(name),
+		DriverObj(name, DeviceBusType_I2C),
 		m_path(path)
 	{}
 
-	~I2CDriverObj() {}
+	virtual ~I2CDriverObj() {}
 
 	virtual int start();
 	virtual int stop();

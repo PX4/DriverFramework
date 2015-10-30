@@ -38,22 +38,19 @@
 
 #pragma once
 
-namespace DriverFramework {
-
 //-----------------------------------------------------------------------
-// Types
+// Macros
 //-----------------------------------------------------------------------
-typedef uint32_t WorkHandle;
-
-typedef void (*workCallback)(void *arg, WorkHandle wh);
 
 // Substitute logging implemntation here
-#define DF_LOG_INFO(FMT, ...)  printf(FMT "\n", ##__VA_ARGS__)
+#define DF_LOG_INFO(FMT, ...) printf(FMT "\n", ##__VA_ARGS__)
 #define DF_LOG_ERR(FMT, ...)  printf(FMT "\n", ##__VA_ARGS__)
 
-//-----------------------------------------------------------------------
-// Functions
-//-----------------------------------------------------------------------
+namespace DriverFramework {
+
+// Types
+typedef uint32_t WorkHandle;
+typedef void (*workCallback)(void *arg, WorkHandle wh);
 
 // Get the offset time from startup
 uint64_t offsetTime(void);
@@ -61,22 +58,34 @@ uint64_t offsetTime(void);
 // convert offset time to absolute time
 timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
 
-// Initialize the driver framework
-// This function must be called before any of the functions below
-int initialize(void);
+class Framework
+{
+public:
+	// Initialize the driver framework
+	// This function must be called before any of the functions below
+	static int initialize(void);
 
-// Terminate the driver framework
-void shutdown(void);
+	// Terminate the driver framework
+	static void shutdown(void);
 
-// Block until shutdown requested
-void waitForShutdown();
+	// Block until shutdown requested
+	static void waitForShutdown();
+};
 
 // 
-namespace WorkMgr
+class WorkMgr
 {
-	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	void destroy(WorkHandle handle);
-	bool schedule(WorkHandle handle);
+public:
+	// Interface functions
+	static WorkHandle create(workCallback cb, void *arg, uint32_t delay);
+	static void destroy(WorkHandle &handle);
+	static bool schedule(WorkHandle handle);
+
+private:
+	friend class Framework;
+
+	static int initialize(void);
+	static void finalize(void);
 };
 
 };

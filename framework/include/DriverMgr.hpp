@@ -35,23 +35,63 @@
 *************************************************************************/
 #include <stdint.h>
 #include <time.h>
-#include "DriverObj.hpp"
+#include <memory>
 
 #pragma once
 
 namespace DriverFramework {
 
-namespace DriverMgr
+// Forward class declarations
+class DriverMgr;
+class DriverObj;
+
+class DriverHandle
+{
+public:
+	DriverHandle() :
+		m_handle(nullptr),
+		m_errno(0)
+	{
+	}
+
+	~DriverHandle();
+
+	bool isValid()
+	{
+		return m_handle != nullptr;
+	}
+	int getError()
+	{
+		return m_errno;
+	}
+private:
+	friend DriverMgr;
+
+	void *m_handle;
+	int m_errno;
+};
+
+// DriverMgr Is initalized by DriverFramework::initialize()
+class DriverMgr
 {    
-	int initialize(void);
-	void finalize(void);
+public:
 
-	void registerDriver(DriverObj *obj);
-	void unRegisterDriver(DriverObj *obj);
+	static int registerDriver(DriverObj *obj);
+	static void unRegisterDriver(DriverObj *obj);
 
-	DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
-	DriverObj *getDriverObjByID(unsigned long id);
+	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
+	static DriverObj *getDriverObjByID(union DeviceId id);
+
+	static DriverHandle getHandle(const char *dev_path);
+	static DriverHandle releaseHandle(DriverHandle &handle);
+
+	static DriverObj *validateHandle(DriverHandle &h);
+	static void setDriverHandleError(DriverHandle &h, int error);
+private:
+	friend Framework;
+
+	static int initialize(void);
+	static void finalize(void);
 };
 
 };
-
