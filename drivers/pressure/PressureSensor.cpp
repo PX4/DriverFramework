@@ -46,15 +46,15 @@ int PressureSensor::start()
 	}
 
 	// Start polling the sensor
-	m_work_handle = WorkItemMgr::create(workCallback, this, m_sample_interval);
-	WorkItemMgr::schedule(m_work_handle);
+	m_work_handle = WorkMgr::create(workCallback, this, m_sample_interval);
+	WorkMgr::schedule(m_work_handle);
 
 	return ret;
 }
 
 int PressureSensor::stop()
 {
-	WorkItemMgr::destroy(m_work_handle);
+	WorkMgr::destroy(m_work_handle);
 	return I2CDriverObj::stop();
 }
 
@@ -92,7 +92,7 @@ void PressureSensor::workCallback(void *arg, WorkHandle wh)
 	PressureSensor *me = (PressureSensor *)arg;
 
 	me->readSensor();
-	WorkItemMgr::schedule(wh);
+	WorkMgr::schedule(wh);
 }
 
 void PressureSensor::readSensor(void)

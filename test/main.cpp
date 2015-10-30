@@ -18,13 +18,13 @@ public:
 
 	virtual int start(void)
 	{
-		m_work_handle = WorkItemMgr::create(measure, this, 10000);
-		WorkItemMgr::schedule(m_work_handle);
+		m_work_handle = WorkMgr::create(measure, this, 10000);
+		WorkMgr::schedule(m_work_handle);
 		return 0;
 	}
 
 	virtual int stop(void) {
-		WorkItemMgr::destroy(m_work_handle);
+		WorkMgr::destroy(m_work_handle);
 		m_work_handle=0;
 		return 0;
 	}
@@ -32,7 +32,7 @@ public:
 private:
 	static void measure(void *arg, const WorkHandle wh)
 	{
-		WorkItemMgr::schedule(wh);
+		WorkMgr::schedule(wh);
 	}
 
 	static AccelSim *m_instance;

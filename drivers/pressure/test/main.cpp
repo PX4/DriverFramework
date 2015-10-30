@@ -69,7 +69,7 @@ void PressureTester::readSensor()
 		DF_LOG_INFO("error: unable to read the pressure sensor device.");
 	}
 	if ((m_read_counter < 1000) && (m_read_attempts < 2000)) {
-		WorkItemMgr::schedule(m_work_handle);
+		WorkMgr::schedule(m_work_handle);
 	}
 	else {
 		// Done test
@@ -93,9 +93,9 @@ int PressureTester::run(void) {
 	else {
 		m_done = false;
 		m_sensor_data.sensor_read_counter = 0;
-		m_work_handle = WorkItemMgr::create(readSensorCallback, this, 1000);
+		m_work_handle = WorkMgr::create(readSensorCallback, this, 1000);
 
-		WorkItemMgr::schedule(m_work_handle);
+		WorkMgr::schedule(m_work_handle);
 	}
 
 	wait();

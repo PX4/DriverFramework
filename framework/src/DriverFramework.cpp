@@ -45,7 +45,7 @@
 
 namespace DriverFramework {
 
-namespace WorkItemMgr {
+namespace WorkMgr {
 
 int initialize(void);
 void finalize(void);
@@ -196,8 +196,8 @@ void DriverFramework::shutdown()
 	// Free the HRTWorkQueue resources
 	HRTWorkQueue::finalize();
 
-	// Free the WorkItemMgr resources
-	WorkItemMgr::finalize();
+	// Free the WorkMgr resources
+	WorkMgr::finalize();
 
 	// Free the DriverMgr resources
 	DriverMgr::finalize();
@@ -218,7 +218,7 @@ int DriverFramework::initialize()
 	if (ret < 0) {
 		return ret-10;
 	}
-	ret = WorkItemMgr::initialize();
+	ret = WorkMgr::initialize();
 	if (ret < 0) {
 		return ret-20;
 	}
@@ -412,15 +412,15 @@ void HRTWorkQueue::hrtUnlock()
 }
 
 /*************************************************************************
-  WorkItemMgr
+  WorkMgr
 *************************************************************************/
-int WorkItemMgr::initialize()
+int WorkMgr::initialize()
 {
 	g_work_items = new std::map<WorkHandle,WorkItem>;
 	return 0;
 }
 
-void WorkItemMgr::finalize()
+void WorkMgr::finalize()
 {
 	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
 	while(it != g_work_items->end())
@@ -433,7 +433,7 @@ void WorkItemMgr::finalize()
 	g_work_items = nullptr;
 }
 
-WorkHandle WorkItemMgr::create(workCallback cb, void *arg, uint32_t delay)
+WorkHandle WorkMgr::create(workCallback cb, void *arg, uint32_t delay)
 {
 	static WorkHandle i=1000;
 	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
@@ -442,16 +442,18 @@ WorkHandle WorkItemMgr::create(workCallback cb, void *arg, uint32_t delay)
 	return i;
 }
 
-void WorkItemMgr::destroy(WorkHandle handle)
+void WorkMgr::destroy(WorkHandle &handle)
 {
 	// remove from map, then from work queue, then delete
 	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->find(handle);
 	if (it != g_work_items->end()) {
 		g_work_items->erase(it);
 	}
+	// mark the handle as cleared
+	handle = 0;
 }
 
-bool WorkItemMgr::schedule(WorkHandle handle)
+bool WorkMgr::schedule(WorkHandle handle)
 {
 	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->find(handle);
 	bool ret = it != g_work_items->end();

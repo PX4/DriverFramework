@@ -61,7 +61,6 @@ uint64_t offsetTime(void);
 // convert offset time to absolute time
 timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
 
-
 // Initialize the driver framework
 // This function must be called before any of the functions below
 int initialize(void);
@@ -72,7 +71,8 @@ void shutdown(void);
 // Block until shutdown requested
 void waitForShutdown();
 
-namespace WorkItemMgr
+// 
+namespace WorkMgr
 {
 	WorkHandle create(workCallback cb, void *arg, uint32_t delay);
 	void destroy(WorkHandle handle);
