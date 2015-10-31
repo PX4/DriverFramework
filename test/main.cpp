@@ -16,12 +16,15 @@ int main()
 
 	TestDriver test(TEST_DRIVER_DEV_PATH);
 
+	printf("TEST1\n");
 	// Start the driver
 	test.start();
 
 	sleep(1);
 
+	printf("TEST2\n");
 	DriverHandle h = DriverMgr::getHandle(TEST_DRIVER_DEV_PATH);
+	printf("TEST3\n");
 	if (!h.isValid()) {
 		printf("Failed to open %s (%d)\n", TEST_DRIVER_DEV_PATH, h.getError());
 	}
@@ -38,6 +41,7 @@ int main()
 			}
 		}
 	}
+	printf("TEST4\n");
 	test.stop();
 
 	Framework::waitForShutdown();

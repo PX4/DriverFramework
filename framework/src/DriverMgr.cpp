@@ -125,13 +125,15 @@ DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int i
 	if (g_driver_list == nullptr) {
 		return nullptr;
 	}
+	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->getName() == name) {
-			return *it;
+			break;
 		}
 	}
-	return nullptr;
+	g_lock->unlock();
+	return (it != g_driver_list->end() ? *it : nullptr;
 }
 
 DriverObj *DriverMgr::getDriverObjByID(union DeviceId id)
@@ -158,6 +160,7 @@ DriverObj *DriverMgr::getDriverObjByHandle(DriverHandle &h)
 	}
 
 	if (h.m_handle != nullptr) {
+		g_lock->lock();
 		std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 		while (it != g_driver_list->end()) {
 			if (h.m_handle == *it)
@@ -165,6 +168,7 @@ DriverObj *DriverMgr::getDriverObjByHandle(DriverHandle &h)
 		}
 
 		return (it == g_driver_list->end()) ? nullptr : *it;
+		g_lock->unlock();
 	}
 	return nullptr;
 }
@@ -178,14 +182,20 @@ DriverHandle DriverMgr::getHandle(const char *dev_path)
 		h.m_errno = ESRCH;
 		return h;
 	}
+	h.m_errno = EBADF;
+	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 		if ( name == (*it)->getName()) {
 			// Device is registered
 			(*it)->incrementRefcount();
 			h.m_handle = *it;
+			h.m_errno = 0;
+			break;
 		}
+		++it;
 	}
+	g_lock->unlock();
 	return h;
 }
 
