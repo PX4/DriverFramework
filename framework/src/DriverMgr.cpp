@@ -101,6 +101,7 @@ int DriverMgr::registerDriver(DriverObj *obj)
 			return -2;
 		}
 	}
+	printf("Added driver %p %s\n", obj, obj->getName().c_str());
 	g_driver_list->push_back(obj);
 	return 0;
 }
@@ -133,7 +134,7 @@ DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int i
 		}
 	}
 	g_lock->unlock();
-	return (it != g_driver_list->end() ? *it : nullptr;
+	return (it != g_driver_list->end()) ? *it : nullptr;
 }
 
 DriverObj *DriverMgr::getDriverObjByID(union DeviceId id)
