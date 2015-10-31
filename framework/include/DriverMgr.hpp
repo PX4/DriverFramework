@@ -81,14 +81,17 @@ public:
 
 	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
 	static DriverObj *getDriverObjByID(union DeviceId id);
+	static DriverObj *getDriverObjByHandle(DriverHandle &handle);
 
 	static DriverHandle getHandle(const char *dev_path);
-	static DriverHandle releaseHandle(DriverHandle &handle);
+	static void releaseHandle(DriverHandle &handle);
 
-	static DriverObj *validateHandle(DriverHandle &h);
 	static void setDriverHandleError(DriverHandle &h, int error);
 private:
 	friend Framework;
+
+	DriverMgr();
+	~DriverMgr();
 
 	static int initialize(void);
 	static void finalize(void);

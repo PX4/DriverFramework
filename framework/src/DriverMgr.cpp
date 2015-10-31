@@ -34,12 +34,16 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdio.h>
+#include <string>
 #include <list>
 #include "DriverFramework.hpp"
+#include "SyncObj.hpp"
 #include "DriverObj.hpp"
 #include "DriverMgr.hpp"
 
 using namespace DriverFramework;
+
+SyncObj *g_lock = nullptr;
 
 // TODO add missing locking and reimplement with map
 // This is meant just to work for now. It hs not been optimized yet.
@@ -59,24 +63,42 @@ int DriverMgr::initialize(void)
 	if (g_driver_list == nullptr) {
 		return -1;
 	}
+	g_lock = new SyncObj();
+	if (g_lock == nullptr) {
+		delete g_driver_list;
+		return -2;
+	}
+
 	return 0;
 }
 
 void DriverMgr::finalize(void)
 {
+	if (g_driver_list == nullptr) {
+		return;
+	}
+	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		g_driver_list->erase(it);
 	}
+	delete g_driver_list;
+	g_driver_list = nullptr;
+	g_lock->unlock();
+	delete g_lock;
+	g_lock = nullptr;
 }
 
 int DriverMgr::registerDriver(DriverObj *obj)
 {
+	if (g_driver_list == nullptr) {
+		return -1;
+	}
 	const std::string &name = obj->getName();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 		if ( name == (*it)->getName()) {
-			return -1;
+			return -2;
 		}
 	}
 	g_driver_list->push_back(obj);
@@ -85,6 +107,9 @@ int DriverMgr::registerDriver(DriverObj *obj)
 
 void DriverMgr::unRegisterDriver(DriverObj *obj)
 {
+	if (g_driver_list == nullptr) {
+		return;
+	}
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (*it == obj) {
@@ -97,6 +122,9 @@ void DriverMgr::unRegisterDriver(DriverObj *obj)
 
 DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int instance)
 {
+	if (g_driver_list == nullptr) {
+		return nullptr;
+	}
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->getName() == name) {
@@ -108,52 +136,69 @@ DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int i
 
 DriverObj *DriverMgr::getDriverObjByID(union DeviceId id)
 {
-	m_lock.lock();
+	if (g_driver_list == nullptr) {
+		return nullptr;
+	}
+	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->getId().dev_id == id.dev_id) {
-			m_lock.unlock();
+			g_lock->unlock();
 			break;
 		}
 	}
-	m_lock.unlock();
+	g_lock->unlock();
 	return (it == g_driver_list->end()) ? nullptr : *it;
 }
 
-DriverObj *DriverMgr::getDriverByHandle(DriverHandle h)
+DriverObj *DriverMgr::getDriverObjByHandle(DriverHandle &h)
 {
+	if (g_driver_list == nullptr) {
+		return nullptr;
+	}
+
 	if (h.m_handle != nullptr) {
 		std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 		while (it != g_driver_list->end()) {
 			if (h.m_handle == *it)
 				break;
 		}
-	return (it == g_driver_list->end()) ? nullptr : *it;
+
+		return (it == g_driver_list->end()) ? nullptr : *it;
+	}
+	return nullptr;
 }
 
 DriverHandle DriverMgr::getHandle(const char *dev_path)
 {
-	string name(dev_path);
+	const std::string name(dev_path);
 	DriverHandle h;
 
-	const std::string &name = obj->getName();
+	if (g_driver_list == nullptr) {
+		h.m_errno = ESRCH;
+		return h;
+	}
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 		if ( name == (*it)->getName()) {
 			// Device is registered
-			driver->incrementRefcount();
+			(*it)->incrementRefcount();
 			h.m_handle = *it;
 		}
 	}
 	return h;
 }
 
-void DriverMgr::releaseHandle(DriverHandle &handle)
+void DriverMgr::releaseHandle(DriverHandle &h)
 {
-	DriverObj *driver = DriverMgr::getDriverByHandle(h);
+	DriverObj *driver = DriverMgr::getDriverObjByHandle(h);
 	if (driver) {
 		driver->decrementRefcount();
-		handle.m_handle = nullptr;
+		h.m_handle = nullptr;
 	}
 }
 
+void DriverMgr::setDriverHandleError(DriverHandle &h, int error)
+{
+	h.m_errno = error;
+}

@@ -74,7 +74,8 @@ class DriverObj
 public:
 	DriverObj(std::string name, DeviceBusType bus_type) : 
 		m_name(name),
-		m_registered(false)
+		m_registered(false),
+		m_refcount(0)
 	{
 		m_id.dev_id_s.bus = 0;
 		m_id.dev_id_s.address = 0;
@@ -109,6 +110,19 @@ public:
 private:
 	friend DriverMgr;
 
+	void incrementRefcount()
+	{
+		m_refcount++;
+	}
+
+	void decrementRefcount()
+	{
+		m_refcount++;
+		if (m_refcount) {
+			m_refcount--;
+		}
+	}
+
 	// Disallow copy
 	DriverObj(const DriverObj&);
 
@@ -116,6 +130,7 @@ private:
 	union DeviceId m_id;
 
 	bool m_registered;
+	unsigned m_refcount;
 };
 
 };

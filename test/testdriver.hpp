@@ -37,15 +37,15 @@ public:
 
 	static int readMessages(DriverHandle h, TestMessage *m, unsigned int count)
 	{
-		DriverObj *obj = DriverMgr::validateHandle(h);
-		if (obj !- nullptr) {
+		DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
+		if (obj != nullptr) {
 			TestDriver *me = reinterpret_cast<TestDriver *>(obj);
 			if (count > me->m_count)
 			{
 				count = me->m_count;
 			}
 			me->m_lock.lock();
-			for (int i = 0; i < count; i++) {
+			for (unsigned int i = 0; i < count; i++) {
 				m[i] = me->m_message[i];
 			}
 			me->m_lock.unlock();
