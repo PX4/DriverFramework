@@ -39,6 +39,8 @@ set(version_patch 0)
 set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
+SET (CMAKE_C_COMPILER /usr/bin/clang-3.6)
+SET (CMAKE_CXX_COMPILER /usr/bin/clang++-3.6)
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
 
 include_directories(

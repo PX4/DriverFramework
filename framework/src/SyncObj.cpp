@@ -34,6 +34,10 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include "SyncObj.hpp"
+#include <stdio.h>
+
+#define DEBUG(FMT, ...)
+//#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
 
 SyncObj::SyncObj()
 {
@@ -47,11 +51,13 @@ SyncObj::~SyncObj()
 
 void SyncObj::lock()
 {
+	DEBUG("Lock %p\n", this);
 	pthread_mutex_lock(&m_lock);
 }
 
 void SyncObj::unlock()
 {
+	DEBUG("unock %p\n", this);
 	pthread_mutex_unlock(&m_lock);
 }
 

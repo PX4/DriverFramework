@@ -33,6 +33,7 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
+#include <stdint.h>
 #include <string>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -46,7 +47,7 @@ using namespace DriverFramework;
 
 int I2CDriverObj::start()
 {
-	m_fd = ::open(m_path.c_str(), O_RDWR);
+	m_fd = ::open(m_dev_instance_path.c_str(), O_RDWR);
 	return (m_fd < 0) ? m_fd : 0;
 }
 
@@ -55,7 +56,29 @@ int I2CDriverObj::stop()
 	return  ::close(m_fd);
 }
 
-int I2CDriverObj::readReg(uint8_t address, uint8_t *out_buffer, int length)
+int I2CDriverObj::readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length)
+{
+	DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
+	if (obj) {
+		return reinterpret_cast<I2CDriverObj*>(obj)->_readReg(address, out_buffer, length);
+	}
+	else {
+		return -1;
+	}
+}
+
+int I2CDriverObj::writeReg(DriverHandle &h, uint8_t address, uint8_t *in_buffer, int length)
+{
+	DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
+	if (obj) {
+		return reinterpret_cast<I2CDriverObj*>(obj)->_writeReg(address, in_buffer, length);
+	}
+	else {
+		return -1;
+	}
+}
+
+int I2CDriverObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 {
 	struct dspal_i2c_ioctl_combined_write_read ioctl_write_read;
 	uint8_t write_buffer[1];
@@ -82,7 +105,7 @@ int I2CDriverObj::readReg(uint8_t address, uint8_t *out_buffer, int length)
 	return 0;
 }
 
-int I2CDriverObj::writeReg(uint8_t address, uint8_t *in_buffer, int length)
+int I2CDriverObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
 	uint8_t write_buffer[MAX_LEN_TRANSMIT_BUFFER_IN_BYTES];
 

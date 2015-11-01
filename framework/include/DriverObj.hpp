@@ -40,6 +40,8 @@
 
 #pragma once
 
+#define DRIVER_MAX_INSTANCES 5
+
 namespace DriverFramework {
 
 // Re-use Device ID types from PX4
@@ -72,9 +74,11 @@ union DeviceId {
 class DriverObj
 {
 public:
-	DriverObj(std::string name, DeviceBusType bus_type) : 
+	DriverObj(const char *name, const char *dev_base_path, DeviceBusType bus_type) : 
 		m_name(name),
+		m_dev_base_path(dev_base_path),
 		m_registered(false),
+		m_driver_instance(-1),
 		m_refcount(0)
 	{
 		m_id.dev_id_s.bus = 0;
@@ -92,10 +96,17 @@ public:
 	virtual int start() = 0;
 	virtual int stop() = 0;
 
+#if 0
 	const std::string &getName()
 	{
 		return m_name;
 	}
+
+	const std::string &getPath()
+	{
+		return m_dev_instance_path;
+	}
+#endif
 
 	union DeviceId getId()
 	{
@@ -106,6 +117,13 @@ public:
 	{
 		return m_registered;
 	}
+
+	int getInstance();
+
+	const std::string m_name;
+	const std::string m_dev_base_path;
+	std::string m_dev_instance_path;
+	union DeviceId m_id;
 
 private:
 	friend DriverMgr;
@@ -126,10 +144,8 @@ private:
 	// Disallow copy
 	DriverObj(const DriverObj&);
 
-	std::string m_name;
-	union DeviceId m_id;
-
 	bool m_registered;
+	int m_driver_instance;
 	unsigned m_refcount;
 };
 

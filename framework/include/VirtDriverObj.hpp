@@ -43,15 +43,12 @@ namespace DriverFramework {
 class VirtDriverObj : public DriverObj
 {
 public:
-	VirtDriverObj(std::string name, std::string path) : 
-		DriverObj(name, DeviceBusType_VIRT),
-		m_path(path)
+	VirtDriverObj(const char *name, const char *dev_base_path) : 
+		DriverObj(name, dev_base_path, DeviceBusType_VIRT)
 	{}
 
 	virtual ~VirtDriverObj() {}
 
-protected:
-	std::string m_path;
 };
 
 };

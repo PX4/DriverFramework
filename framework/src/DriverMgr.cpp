@@ -94,15 +94,27 @@ int DriverMgr::registerDriver(DriverObj *obj)
 	if (g_driver_list == nullptr) {
 		return -1;
 	}
-	const std::string &name = obj->getName();
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
-	while (it != g_driver_list->end()) {
-		if ( name == (*it)->getName()) {
-			return -2;
+
+	int found = false;
+	g_lock->lock();
+	for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
+	{
+		std::string tmp_path = obj->m_dev_base_path + std::to_string(i);;
+		std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+		while (it != g_driver_list->end()) {
+			if ( tmp_path == (*it)->m_dev_instance_path) {
+				found = true;
+				break;
+			}
+		}
+		if (!found)  {
+			obj->m_dev_instance_path = tmp_path;
+			g_driver_list->push_back(obj);
+			printf("Added driver %p %s\n", obj, obj->m_dev_instance_path.c_str());
+			break;
 		}
 	}
-	printf("Added driver %p %s\n", obj, obj->getName().c_str());
-	g_driver_list->push_back(obj);
+	g_lock->unlock();
 	return 0;
 }
 
@@ -111,6 +123,7 @@ void DriverMgr::unRegisterDriver(DriverObj *obj)
 	if (g_driver_list == nullptr) {
 		return;
 	}
+	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (*it == obj) {
@@ -119,6 +132,7 @@ void DriverMgr::unRegisterDriver(DriverObj *obj)
 			break;
 		}
 	}
+	g_lock->unlock();
 }
 
 DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int instance)
@@ -129,8 +143,12 @@ DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int i
 	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
-		if ((*it)->getName() == name) {
-			break;
+		if ((*it)->m_name == name) {
+			// see if instance matches
+			const std::string tmp_path = (*it)->m_dev_base_path + std::to_string(instance);
+			if (tmp_path == (*it)->m_dev_instance_path) {
+				break;
+			}
 		}
 	}
 	g_lock->unlock();
@@ -168,26 +186,27 @@ DriverObj *DriverMgr::getDriverObjByHandle(DriverHandle &h)
 				break;
 		}
 
-		return (it == g_driver_list->end()) ? nullptr : *it;
 		g_lock->unlock();
+		return (it == g_driver_list->end()) ? nullptr : *it;
 	}
 	return nullptr;
 }
 
 DriverHandle DriverMgr::getHandle(const char *dev_path)
 {
-	const std::string name(dev_path);
 	DriverHandle h;
-
 	if (g_driver_list == nullptr) {
 		h.m_errno = ESRCH;
 		return h;
 	}
+	const std::string name(dev_path);
 	h.m_errno = EBADF;
+
 	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
-		if ( name == (*it)->getName()) {
+		printf("m_dev_instance_path = %s\n", (*it)->m_dev_instance_path.c_str());
+		if ( name == (*it)->m_dev_instance_path) {
 			// Device is registered
 			(*it)->incrementRefcount();
 			h.m_handle = *it;

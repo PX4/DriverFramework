@@ -14,17 +14,15 @@ int main()
 		return ret;
 	}
 
-	TestDriver test(TEST_DRIVER_DEV_PATH);
+	TestDriver test;
 
-	printf("TEST1\n");
 	// Start the driver
 	test.start();
 
 	sleep(1);
 
-	printf("TEST2\n");
-	DriverHandle h = DriverMgr::getHandle(TEST_DRIVER_DEV_PATH);
-	printf("TEST3\n");
+	const std::string devname = std::string(TEST_DRIVER_DEV_PATH) + std::to_string(0);
+	DriverHandle h = DriverMgr::getHandle(devname.c_str());
 	if (!h.isValid()) {
 		printf("Failed to open %s (%d)\n", TEST_DRIVER_DEV_PATH, h.getError());
 	}
@@ -41,10 +39,9 @@ int main()
 			}
 		}
 	}
-	printf("TEST4\n");
 	test.stop();
 
-	Framework::waitForShutdown();
+	Framework::shutdown();
 
 	return 0;
 }

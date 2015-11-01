@@ -36,6 +36,7 @@
 #include <string>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "DriverObj.hpp"
 
 #pragma once
@@ -45,9 +46,8 @@ namespace DriverFramework {
 class I2CDriverObj : public DriverObj
 {
 public:
-	I2CDriverObj(std::string name, std::string path) : 
-		DriverObj(name, DeviceBusType_I2C),
-		m_path(path)
+	I2CDriverObj(const char *name, const char *dev_base_path) : 
+		DriverObj(name, dev_base_path, DeviceBusType_I2C)
 	{}
 
 	virtual ~I2CDriverObj() {}
@@ -55,12 +55,28 @@ public:
 	virtual int start();
 	virtual int stop();
 
+	static int readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+	static int writeReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+
 protected:
-	int readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int writeReg(uint8_t address, uint8_t *out_buffer, int length);
+	int dev_open(int flags)
+	{
+		int fd = ::open(m_dev_instance_path.c_str(), flags); 
+		if (fd >= 0) {
+			m_fd = fd;
+		}
+		return (fd >= 0) ? 0 : -errno;
+	}
+
+	int dev_close()
+	{
+		return ::close(m_fd);
+	}
 
 private:
-	std::string m_path;
+	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
+	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
+
 	int m_fd = 0;
 };
 

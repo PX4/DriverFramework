@@ -1,7 +1,7 @@
 #include "SyncObj.hpp"
 #include "VirtDriverObj.hpp"
 
-#define TEST_DRIVER_DEV_PATH "/dev/test0"
+#define TEST_DRIVER_DEV_PATH "/dev/test"
 
 using namespace DriverFramework;
 
@@ -12,8 +12,8 @@ struct TestMessage {
 class TestDriver : public VirtDriverObj
 {
 public:
-	TestDriver(const char *dev_path) :
-		VirtDriverObj("TestDriver", dev_path),
+	TestDriver() :
+		VirtDriverObj("TestDriver", TEST_DRIVER_DEV_PATH),
 		m_count(sizeof(m_message)/sizeof(m_message[0]))
 	{}
 	virtual ~TestDriver() {}
@@ -32,6 +32,7 @@ public:
 	virtual int stop(void) {
 		WorkMgr::destroy(m_work_handle);
 		m_work_handle=0;
+		DriverMgr::unRegisterDriver(this);
 		return 0;
 	}
 
