@@ -61,18 +61,14 @@ public:
 		I2CDriverObj("PressureSensor", device_path)
 	{}
 
-	virtual int start(void);
-	virtual int stop(void);
-
 	void setAltimeter(float altimeter_setting_in_mbars);
 
 	int getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required);
 
+protected:
+	virtual void _measure();
+
 private:
-
-	static void workCallback(void *arg, WorkHandle wh);
-
-	void readSensor(void);
 
 	// Return pressure in pascals
 	uint32_t getPressure();

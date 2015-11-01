@@ -77,7 +77,7 @@ class DriverMgr
 public:
 
 	static int registerDriver(DriverObj *obj);
-	static void unRegisterDriver(DriverObj *obj);
+	static void unregisterDriver(DriverObj *obj);
 
 	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
 	static DriverObj *getDriverObjByID(union DeviceId id);

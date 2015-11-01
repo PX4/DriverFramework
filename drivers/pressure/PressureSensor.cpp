@@ -37,27 +37,6 @@
 
 using namespace DriverFramework;
 
-
-int PressureSensor::start()
-{
-	int ret = I2CDriverObj::start();
-	if (ret != 0) {
-		return ret;
-	}
-
-	// Start polling the sensor
-	m_work_handle = WorkMgr::create(workCallback, this, m_sample_interval);
-	WorkMgr::schedule(m_work_handle);
-
-	return ret;
-}
-
-int PressureSensor::stop()
-{
-	WorkMgr::destroy(m_work_handle);
-	return I2CDriverObj::stop();
-}
-
 void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
 {
 	m_altimeter_mbars = altimeter_setting_in_mbars;
@@ -87,15 +66,7 @@ float PressureSensor::getTemperature()
 	return 0.0;
 }
 
-void PressureSensor::workCallback(void *arg, WorkHandle wh)
-{
-	PressureSensor *me = (PressureSensor *)arg;
-
-	me->readSensor();
-	WorkMgr::schedule(wh);
-}
-
-void PressureSensor::readSensor(void)
+void PressureSensor::_measure(void)
 {
 	m_synchronize.lock();
 

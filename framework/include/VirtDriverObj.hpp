@@ -49,6 +49,11 @@ public:
 
 	virtual ~VirtDriverObj() {}
 
+protected:
+	virtual void _measure() = 0;
+
+private:
+	
 };
 
 };

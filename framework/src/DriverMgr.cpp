@@ -45,6 +45,8 @@ using namespace DriverFramework;
 
 SyncObj *g_lock = nullptr;
 
+#define NO_VERIFY 1 // Use fast method to get DriverObj
+
 // TODO add missing locking and reimplement with map
 // This is meant just to work for now. It hs not been optimized yet.
 
@@ -118,7 +120,7 @@ int DriverMgr::registerDriver(DriverObj *obj)
 	return 0;
 }
 
-void DriverMgr::unRegisterDriver(DriverObj *obj)
+void DriverMgr::unregisterDriver(DriverObj *obj)
 {
 	if (g_driver_list == nullptr) {
 		return;
@@ -179,6 +181,9 @@ DriverObj *DriverMgr::getDriverObjByHandle(DriverHandle &h)
 	}
 
 	if (h.m_handle != nullptr) {
+#ifdef NO_VERIFY
+		return reinterpret_cast<DriverObj *>(h.m_handle);
+#else
 		g_lock->lock();
 		std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
 		while (it != g_driver_list->end()) {
@@ -188,6 +193,7 @@ DriverObj *DriverMgr::getDriverObjByHandle(DriverHandle &h)
 
 		g_lock->unlock();
 		return (it == g_driver_list->end()) ? nullptr : *it;
+#endif
 	}
 	return nullptr;
 }

@@ -18,24 +18,6 @@ public:
 	{}
 	virtual ~TestDriver() {}
 
-	virtual int start(void)
-	{
-		int ret = DriverMgr::registerDriver(this);
-		if (ret) {
-			return ret;
-		}
-		m_work_handle = WorkMgr::create(measure, this, 10000);
-		WorkMgr::schedule(m_work_handle);
-		return 0;
-	}
-
-	virtual int stop(void) {
-		WorkMgr::destroy(m_work_handle);
-		m_work_handle=0;
-		DriverMgr::unRegisterDriver(this);
-		return 0;
-	}
-
 	static int readMessages(DriverHandle h, TestMessage *m, unsigned int count)
 	{
 		DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
@@ -58,15 +40,8 @@ public:
 		}
 	}
 
-private:
-	static void measure(void *arg, const WorkHandle wh)
-	{
-		WorkMgr::schedule(wh);
-		reinterpret_cast<TestDriver *>(arg)->_measure();
-		
-	}
-
-	void _measure()
+protected:
+	virtual void _measure()
 	{
 		static int i = 0;
 		m_lock.lock();
@@ -75,10 +50,8 @@ private:
 		m_lock.unlock();
 	}
 
-	WorkHandle 	m_work_handle	= 0;
 	SyncObj		m_lock;
-
-	TestMessage m_message[3];
-	unsigned int m_count;
+	TestMessage 	m_message[3];
+	unsigned int 	m_count;
 };
 

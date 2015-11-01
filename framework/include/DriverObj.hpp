@@ -86,27 +86,30 @@ public:
 		m_id.dev_id_s.devtype = bus_type;
 	}
 
+	virtual int start(void)
+	{
+		int ret = DriverMgr::registerDriver(this);
+		if (ret) {
+			return ret;
+		}
+		m_work_handle = WorkMgr::create(measure, this, 10000);
+		WorkMgr::schedule(m_work_handle);
+		return 0;
+	}
+
+	virtual int stop(void) {
+		WorkMgr::destroy(m_work_handle);
+		m_work_handle=0;
+		DriverMgr::unregisterDriver(this);
+		return 0;
+	}
+
 	virtual ~DriverObj() 
 	{
 		if (isRegistered()) {
-			DriverMgr::unRegisterDriver(this);
+			DriverMgr::unregisterDriver(this);
 		}
 	}
-
-	virtual int start() = 0;
-	virtual int stop() = 0;
-
-#if 0
-	const std::string &getName()
-	{
-		return m_name;
-	}
-
-	const std::string &getPath()
-	{
-		return m_dev_instance_path;
-	}
-#endif
 
 	union DeviceId getId()
 	{
@@ -125,8 +128,19 @@ public:
 	std::string m_dev_instance_path;
 	union DeviceId m_id;
 
+	virtual void _measure() = 0;
+
+	WorkHandle 	m_work_handle	= 0;
+
 private:
 	friend DriverMgr;
+
+	static void measure(void *arg, const WorkHandle wh)
+	{
+		WorkMgr::schedule(wh);
+		reinterpret_cast<DriverObj *>(arg)->_measure();
+		
+	}
 
 	void incrementRefcount()
 	{
