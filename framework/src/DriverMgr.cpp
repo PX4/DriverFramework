@@ -82,7 +82,7 @@ void DriverMgr::finalize(void)
 	g_lock->lock();
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
-		g_driver_list->erase(it);
+		it = g_driver_list->erase(it);
 	}
 	delete g_driver_list;
 	g_driver_list = nullptr;
@@ -129,7 +129,7 @@ void DriverMgr::unregisterDriver(DriverObj *obj)
 	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (*it == obj) {
-			(*it)->m_registered = false;
+			printf("unregisterDriver erase %p\n", *it);
 			g_driver_list->erase(it);
 			break;
 		}

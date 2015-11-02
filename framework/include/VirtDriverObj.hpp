@@ -43,8 +43,8 @@ namespace DriverFramework {
 class VirtDriverObj : public DriverObj
 {
 public:
-	VirtDriverObj(const char *name, const char *dev_base_path) : 
-		DriverObj(name, dev_base_path, DeviceBusType_VIRT)
+	VirtDriverObj(const char *name, const char *dev_base_path, unsigned int sample_interval) : 
+		DriverObj(name, dev_base_path, DeviceBusType_VIRT, sample_interval)
 	{}
 
 	virtual ~VirtDriverObj() {}

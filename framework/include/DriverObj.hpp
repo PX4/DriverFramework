@@ -74,12 +74,12 @@ union DeviceId {
 class DriverObj
 {
 public:
-	DriverObj(const char *name, const char *dev_base_path, DeviceBusType bus_type) : 
+	DriverObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval) :
 		m_name(name),
 		m_dev_base_path(dev_base_path),
-		m_registered(false),
 		m_driver_instance(-1),
-		m_refcount(0)
+		m_refcount(0),
+		m_sample_interval(sample_interval)
 	{
 		m_id.dev_id_s.bus = 0;
 		m_id.dev_id_s.address = 0;
@@ -88,19 +88,25 @@ public:
 
 	virtual int start(void)
 	{
-		int ret = DriverMgr::registerDriver(this);
-		if (ret) {
-			return ret;
+		if (m_driver_instance < 0) {
+			int ret = DriverMgr::registerDriver(this);
+			if (ret) {
+				return ret;
+			}
 		}
-		m_work_handle = WorkMgr::create(measure, this, 10000);
-		WorkMgr::schedule(m_work_handle);
+		if (m_sample_interval && !m_work_handle) {
+			m_work_handle = WorkMgr::create(measure, this, m_sample_interval);
+			WorkMgr::schedule(m_work_handle);
+		}
 		return 0;
 	}
 
 	virtual int stop(void) {
-		WorkMgr::destroy(m_work_handle);
-		m_work_handle=0;
-		DriverMgr::unregisterDriver(this);
+		if (m_work_handle) {
+			WorkMgr::destroy(m_work_handle);
+			m_work_handle=0;
+			DriverMgr::unregisterDriver(this);
+		}
 		return 0;
 	}
 
@@ -118,7 +124,7 @@ public:
 
 	bool isRegistered()
 	{
-		return m_registered;
+		return (m_driver_instance >= 0);
 	}
 
 	int getInstance();
@@ -142,25 +148,41 @@ private:
 		
 	}
 
-	void incrementRefcount()
+	// Return -1 on failure, otherwise recount
+	virtual int incrementRefcount()
 	{
+		if (isRegistered()) {
+			int ret = start();
+			if (ret < 0) {
+				return -1;
+			}
+		}
 		m_refcount++;
+		return m_refcount;
 	}
 
-	void decrementRefcount()
+	// Return -1 on failure, otherwise recount
+	virtual int decrementRefcount()
 	{
-		m_refcount++;
 		if (m_refcount) {
 			m_refcount--;
+
+			if (!m_refcount) {
+				stop();
+			}
 		}
+		else {
+			return -1;
+		}
+		return m_refcount;
 	}
 
 	// Disallow copy
 	DriverObj(const DriverObj&);
 
-	bool m_registered;
-	int m_driver_instance;
-	unsigned m_refcount;
+	int 		m_driver_instance;	// m_driver_instance = -1 when unregistered
+	unsigned 	m_refcount;
+	unsigned int 	m_sample_interval;
 };
 
 };

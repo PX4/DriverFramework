@@ -58,7 +58,7 @@ class PressureSensor : public I2CDriverObj
 {
 public:
 	PressureSensor(const char *device_path) :
-		I2CDriverObj("PressureSensor", device_path)
+		I2CDriverObj("PressureSensor", device_path, 1000)
 	{}
 
 	void setAltimeter(float altimeter_setting_in_mbars);
@@ -76,14 +76,12 @@ private:
 	// Get temperature in degrees C
 	float getTemperature();
 
-	struct pressure_sensor_data m_sensor_data;
+	struct pressure_sensor_data 	m_sensor_data;
 
-	float 		m_altimeter_mbars;
+	float 				m_altimeter_mbars = 0.0;
 
-	unsigned int 	m_sample_interval = 1000; // usec
+	WorkHandle 			m_work_handle = 0;
 
-	WorkHandle m_work_handle = 0;
-
-	SyncObj m_synchronize;
+	SyncObj 			m_synchronize;
 };
 

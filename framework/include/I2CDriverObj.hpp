@@ -46,8 +46,8 @@ namespace DriverFramework {
 class I2CDriverObj : public DriverObj
 {
 public:
-	I2CDriverObj(const char *name, const char *dev_base_path) : 
-		DriverObj(name, dev_base_path, DeviceBusType_I2C)
+	I2CDriverObj(const char *name, const char *dev_base_path, unsigned int sample_interval) :
+		DriverObj(name, dev_base_path, DeviceBusType_I2C, sample_interval)
 	{}
 
 	virtual ~I2CDriverObj() {}
@@ -61,7 +61,7 @@ public:
 protected:
 	int dev_open(int flags)
 	{
-		int fd = ::open(m_dev_instance_path.c_str(), flags); 
+		int fd = ::open(m_dev_instance_path.c_str(), flags);
 		if (fd >= 0) {
 			m_fd = fd;
 		}
