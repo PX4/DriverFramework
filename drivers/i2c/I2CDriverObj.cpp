@@ -58,9 +58,9 @@ int I2CDriverObj::stop()
 
 int I2CDriverObj::readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
-	DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
+	I2CDriverObj *obj = DriverMgr::getDriverObjByHandle<I2CDriverObj>(h);
 	if (obj) {
-		return reinterpret_cast<I2CDriverObj*>(obj)->_readReg(address, out_buffer, length);
+		return obj->_readReg(address, out_buffer, length);
 	}
 	else {
 		return -1;
@@ -69,9 +69,9 @@ int I2CDriverObj::readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer,
 
 int I2CDriverObj::writeReg(DriverHandle &h, uint8_t address, uint8_t *in_buffer, int length)
 {
-	DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
+	I2CDriverObj *obj = DriverMgr::getDriverObjByHandle<I2CDriverObj>(h);
 	if (obj) {
-		return reinterpret_cast<I2CDriverObj*>(obj)->_writeReg(address, in_buffer, length);
+		return obj->_writeReg(address, in_buffer, length);
 	}
 	else {
 		return -1;

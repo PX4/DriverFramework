@@ -13,16 +13,15 @@ class TestDriver : public VirtDriverObj
 {
 public:
 	TestDriver() :
-		VirtDriverObj("TestDriver", TEST_DRIVER_DEV_PATH, 10000),
+		VirtDriverObj("TestDriver", TEST_DRIVER_DEV_PATH, 1000),
 		m_count(sizeof(m_message)/sizeof(m_message[0]))
 	{}
 	virtual ~TestDriver() {}
 
 	static int readMessages(DriverHandle h, TestMessage *m, unsigned int count)
 	{
-		DriverObj *obj = DriverMgr::getDriverObjByHandle(h);
-		if (obj != nullptr) {
-			TestDriver *me = reinterpret_cast<TestDriver *>(obj);
+		TestDriver *me = DriverMgr::getDriverObjByHandle<TestDriver>(h);
+		if (me != nullptr) {
 			if (count > me->m_count)
 			{
 				count = me->m_count;

@@ -39,6 +39,8 @@
 
 #pragma once
 
+#define NO_VERIFY 1 // Use fast method to get Driver Obj by Handle
+
 namespace DriverFramework {
 
 // Forward class declarations
@@ -81,7 +83,20 @@ public:
 
 	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
 	static DriverObj *getDriverObjByID(union DeviceId id);
-	static DriverObj *getDriverObjByHandle(DriverHandle &handle);
+
+	template <typename T>
+	static T *getDriverObjByHandle(DriverHandle &handle)
+	{
+		if (!m_initialized || handle.m_handle == nullptr) {
+			return nullptr;
+		}
+
+#ifdef NO_VERIFY
+		return reinterpret_cast<T *>(handle.m_handle);
+#else
+		return dynamic_cast<T *>(_getDriverObjByHandle(handle));
+#endif
+	}
 
 	static DriverHandle getHandle(const char *dev_path);
 	static void releaseHandle(DriverHandle &handle);
@@ -90,11 +105,15 @@ public:
 private:
 	friend Framework;
 
+	static DriverObj *_getDriverObjByHandle(DriverHandle &handle);
+
 	DriverMgr();
 	~DriverMgr();
 
 	static int initialize(void);
 	static void finalize(void);
+
+	static bool m_initialized;
 };
 
 };
