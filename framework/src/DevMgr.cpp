@@ -41,6 +41,9 @@
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
 
+#include <stdlib.h>
+#include <execinfo.h>
+
 using namespace DriverFramework;
 
 SyncObj *g_lock = nullptr;
@@ -53,13 +56,6 @@ bool DevMgr::m_initialized = false;
 // This is meant just to work for now. It hs not been optimized yet.
 
 static std::list<DriverFramework::DevObj *> *g_driver_list = nullptr;
-
-DevHandle::~DevHandle()
-{
-	if(isValid()) {
-		DevMgr::releaseHandle(*this);
-	}
-}
 
 int DevMgr::initialize(void)
 {
@@ -116,7 +112,7 @@ int DevMgr::registerDriver(DevObj *obj)
 		if (!found)  {
 			obj->m_dev_instance_path = tmp_path;
 			g_driver_list->push_back(obj);
-			printf("Added driver %p %s\n", obj, obj->m_dev_instance_path.c_str());
+			DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path.c_str());
 			break;
 		}
 	}
@@ -133,7 +129,6 @@ void DevMgr::unregisterDriver(DevObj *obj)
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (*it == obj) {
-			printf("unregisterDriver erase %p\n", *it);
 			g_driver_list->erase(it);
 			break;
 		}
@@ -204,10 +199,13 @@ DevHandle DevMgr::getHandle(const char *dev_path)
 	g_lock->lock();
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
-		printf("m_dev_instance_path = %s\n", (*it)->m_dev_instance_path.c_str());
 		if ( name == (*it)->m_dev_instance_path) {
 			// Device is registered
 			(*it)->incrementRefcount();
+
+			// Increment again because destruction of local h will decrement
+			(*it)->incrementRefcount();
+
 			h.m_handle = *it;
 			h.m_errno = 0;
 			break;
@@ -230,4 +228,38 @@ void DevMgr::releaseHandle(DevHandle &h)
 void DevMgr::setDevHandleError(DevHandle &h, int error)
 {
 	h.m_errno = error;
+}
+
+
+//------------------------------------------------------------------------
+// DevHandle
+//------------------------------------------------------------------------
+
+DevHandle::~DevHandle()
+{
+	if(isValid()) {
+		DevMgr::releaseHandle(*this);
+	}
+}
+
+int DevHandle::ioctl(unsigned long cmd, void *arg)
+{
+	if (m_handle) {
+		return reinterpret_cast<DevObj *>(m_handle)->devIOCTL(cmd, arg);
+	}
+	return -1;
+}
+ssize_t DevHandle::read(void *buf, size_t len)
+{
+	if (m_handle) {
+		return reinterpret_cast<DevObj *>(m_handle)->devRead(buf, len);
+	}
+	return -1;
+}
+ssize_t DevHandle::write(void *buf, size_t len)
+{
+	if (m_handle) {
+		return reinterpret_cast<DevObj *>(m_handle)->devWrite(buf, len);
+	}
+	return -1;
 }

@@ -38,6 +38,9 @@
 
 #pragma once
 
+// Show backtrace on error
+#define DF_ENABLE_BACKTRACE 1
+
 //-----------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------
@@ -57,6 +60,11 @@ uint64_t offsetTime(void);
 
 // convert offset time to absolute time
 timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
+
+#ifdef DF_ENABLE_BACKTRACE
+// Used to show a backtrace while running
+void backtrace();
+#endif
 
 class Framework
 {

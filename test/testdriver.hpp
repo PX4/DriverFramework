@@ -1,7 +1,11 @@
+#include <string.h>
 #include "SyncObj.hpp"
 #include "VirtDevObj.hpp"
 
 #define TEST_DRIVER_DEV_PATH "/dev/test"
+
+#define TEST_IOCTL_CMD 		1
+#define TEST_IOCTL_RESULT 	10
 
 using namespace DriverFramework;
 
@@ -18,6 +22,7 @@ public:
 	{}
 	virtual ~TestDriver() {}
 
+	// New way to read Device or Device subclass specific APIs
 	static int readMessages(DevHandle h, TestMessage *m, unsigned int count)
 	{
 		TestDriver *me = DevMgr::getDevObjByHandle<TestDriver>(h);
@@ -37,6 +42,29 @@ public:
 		else {
 			return -1;
 		}
+	}
+
+	// Alternate (old) way to read
+	virtual ssize_t devRead(void *buf, size_t len)
+	{
+		if (len > sizeof(m_message))
+		{
+			len = sizeof(m_message);
+		}
+		m_lock.lock();
+		memcpy(buf, m_message, len);
+		m_lock.unlock();
+		return len;
+	}
+
+	virtual int devIOCTL(unsigned long cmd, void *arg)
+	{
+		if (cmd == TEST_IOCTL_CMD)
+		{
+			*reinterpret_cast<int *>(arg) = TEST_IOCTL_RESULT;
+			return 0;
+		}
+		return -1;
 	}
 
 protected:

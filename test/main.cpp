@@ -7,6 +7,14 @@
 
 using namespace DriverFramework;
 
+void printMessages(TestMessage *message, unsigned int count)
+{
+	printf("Read %d messages\n", count);
+	for (int i=0; i<count; i++) {
+		printf("message %d: %d\n", i, message[i].val);
+	}
+}
+
 int main()
 {
 	int ret = Framework::initialize();
@@ -28,17 +36,36 @@ int main()
 	}
 	else {
 		TestMessage message[5];
+
 		int count = TestDriver::readMessages(h, message, 5);
 		if (count < 0) {
+			printf("Failed to readMessages from adcsim (%d)\n", h.getError());
+		}
+		else {
+			printMessages(message, count);
+		}
+
+		sleep(1);
+
+		int len = h.read(&message, sizeof(message));
+		printf("Read %d bytes (message = %zu bytes)\n", len, sizeof(message[0]));
+		if (len <= 0) { 
 			printf("Failed to read from adcsim (%d)\n", h.getError());
 		}
 		else {
-			printf("Read %d messages\n", count);
-			for (int i=0; i<count; i++) {
-				printf("message %d: %d\n", i, message[i].val);
-			}
+			printMessages(message, len/sizeof(message[0]));
 		}
+
+		int result;
+		if (h.ioctl(TEST_IOCTL_CMD, &result) < 0 || result != TEST_IOCTL_RESULT) {
+			printf("ioctl failed (%d)\n", h.getError());
+		}
+		else {
+			printf("ioctl TEST_IOCTL_RESULT received\n");
+		}
+		
 	}
+	printf("stop\n");
 	test.stop();
 
 	Framework::shutdown();

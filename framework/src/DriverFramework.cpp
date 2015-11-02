@@ -41,6 +41,12 @@
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
 
+// Used for backtrace
+#ifdef DF_ENABLE_BACKTRACE
+#include <stdlib.h>
+#include <execinfo.h>
+#endif
+
 #define SHOW_STATS 0
 
 using namespace DriverFramework;
@@ -167,6 +173,25 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 	ts.tv_nsec = (abs_time % 1000000) * 1000;
 
 	return ts;
+}
+
+void DriverFramework::backtrace()
+{
+	void *buffer[10];
+	char **callstack;
+	int bt_size;
+	int idx;
+
+	bt_size = ::backtrace(buffer, 10);
+	callstack = ::backtrace_symbols(buffer, bt_size);
+
+	DF_LOG_INFO("Backtrace: %d", bt_size);
+
+	for (idx = 0; idx < bt_size; idx++) {
+		DF_LOG_INFO("%s", callstack[idx]);
+	}
+
+	free(callstack);
 }
 
 //-----------------------------------------------------------------------
