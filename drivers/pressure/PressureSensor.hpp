@@ -80,8 +80,6 @@ private:
 
 	float 				m_altimeter_mbars = 0.0;
 
-	WorkHandle 			m_work_handle = 0;
-
 	SyncObj 			m_synchronize;
 };
 
