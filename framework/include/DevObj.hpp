@@ -77,9 +77,9 @@ public:
 	DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval) :
 		m_name(name),
 		m_dev_base_path(dev_base_path),
+		m_sample_interval(sample_interval),
 		m_driver_instance(-1),
-		m_refcount(0),
-		m_sample_interval(sample_interval)
+		m_refcount(0)
 	{
 		m_id.dev_id_s.bus = 0;
 		m_id.dev_id_s.address = 0;
@@ -110,7 +110,7 @@ public:
 		return 0;
 	}
 
-	void set_sample_interval(unsigned int sample_interval);
+	void setSampleInterval(unsigned int sample_interval);
 
 	virtual ~DevObj() 
 	{
@@ -146,10 +146,11 @@ public:
 		return -1;
 	}
 
-	const std::string m_name;
-	const std::string m_dev_base_path;
-	std::string m_dev_instance_path;
-	union DeviceId m_id;
+	const std::string 	m_name;
+	const std::string 	m_dev_base_path;
+	std::string 		m_dev_instance_path;
+	unsigned int 		m_sample_interval;
+	union DeviceId		m_id;
 
 	virtual void _measure() = 0;
 
@@ -199,7 +200,6 @@ private:
 
 	int 		m_driver_instance;	// m_driver_instance = -1 when unregistered
 	unsigned 	m_refcount;
-	unsigned int 	m_sample_interval;
 };
 
 };
