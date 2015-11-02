@@ -125,7 +125,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 	/* Save the address of the register to read from in the write buffer for the combined write. */
 	write_buffer[0] = address;
 	memcpy(&write_buffer[1], in_buffer, length);
-	int bytes_written = write(m_fd, (char *) write_buffer, length + 1);
+	int bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
 	if (bytes_written != length + 1) {
 		DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
 				bytes_written);

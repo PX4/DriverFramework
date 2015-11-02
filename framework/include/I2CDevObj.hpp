@@ -43,6 +43,15 @@
 
 namespace DriverFramework {
 
+class I2CDevHandle : public DevHandle
+{
+public:
+	I2CDevHandle() :
+		DevHandle()
+	{}
+	virtual ~I2CDevHandle();
+};
+
 class I2CDevObj : public DevObj
 {
 public:

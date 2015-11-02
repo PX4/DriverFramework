@@ -62,10 +62,16 @@ public:
 	{
 		return m_handle != nullptr;
 	}
+
 	int getError()
 	{
 		return m_errno;
 	}
+
+	int ioctl(unsigned long request, void *arg);
+	ssize_t read(void *buf, size_t count);
+	ssize_t write(void *buf, size_t count);
+
 private:
 	friend DevMgr;
 

@@ -110,6 +110,8 @@ public:
 		return 0;
 	}
 
+	void set_sample_interval(unsigned int sample_interval);
+
 	virtual ~DevObj() 
 	{
 		if (isRegistered()) {
@@ -128,6 +130,21 @@ public:
 	}
 
 	int getInstance();
+
+        virtual int devIOCTL(unsigned long request, void *arg)
+	{
+		return -1;
+	}
+
+        virtual ssize_t devRead(void *buf, size_t count)
+	{
+		return -1;
+	}
+
+        virtual ssize_t devWrite(void *buf, size_t count)
+	{
+		return -1;
+	}
 
 	const std::string m_name;
 	const std::string m_dev_base_path;
