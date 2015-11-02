@@ -41,7 +41,7 @@
 #include "DriverObj.hpp"
 #include "DriverMgr.hpp"
 
-#define SHOW_STATS 1
+#define SHOW_STATS 0
 
 using namespace DriverFramework;
 
@@ -282,23 +282,43 @@ HRTWorkQueue *HRTWorkQueue::instance(void)
 	return m_instance;
 }
 
+static int setRealtimeSched(pthread_attr_t &attr)
+{
+	sched_param param;
+
+	int ret = pthread_attr_init (&attr);
+	ret = (!ret) ? ret : pthread_attr_getschedparam (&attr, &param);
+
+	param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+
+	ret = (!ret) ? ret : pthread_attr_setschedparam (&attr, &param);
+	ret = (!ret) ? ret : pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED);
+	return ret;
+}
+
 int HRTWorkQueue::initialize(void)
 {
 	m_instance = new HRTWorkQueue();
 
 	if (m_instance == nullptr) {
-		return -2;
+		return 1;
 	}
 
 	// Create a lock for handling the work queue
-	if (pthread_mutex_init(&g_hrt_lock, NULL) != 0)
-	{
-        	return -1;
+	if (pthread_mutex_init(&g_hrt_lock, NULL) != 0) {
+		return 2;
+	}
+
+	pthread_attr_t attr;
+	if(setRealtimeSched(attr)) {
+		return 3;
 	}
 
 	// Create high priority worker thread
-	int ret = pthread_create(&g_tid, NULL, process_trampoline, NULL);
-	return ret;
+	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
+		return 4;
+	}
+	return 0;
 }
 
 void HRTWorkQueue::finalize(void)
@@ -347,7 +367,7 @@ void HRTWorkQueue::process(void)
 	timespec ts;
 	uint64_t now;
 
-	for(;!m_exit_requested;) {
+	while(!m_exit_requested) {
 		hrtLock();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -370,7 +390,6 @@ void HRTWorkQueue::process(void)
 				hrtLock();
 
 				work_itr = m_work.erase(work_itr);
-
 			} else {
 				remaining = (*work_itr)->m_delay - elapsed;
 				if (remaining < next) {
