@@ -41,24 +41,24 @@
 #include <unistd.h>
 #include "OSConfig.h"
 #include "dev_fs_lib_i2c.h"
-#include "I2CDriverObj.hpp"
+#include "I2CDevObj.hpp"
 
 using namespace DriverFramework;
 
-int I2CDriverObj::start()
+int I2CDevObj::start()
 {
 	m_fd = ::open(m_dev_instance_path.c_str(), O_RDWR);
 	return (m_fd < 0) ? m_fd : 0;
 }
 
-int I2CDriverObj::stop()
+int I2CDevObj::stop()
 {
 	return  ::close(m_fd);
 }
 
-int I2CDriverObj::readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length)
+int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
-	I2CDriverObj *obj = DriverMgr::getDriverObjByHandle<I2CDriverObj>(h);
+	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
 	if (obj) {
 		return obj->_readReg(address, out_buffer, length);
 	}
@@ -67,9 +67,9 @@ int I2CDriverObj::readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer,
 	}
 }
 
-int I2CDriverObj::writeReg(DriverHandle &h, uint8_t address, uint8_t *in_buffer, int length)
+int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length)
 {
-	I2CDriverObj *obj = DriverMgr::getDriverObjByHandle<I2CDriverObj>(h);
+	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
 	if (obj) {
 		return obj->_writeReg(address, in_buffer, length);
 	}
@@ -78,7 +78,7 @@ int I2CDriverObj::writeReg(DriverHandle &h, uint8_t address, uint8_t *in_buffer,
 	}
 }
 
-int I2CDriverObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
+int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 {
 	struct dspal_i2c_ioctl_combined_write_read ioctl_write_read;
 	uint8_t write_buffer[1];
@@ -105,7 +105,7 @@ int I2CDriverObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 	return 0;
 }
 
-int I2CDriverObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
+int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
 	uint8_t write_buffer[MAX_LEN_TRANSMIT_BUFFER_IN_BYTES];
 

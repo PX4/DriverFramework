@@ -36,7 +36,7 @@
 *************************************************************************/
 #include <string>
 #include "DriverFramework.hpp"
-#include "DriverMgr.hpp"
+#include "DevMgr.hpp"
 
 #pragma once
 
@@ -71,10 +71,10 @@ union DeviceId {
 	uint32_t dev_id;
 };
 
-class DriverObj
+class DevObj
 {
 public:
-	DriverObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval) :
+	DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval) :
 		m_name(name),
 		m_dev_base_path(dev_base_path),
 		m_driver_instance(-1),
@@ -89,7 +89,7 @@ public:
 	virtual int start(void)
 	{
 		if (m_driver_instance < 0) {
-			int ret = DriverMgr::registerDriver(this);
+			int ret = DevMgr::registerDriver(this);
 			if (ret) {
 				return ret;
 			}
@@ -105,15 +105,15 @@ public:
 		if (m_work_handle) {
 			WorkMgr::destroy(m_work_handle);
 			m_work_handle=0;
-			DriverMgr::unregisterDriver(this);
+			DevMgr::unregisterDriver(this);
 		}
 		return 0;
 	}
 
-	virtual ~DriverObj() 
+	virtual ~DevObj() 
 	{
 		if (isRegistered()) {
-			DriverMgr::unregisterDriver(this);
+			DevMgr::unregisterDriver(this);
 		}
 	}
 
@@ -139,12 +139,12 @@ public:
 	WorkHandle 	m_work_handle	= 0;
 
 private:
-	friend DriverMgr;
+	friend DevMgr;
 
 	static void measure(void *arg, const WorkHandle wh)
 	{
 		WorkMgr::schedule(wh);
-		reinterpret_cast<DriverObj *>(arg)->_measure();
+		reinterpret_cast<DevObj *>(arg)->_measure();
 		
 	}
 
@@ -178,7 +178,7 @@ private:
 	}
 
 	// Disallow copy
-	DriverObj(const DriverObj&);
+	DevObj(const DevObj&);
 
 	int 		m_driver_instance;	// m_driver_instance = -1 when unregistered
 	unsigned 	m_refcount;

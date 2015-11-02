@@ -38,8 +38,8 @@
 #include <map>
 #include <pthread.h>
 #include "DriverFramework.hpp"
-#include "DriverObj.hpp"
-#include "DriverMgr.hpp"
+#include "DevObj.hpp"
+#include "DevMgr.hpp"
 
 #define SHOW_STATS 0
 
@@ -190,8 +190,8 @@ void Framework::shutdown()
 	// Free the WorkMgr resources
 	WorkMgr::finalize();
 
-	// Free the DriverMgr resources
-	DriverMgr::finalize();
+	// Free the DevMgr resources
+	DevMgr::finalize();
 
 	// allow Framework to exit
 	pthread_mutex_lock(&g_framework_exit);
@@ -205,7 +205,7 @@ int Framework::initialize()
 	if (ret < 0) {
 		return ret;
 	}
-	ret = DriverMgr::initialize();
+	ret = DevMgr::initialize();
 	if (ret < 0) {
 		return ret-10;
 	}

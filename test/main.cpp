@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "DriverFramework.hpp"
-#include "DriverMgr.hpp"
+#include "DevMgr.hpp"
 #include "testdriver.hpp"
 
 using namespace DriverFramework;
@@ -22,7 +22,7 @@ int main()
 	sleep(1);
 
 	const std::string devname = std::string(TEST_DRIVER_DEV_PATH) + std::to_string(0);
-	DriverHandle h = DriverMgr::getHandle(devname.c_str());
+	DevHandle h = DevMgr::getHandle(devname.c_str());
 	if (!h.isValid()) {
 		printf("Failed to open %s (%d)\n", TEST_DRIVER_DEV_PATH, h.getError());
 	}

@@ -38,32 +38,32 @@
 #include <list>
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
-#include "DriverObj.hpp"
-#include "DriverMgr.hpp"
+#include "DevObj.hpp"
+#include "DevMgr.hpp"
 
 using namespace DriverFramework;
 
 SyncObj *g_lock = nullptr;
 
-bool DriverMgr::m_initialized = false;
+bool DevMgr::m_initialized = false;
 
-#define NO_VERIFY 1 // Use fast method to get DriverObj
+#define NO_VERIFY 1 // Use fast method to get DevObj
 
 // TODO add missing locking and reimplement with map
 // This is meant just to work for now. It hs not been optimized yet.
 
-static std::list<DriverFramework::DriverObj *> *g_driver_list = nullptr;
+static std::list<DriverFramework::DevObj *> *g_driver_list = nullptr;
 
-DriverHandle::~DriverHandle()
+DevHandle::~DevHandle()
 {
 	if(isValid()) {
-		DriverMgr::releaseHandle(*this);
+		DevMgr::releaseHandle(*this);
 	}
 }
 
-int DriverMgr::initialize(void)
+int DevMgr::initialize(void)
 {
-	g_driver_list = new std::list<DriverFramework::DriverObj *>;
+	g_driver_list = new std::list<DriverFramework::DevObj *>;
 	if (g_driver_list == nullptr) {
 		return -1;
 	}
@@ -77,14 +77,14 @@ int DriverMgr::initialize(void)
 	return 0;
 }
 
-void DriverMgr::finalize(void)
+void DevMgr::finalize(void)
 {
 	if (g_driver_list == nullptr) {
 		return;
 	}
 	g_lock->lock();
 	m_initialized = false;
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		it = g_driver_list->erase(it);
 	}
@@ -95,7 +95,7 @@ void DriverMgr::finalize(void)
 	g_lock = nullptr;
 }
 
-int DriverMgr::registerDriver(DriverObj *obj)
+int DevMgr::registerDriver(DevObj *obj)
 {
 	if (g_driver_list == nullptr) {
 		return -1;
@@ -106,7 +106,7 @@ int DriverMgr::registerDriver(DriverObj *obj)
 	for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
 	{
 		std::string tmp_path = obj->m_dev_base_path + std::to_string(i);;
-		std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+		std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 		while (it != g_driver_list->end()) {
 			if ( tmp_path == (*it)->m_dev_instance_path) {
 				found = true;
@@ -124,13 +124,13 @@ int DriverMgr::registerDriver(DriverObj *obj)
 	return 0;
 }
 
-void DriverMgr::unregisterDriver(DriverObj *obj)
+void DevMgr::unregisterDriver(DevObj *obj)
 {
 	if (g_driver_list == nullptr) {
 		return;
 	}
 	g_lock->lock();
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (*it == obj) {
 			printf("unregisterDriver erase %p\n", *it);
@@ -141,13 +141,13 @@ void DriverMgr::unregisterDriver(DriverObj *obj)
 	g_lock->unlock();
 }
 
-DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int instance)
+DevObj *DevMgr::getDevObjByName(const std::string &name, unsigned int instance)
 {
 	if (g_driver_list == nullptr) {
 		return nullptr;
 	}
 	g_lock->lock();
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->m_name == name) {
 			// see if instance matches
@@ -161,13 +161,13 @@ DriverObj *DriverMgr::getDriverObjByName(const std::string &name, unsigned int i
 	return (it != g_driver_list->end()) ? *it : nullptr;
 }
 
-DriverObj *DriverMgr::getDriverObjByID(union DeviceId id)
+DevObj *DevMgr::getDevObjByID(union DeviceId id)
 {
 	if (g_driver_list == nullptr) {
 		return nullptr;
 	}
 	g_lock->lock();
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin(); 
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->getId().dev_id == id.dev_id) {
 			g_lock->unlock();
@@ -178,10 +178,10 @@ DriverObj *DriverMgr::getDriverObjByID(union DeviceId id)
 	return (it == g_driver_list->end()) ? nullptr : *it;
 }
 
-DriverObj *DriverMgr::_getDriverObjByHandle(DriverHandle &h)
+DevObj *DevMgr::_getDevObjByHandle(DevHandle &h)
 {
 	g_lock->lock();
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 		if (h.m_handle == *it)
 			break;
@@ -191,9 +191,9 @@ DriverObj *DriverMgr::_getDriverObjByHandle(DriverHandle &h)
 	return (it == g_driver_list->end()) ? nullptr : *it;
 }
 
-DriverHandle DriverMgr::getHandle(const char *dev_path)
+DevHandle DevMgr::getHandle(const char *dev_path)
 {
-	DriverHandle h;
+	DevHandle h;
 	if (g_driver_list == nullptr) {
 		h.m_errno = ESRCH;
 		return h;
@@ -202,7 +202,7 @@ DriverHandle DriverMgr::getHandle(const char *dev_path)
 	h.m_errno = EBADF;
 
 	g_lock->lock();
-	std::list<DriverFramework::DriverObj *>::iterator it = g_driver_list->begin();
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 		printf("m_dev_instance_path = %s\n", (*it)->m_dev_instance_path.c_str());
 		if ( name == (*it)->m_dev_instance_path) {
@@ -218,16 +218,16 @@ DriverHandle DriverMgr::getHandle(const char *dev_path)
 	return h;
 }
 
-void DriverMgr::releaseHandle(DriverHandle &h)
+void DevMgr::releaseHandle(DevHandle &h)
 {
-	DriverObj *driver = DriverMgr::getDriverObjByHandle<DriverObj>(h);
+	DevObj *driver = DevMgr::getDevObjByHandle<DevObj>(h);
 	if (driver) {
 		driver->decrementRefcount();
 		h.m_handle = nullptr;
 	}
 }
 
-void DriverMgr::setDriverHandleError(DriverHandle &h, int error)
+void DevMgr::setDevHandleError(DevHandle &h, int error)
 {
 	h.m_errno = error;
 }

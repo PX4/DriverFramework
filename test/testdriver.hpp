@@ -1,5 +1,5 @@
 #include "SyncObj.hpp"
-#include "VirtDriverObj.hpp"
+#include "VirtDevObj.hpp"
 
 #define TEST_DRIVER_DEV_PATH "/dev/test"
 
@@ -9,18 +9,18 @@ struct TestMessage {
 	int val;
 };
 
-class TestDriver : public VirtDriverObj
+class TestDriver : public VirtDevObj
 {
 public:
 	TestDriver() :
-		VirtDriverObj("TestDriver", TEST_DRIVER_DEV_PATH, 100),
+		VirtDevObj("TestDriver", TEST_DRIVER_DEV_PATH, 100),
 		m_count(sizeof(m_message)/sizeof(m_message[0]))
 	{}
 	virtual ~TestDriver() {}
 
-	static int readMessages(DriverHandle h, TestMessage *m, unsigned int count)
+	static int readMessages(DevHandle h, TestMessage *m, unsigned int count)
 	{
-		TestDriver *me = DriverMgr::getDriverObjByHandle<TestDriver>(h);
+		TestDriver *me = DevMgr::getDevObjByHandle<TestDriver>(h);
 		if (me != nullptr) {
 			if (count > me->m_count)
 			{
@@ -31,7 +31,7 @@ public:
 				m[i] = me->m_message[i];
 			}
 			me->m_lock.unlock();
-			DriverMgr::setDriverHandleError(h, 0);
+			DevMgr::setDevHandleError(h, 0);
 			return count;
 		}
 		else {

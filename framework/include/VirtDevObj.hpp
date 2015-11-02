@@ -33,87 +33,27 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <stdint.h>
-#include <time.h>
-#include <memory>
+#include <string>
+#include "DevObj.hpp"
 
 #pragma once
 
-#define NO_VERIFY 1 // Use fast method to get Driver Obj by Handle
-
 namespace DriverFramework {
 
-// Forward class declarations
-class DriverMgr;
-class DriverObj;
-
-class DriverHandle
+class VirtDevObj : public DevObj
 {
 public:
-	DriverHandle() :
-		m_handle(nullptr),
-		m_errno(0)
-	{
-	}
+	VirtDevObj(const char *name, const char *dev_base_path, unsigned int sample_interval) : 
+		DevObj(name, dev_base_path, DeviceBusType_VIRT, sample_interval)
+	{}
 
-	~DriverHandle();
+	virtual ~VirtDevObj() {}
 
-	bool isValid()
-	{
-		return m_handle != nullptr;
-	}
-	int getError()
-	{
-		return m_errno;
-	}
+protected:
+	virtual void _measure() = 0;
+
 private:
-	friend DriverMgr;
-
-	void *m_handle;
-	int m_errno;
-};
-
-// DriverMgr Is initalized by DriverFramework::initialize()
-class DriverMgr
-{    
-public:
-
-	static int registerDriver(DriverObj *obj);
-	static void unregisterDriver(DriverObj *obj);
-
-	static DriverObj *getDriverObjByName(const std::string &name, unsigned int instance);
-	static DriverObj *getDriverObjByID(union DeviceId id);
-
-	template <typename T>
-	static T *getDriverObjByHandle(DriverHandle &handle)
-	{
-		if (!m_initialized || handle.m_handle == nullptr) {
-			return nullptr;
-		}
-
-#ifdef NO_VERIFY
-		return reinterpret_cast<T *>(handle.m_handle);
-#else
-		return dynamic_cast<T *>(_getDriverObjByHandle(handle));
-#endif
-	}
-
-	static DriverHandle getHandle(const char *dev_path);
-	static void releaseHandle(DriverHandle &handle);
-
-	static void setDriverHandleError(DriverHandle &h, int error);
-private:
-	friend Framework;
-
-	static DriverObj *_getDriverObjByHandle(DriverHandle &handle);
-
-	DriverMgr();
-	~DriverMgr();
-
-	static int initialize(void);
-	static void finalize(void);
-
-	static bool m_initialized;
+	
 };
 
 };

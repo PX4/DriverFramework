@@ -37,26 +37,26 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "DriverObj.hpp"
+#include "DevObj.hpp"
 
 #pragma once
 
 namespace DriverFramework {
 
-class I2CDriverObj : public DriverObj
+class I2CDevObj : public DevObj
 {
 public:
-	I2CDriverObj(const char *name, const char *dev_base_path, unsigned int sample_interval) :
-		DriverObj(name, dev_base_path, DeviceBusType_I2C, sample_interval)
+	I2CDevObj(const char *name, const char *dev_base_path, unsigned int sample_interval) :
+		DevObj(name, dev_base_path, DeviceBusType_I2C, sample_interval)
 	{}
 
-	virtual ~I2CDriverObj() {}
+	virtual ~I2CDevObj() {}
 
 	virtual int start();
 	virtual int stop();
 
-	static int readReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-	static int writeReg(DriverHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+	static int writeReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
 
 protected:
 	int dev_open(int flags)

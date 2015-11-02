@@ -35,7 +35,7 @@
 
 #include <pthread.h>
 #include "SyncObj.hpp"
-#include "I2CDriverObj.hpp"
+#include "I2CDevObj.hpp"
 
 #define PRESSURE_DEVICE_PATH "/dev/i2c-2"
 
@@ -54,11 +54,11 @@ struct pressure_sensor_data
 
 using namespace DriverFramework;
 
-class PressureSensor : public I2CDriverObj
+class PressureSensor : public I2CDevObj
 {
 public:
 	PressureSensor(const char *device_path) :
-		I2CDriverObj("PressureSensor", device_path, 1000)
+		I2CDevObj("PressureSensor", device_path, 1000)
 	{}
 
 	void setAltimeter(float altimeter_setting_in_mbars);

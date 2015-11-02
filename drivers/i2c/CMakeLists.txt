@@ -32,7 +32,7 @@
 ############################################################################
 
 add_library(i2c
-	I2CDriverObj.cpp
+	I2CDevObj.cpp
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

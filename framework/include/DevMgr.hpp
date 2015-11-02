@@ -33,27 +33,87 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <string>
-#include "DriverObj.hpp"
+#include <stdint.h>
+#include <time.h>
+#include <memory>
 
 #pragma once
 
+#define NO_VERIFY 1 // Use fast method to get Driver Obj by Handle
+
 namespace DriverFramework {
 
-class VirtDriverObj : public DriverObj
+// Forward class declarations
+class DevMgr;
+class DevObj;
+
+class DevHandle
 {
 public:
-	VirtDriverObj(const char *name, const char *dev_base_path, unsigned int sample_interval) : 
-		DriverObj(name, dev_base_path, DeviceBusType_VIRT, sample_interval)
-	{}
+	DevHandle() :
+		m_handle(nullptr),
+		m_errno(0)
+	{
+	}
 
-	virtual ~VirtDriverObj() {}
+	~DevHandle();
 
-protected:
-	virtual void _measure() = 0;
-
+	bool isValid()
+	{
+		return m_handle != nullptr;
+	}
+	int getError()
+	{
+		return m_errno;
+	}
 private:
-	
+	friend DevMgr;
+
+	void *m_handle;
+	int m_errno;
+};
+
+// DevMgr Is initalized by DriverFramework::initialize()
+class DevMgr
+{    
+public:
+
+	static int registerDriver(DevObj *obj);
+	static void unregisterDriver(DevObj *obj);
+
+	static DevObj *getDevObjByName(const std::string &name, unsigned int instance);
+	static DevObj *getDevObjByID(union DeviceId id);
+
+	template <typename T>
+	static T *getDevObjByHandle(DevHandle &handle)
+	{
+		if (!m_initialized || handle.m_handle == nullptr) {
+			return nullptr;
+		}
+
+#ifdef NO_VERIFY
+		return reinterpret_cast<T *>(handle.m_handle);
+#else
+		return dynamic_cast<T *>(_getDevObjByHandle(handle));
+#endif
+	}
+
+	static DevHandle getHandle(const char *dev_path);
+	static void releaseHandle(DevHandle &handle);
+
+	static void setDevHandleError(DevHandle &h, int error);
+private:
+	friend Framework;
+
+	static DevObj *_getDevObjByHandle(DevHandle &handle);
+
+	DevMgr();
+	~DevMgr();
+
+	static int initialize(void);
+	static void finalize(void);
+
+	static bool m_initialized;
 };
 
 };
