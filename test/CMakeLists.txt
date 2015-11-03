@@ -35,14 +35,14 @@ include_directories(
 	./
 	)
 
-add_executable(testapp
+add_executable(df_testapp
 	main.cpp
 	)
 
-target_link_libraries(testapp
+target_link_libraries(df_testapp
 	-Wl,--start-group
-	${framework_library}
-	${driver_libraries}
+	df_driver_framework
+	${driver_libs}
 	pthread
 	-Wl,--end-group
 	)

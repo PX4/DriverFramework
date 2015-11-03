@@ -35,13 +35,13 @@ include_directories(
 	../
 	)
 
-add_executable(pressure_test
+add_executable(df_pressure_test
 	main.cpp
 	)
 
-target_link_libraries(pressure_test
+target_link_libraries(df_pressure_test
 	-Wl,--start-group
-	${framework_library}
+	df_driver_framework
 	${driver_libraries}
 	pthread
 	-Wl,--end-group

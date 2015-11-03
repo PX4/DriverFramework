@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-add_library(pressure
+add_library(df_pressure
 	PressureSensor.cpp
 	)
 

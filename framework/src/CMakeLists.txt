@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-add_library(driver_framework
+add_library(df_driver_framework
 	DriverFramework.cpp
 	DevMgr.cpp
 	DevObj.cpp

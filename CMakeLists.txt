@@ -48,23 +48,13 @@ include_directories(
 	os/qurt/include
 	)
 
-set(framework_library
-	driver_framework
-	)
-
-set(driver_libraries
-	i2c
-	pressure
-	)
-
 # Add framework library
 add_subdirectory(framework/src)
 
 # Add driver libraries
-foreach(driver ${driver_libraries})
-	add_subdirectory(drivers/${driver})
-endforeach()
+add_subdirectory(drivers)
 
+# Add unit test
 add_subdirectory(test)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
