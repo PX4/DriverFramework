@@ -42,7 +42,7 @@ add_executable(df_pressure_test
 target_link_libraries(df_pressure_test
 	-Wl,--start-group
 	df_driver_framework
-	${driver_libraries}
+	${df_driver_libraries}
 	pthread
 	-Wl,--end-group
 	)

@@ -31,19 +31,16 @@
 #
 ############################################################################
 
-include_directories(
-	./
-	)
+FILE(GLOB drivers RELATIVE ./ ./*)
 
-add_executable(df_testapp
-	main.cpp
-	)
+set(df_driver_libs)
 
-target_link_libraries(df_testapp
-	-Wl,--start-group
-	df_driver_framework
-	${df_driver_libs}
-	pthread
-	-Wl,--end-group
-	)
+# Add driver libraries
+foreach(driver ${drivers})
+	add_subdirectory(${driver})
+	list(APPEND df_driver_libs
+		df_${driver}
+		)
+endforeach()
+
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
