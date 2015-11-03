@@ -43,6 +43,7 @@
 
 #include <stdlib.h>
 #include <execinfo.h>
+#include <errno.h>
 
 using namespace DriverFramework;
 
