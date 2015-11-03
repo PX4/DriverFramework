@@ -45,8 +45,8 @@ using namespace DriverFramework;
 
 SyncObj::SyncObj()
 {
-	m_lock = PTHREAD_MUTEX_INITIALIZER;
-	m_new_data_cond = PTHREAD_COND_INITIALIZER;
+	m_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	m_new_data_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 }
 
 SyncObj::~SyncObj()

@@ -47,7 +47,7 @@
 #include <execinfo.h>
 #endif
 
-#ifdef __PX4_DARWIN
+#ifdef __APPLE__ && __MACH__
 #include <mach/mach_time.h>
 #define MAC_NANO (+1.0E-9)
 #define MAC_GIGA (UINT64_C(1000000000))
@@ -157,7 +157,7 @@ static uint64_t TSToABSTime(struct timespec *ts)
 
 int DriverFramework::clockGetRealtime(struct timespec *ts)
 {
-#ifdef __PX4_DARWIN
+#ifdef __APPLE__ && __MACH__
 
 	mach_timebase_info_data_t tb = {};
 	mach_timebase_info(&tb);
