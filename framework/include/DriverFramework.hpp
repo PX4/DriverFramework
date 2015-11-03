@@ -64,6 +64,15 @@ struct timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
 // convert offset time to absolute time
 struct timespec absoluteTimeInFuture(uint64_t time_ms);
 
+/**
+ * Get the absolute time off the system realtime clock
+ *
+ * @param timespec the realtime time
+ *
+ * @return 0 if successful, nonzero else
+ */
+int clockGetRealtime(struct timespec *ts);
+
 #ifdef DF_ENABLE_BACKTRACE
 // Used to show a backtrace while running
 void backtrace();
