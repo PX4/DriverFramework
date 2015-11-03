@@ -10,7 +10,7 @@ using namespace DriverFramework;
 static void printMessages(TestMessage *message, unsigned int count)
 {
 	printf("Read %d messages\n", count);
-	for (int i=0; i<count; i++) {
+	for (unsigned i = 0; i < count; i++) {
 		printf("message %d: %d\n", i, message[i].val);
 	}
 }
