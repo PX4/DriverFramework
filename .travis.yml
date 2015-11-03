@@ -1,0 +1,31 @@
+# Build and autotest script for DriverFramework
+# http://travis-ci.org
+
+language: cpp
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      sudo: false
+    - os: osx
+      osx_image: beta-xcode6.3
+      sudo: true
+
+addons:
+  apt:
+    sources:
+    - kubuntu-backports
+    - ubuntu-toolchain-r-test
+    - george-edison55-precise-backports
+    packages:
+    - build-essential
+    - clang-3.5
+    - cmake
+
+env:
+  global:
+    - NINJA_BUILD=1
+
+script:
+  - make run
