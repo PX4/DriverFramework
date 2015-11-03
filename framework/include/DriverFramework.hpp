@@ -59,7 +59,7 @@ typedef void (*workCallback)(void *arg, WorkHandle wh);
 uint64_t offsetTime(void);
 
 // convert offset time to absolute time
-timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
+struct timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
 
 #ifdef DF_ENABLE_BACKTRACE
 // Used to show a backtrace while running

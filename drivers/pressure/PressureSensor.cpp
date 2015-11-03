@@ -46,7 +46,7 @@ int PressureSensor::getSensorData(struct pressure_sensor_data &out_data, bool is
 {
 	m_synchronize.lock();
 	if (is_new_data_required) {
-		m_synchronize.waitOnSignal();
+		m_synchronize.waitOnSignal(0);
 	}
 	out_data = m_sensor_data;
 	m_synchronize.unlock();

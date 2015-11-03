@@ -57,8 +57,24 @@ bool DevMgr::m_initialized = false;
 
 static std::list<DriverFramework::DevObj *> *g_driver_list = nullptr;
 
+class WaitList {
+public:
+	WaitList(const UpdateList &in_set, UpdateList &out_set) :
+		m_in_set(in_set),
+		m_out_set(out_set)
+	{}
+	~WaitList() {}
+		
+	const UpdateList &	m_in_set;
+	UpdateList &		m_out_set;
+	SyncObj 		m_lock;
+};
+
+static std::list<WaitList *> *g_wait_list = 0;
+
 int DevMgr::initialize(void)
 {
+	g_wait_list = new std::list<WaitList *>;
 	g_driver_list = new std::list<DriverFramework::DevObj *>;
 	if (g_driver_list == nullptr) {
 		return -1;
@@ -86,6 +102,10 @@ void DevMgr::finalize(void)
 	}
 	delete g_driver_list;
 	g_driver_list = nullptr;
+
+	delete g_wait_list;
+	g_wait_list = nullptr;
+
 	g_lock->unlock();
 	delete g_lock;
 	g_lock = nullptr;
@@ -108,6 +128,7 @@ int DevMgr::registerDriver(DevObj *obj)
 				found = true;
 				break;
 			}
+			++it;
 		}
 		if (!found)  {
 			obj->m_dev_instance_path = tmp_path;
@@ -132,11 +153,12 @@ void DevMgr::unregisterDriver(DevObj *obj)
 			g_driver_list->erase(it);
 			break;
 		}
+		++it;
 	}
 	g_lock->unlock();
 }
 
-DevObj *DevMgr::getDevObjByName(const std::string &name, unsigned int instance)
+DevObj *DevMgr::getDevObjByName(const char *name, unsigned int instance)
 {
 	if (g_driver_list == nullptr) {
 		return nullptr;
@@ -151,6 +173,7 @@ DevObj *DevMgr::getDevObjByName(const std::string &name, unsigned int instance)
 				break;
 			}
 		}
+		++it;
 	}
 	g_lock->unlock();
 	return (it != g_driver_list->end()) ? *it : nullptr;
@@ -168,6 +191,7 @@ DevObj *DevMgr::getDevObjByID(union DeviceId id)
 			g_lock->unlock();
 			break;
 		}
+		++it;
 	}
 	g_lock->unlock();
 	return (it == g_driver_list->end()) ? nullptr : *it;
@@ -178,50 +202,47 @@ DevObj *DevMgr::_getDevObjByHandle(DevHandle &h)
 	g_lock->lock();
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
-		if (h.m_handle == *it)
+		if (h.m_handle == *it) {
 			break;
+		}
+		++it;
 	}
 
 	g_lock->unlock();
 	return (it == g_driver_list->end()) ? nullptr : *it;
 }
 
-DevHandle DevMgr::getHandle(const char *dev_path)
+void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 {
-	DevHandle h;
 	if (g_driver_list == nullptr) {
 		h.m_errno = ESRCH;
-		return h;
+		return;
 	}
 	const std::string name(dev_path);
 	h.m_errno = EBADF;
 
-	g_lock->lock();
+	//g_lock->lock();
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 		if ( name == (*it)->m_dev_instance_path) {
 			// Device is registered
-			(*it)->incrementRefcount();
-
-			// Increment again because destruction of local h will decrement
-			(*it)->incrementRefcount();
-
+			//g_lock->unlock();
+			(*it)->addHandle(h);
+			//g_lock->lock();
 			h.m_handle = *it;
 			h.m_errno = 0;
 			break;
 		}
 		++it;
 	}
-	g_lock->unlock();
-	return h;
+	//g_lock->unlock();
 }
 
 void DevMgr::releaseHandle(DevHandle &h)
 {
 	DevObj *driver = DevMgr::getDevObjByHandle<DevObj>(h);
 	if (driver) {
-		driver->decrementRefcount();
-		h.m_handle = nullptr;
+		driver->removeHandle(h);
 	}
 }
 
@@ -230,6 +251,53 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
+int DevMgr::waitForUpdate(const UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
+{
+	WaitList wl(in_set, out_set);
+
+	wl.m_lock.lock();
+	g_wait_list->push_front(&wl);
+
+	int ret = wl.m_lock.waitOnSignal(timeout_ms);
+
+	// Remove the List item
+	auto it = g_wait_list->begin();
+	while(it != g_wait_list->end()) {
+		if (*it == &wl) {
+			it = g_wait_list->erase(it);
+			break;
+		}
+	}
+
+	wl.m_lock.unlock();
+	return ret;
+}
+
+void  DevMgr::updateNotify(DevObj &obj)
+{
+	std::list<WaitList *>::const_iterator it =  g_wait_list->begin();
+
+	for (; it != g_wait_list->end(); ++it) {
+
+#if 0
+		std::list<const UpdateList &>::iterator in_it = (*it)->m_in_set.begin();
+		for (; in_it != (*it)->m_in_set.end(); ++in_it) {
+
+			// If the obj is equal the obj of DevHandle
+			if (in_it->m_handle == &obj) {
+
+				// Add obj to the out set
+				(*it)->m_out_set.push_back(const_cast<DevHandle &>(&(*in_it)));
+			}
+		}
+#endif
+		if ((*it)->m_out_set.size() > 0) {
+			(*it)->m_lock.lock();
+			(*it)->m_lock.signal();
+			(*it)->m_lock.unlock();
+		}
+	}
+}
 
 //------------------------------------------------------------------------
 // DevHandle

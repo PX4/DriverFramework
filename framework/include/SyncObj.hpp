@@ -38,6 +38,8 @@
 
 #include <pthread.h>
 
+namespace DriverFramework {
+
 class SyncObj
 {
 public:
@@ -47,7 +49,10 @@ public:
 	void lock();
 	void unlock();
 
-	void waitOnSignal(void);
+	// Returns 0 on success, ETIMEDOUT on timeout
+	// Use timeout_ms = 0 for blocking wait
+	int waitOnSignal(unsigned long timeout_ms);
+
 	void signal(void);
 
 private:
@@ -55,3 +60,4 @@ private:
 	pthread_cond_t	m_new_data_cond;
 };
 
+};

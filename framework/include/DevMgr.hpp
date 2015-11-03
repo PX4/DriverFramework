@@ -35,7 +35,7 @@
 *************************************************************************/
 #include <stdint.h>
 #include <time.h>
-#include <memory>
+#include <list>
 
 #pragma once
 
@@ -75,9 +75,16 @@ public:
 private:
 	friend DevMgr;
 
-	void *m_handle;
-	int m_errno;
+	// Disallow copy
+	DevHandle(const DevHandle&);
+
+	void *	m_handle;
+	int 	m_errno;
 };
+
+typedef std::list<DevHandle *> UpdateList;
+
+
 
 // DevMgr Is initalized by DriverFramework::initialize()
 class DevMgr
@@ -87,7 +94,7 @@ public:
 	static int registerDriver(DevObj *obj);
 	static void unregisterDriver(DevObj *obj);
 
-	static DevObj *getDevObjByName(const std::string &name, unsigned int instance);
+	static DevObj *getDevObjByName(const char *name, unsigned int instance);
 	static DevObj *getDevObjByID(union DeviceId id);
 
 	template <typename T>
@@ -104,8 +111,14 @@ public:
 #endif
 	}
 
-	static DevHandle getHandle(const char *dev_path);
+	static void getHandle(const char *dev_path, DevHandle &handle);
 	static void releaseHandle(DevHandle &handle);
+
+	// Called by DevObj to notify threads waiting on an update
+	static void updateNotify(DevObj &obj);
+
+	// Similar to poll
+	static int waitForUpdate(const UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms);
 
 	static void setDevHandleError(DevHandle &h, int error);
 private:

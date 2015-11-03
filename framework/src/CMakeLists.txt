@@ -34,6 +34,7 @@
 add_library(driver_framework
 	DriverFramework.cpp
 	DevMgr.cpp
+	DevObj.cpp
 	SyncObj.cpp
 	)
 

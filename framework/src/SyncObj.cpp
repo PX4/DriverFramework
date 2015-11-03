@@ -33,11 +33,15 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include "SyncObj.hpp"
 #include <stdio.h>
+#include <pthread.h>
+#include "DriverFramework.hpp"
+#include "SyncObj.hpp"
 
 #define DEBUG(FMT, ...)
 //#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
+
+using namespace DriverFramework;
 
 SyncObj::SyncObj()
 {
@@ -61,9 +65,15 @@ void SyncObj::unlock()
 	pthread_mutex_unlock(&m_lock);
 }
 
-void SyncObj::waitOnSignal(void)
+int SyncObj::waitOnSignal(unsigned long timeout_ms)
 {
-	pthread_cond_wait(&m_new_data_cond, &m_lock);
+	if (timeout_ms) {
+		pthread_cond_wait(&m_new_data_cond, &m_lock);
+	}
+	else {
+		struct timespec ts = DriverFramework::offsetTimeToAbsoluteTime(timeout_ms);
+		pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
+	}
 }
 
 void SyncObj::signal(void)

@@ -74,50 +74,15 @@ union DeviceId {
 class DevObj
 {
 public:
-	DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval) :
-		m_name(name),
-		m_dev_base_path(dev_base_path),
-		m_sample_interval(sample_interval),
-		m_driver_instance(-1),
-		m_refcount(0)
-	{
-		m_id.dev_id_s.bus = 0;
-		m_id.dev_id_s.address = 0;
-		m_id.dev_id_s.devtype = bus_type;
-	}
+	DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval);
 
-	virtual int start(void)
-	{
-		if (m_driver_instance < 0) {
-			int ret = DevMgr::registerDriver(this);
-			if (ret) {
-				return ret;
-			}
-		}
-		if (m_sample_interval && !m_work_handle) {
-			m_work_handle = WorkMgr::create(measure, this, m_sample_interval);
-			WorkMgr::schedule(m_work_handle);
-		}
-		return 0;
-	}
+	virtual int start(void);
 
-	virtual int stop(void) {
-		if (m_work_handle) {
-			WorkMgr::destroy(m_work_handle);
-			m_work_handle=0;
-			DevMgr::unregisterDriver(this);
-		}
-		return 0;
-	}
+	virtual int stop(void);
 
 	void setSampleInterval(unsigned int sample_interval);
 
-	virtual ~DevObj() 
-	{
-		if (isRegistered()) {
-			DevMgr::unregisterDriver(this);
-		}
-	}
+	virtual ~DevObj();
 
 	union DeviceId getId()
 	{
@@ -129,22 +94,18 @@ public:
 		return (m_driver_instance >= 0);
 	}
 
-	int getInstance();
-
-        virtual int devIOCTL(unsigned long request, void *arg)
+	int getInstance()
 	{
-		return -1;
+		return m_driver_instance;
 	}
 
-        virtual ssize_t devRead(void *buf, size_t count)
-	{
-		return -1;
-	}
+        virtual int devIOCTL(unsigned long request, void *arg);
 
-        virtual ssize_t devWrite(void *buf, size_t count)
-	{
-		return -1;
-	}
+        virtual ssize_t devRead(void *buf, size_t count);
+
+        virtual ssize_t devWrite(void *buf, size_t count);
+
+	void updateNotify();
 
 	const std::string 	m_name;
 	const std::string 	m_dev_base_path;
@@ -157,49 +118,19 @@ public:
 	WorkHandle 	m_work_handle	= 0;
 
 private:
+	int addHandle(DevHandle &h);
+	int removeHandle(DevHandle &h);
+
 	friend DevMgr;
 
-	static void measure(void *arg, const WorkHandle wh)
-	{
-		WorkMgr::schedule(wh);
-		reinterpret_cast<DevObj *>(arg)->_measure();
-		
-	}
-
-	// Return -1 on failure, otherwise recount
-	virtual int incrementRefcount()
-	{
-		if (isRegistered()) {
-			int ret = start();
-			if (ret < 0) {
-				return -1;
-			}
-		}
-		m_refcount++;
-		return m_refcount;
-	}
-
-	// Return -1 on failure, otherwise recount
-	virtual int decrementRefcount()
-	{
-		if (m_refcount) {
-			m_refcount--;
-
-			if (!m_refcount) {
-				stop();
-			}
-		}
-		else {
-			return -1;
-		}
-		return m_refcount;
-	}
+	static void measure(void *arg, const WorkHandle wh);
 
 	// Disallow copy
 	DevObj(const DevObj&);
 
-	int 		m_driver_instance;	// m_driver_instance = -1 when unregistered
-	unsigned 	m_refcount;
+	int 			m_driver_instance;	// m_driver_instance = -1 when unregistered
+	std::list<DevHandle *>	m_handles;
+	unsigned 		m_refcount;
 };
 
 };
