@@ -47,6 +47,12 @@
 #include <execinfo.h>
 #endif
 
+#ifdef __PX4_DARWIN
+#include <mach/mach_time.h>
+#define MAC_NANO (+1.0E-9)
+#define MAC_GIGA (UINT64_C(1000000000))
+#endif
+
 #define SHOW_STATS 0
 
 using namespace DriverFramework;
@@ -149,26 +155,49 @@ static uint64_t TSToABSTime(struct timespec *ts)
         return result;
 }
 
+int DriverFramework::clockGetRealtime(struct timespec *ts)
+{
+#ifdef __PX4_DARWIN
+
+	mach_timebase_info_data_t tb = {};
+	mach_timebase_info(&tb);
+	double px4_timebase = tb.numer;
+	px4_timebase /= tb.denom;
+
+	double diff = mach_absolute_time() * px4_timebase;
+	ts->tv_sec = diff * MAC_NANO;
+	ts->tv_nsec = diff - (ts->tv_sec * MAC_GIGA);
+
+	return 0;
+
+#else
+
+	return clock_gettime(CLOCK_REALTIME, &ts);
+
+#endif
+}
+
 //-----------------------------------------------------------------------
 // Global Functions
 //-----------------------------------------------------------------------
 uint64_t DriverFramework::offsetTime(void)
 {
-        struct timespec ts;
+	struct timespec ts = {};
 
-       	clock_gettime(CLOCK_REALTIME, &ts);
+	(void)clockGetRealtime(&ts);
+
 	if (!g_timestart) {
 		g_timestart = TSToABSTime(&ts);
 	}
 
 	// Time is in microseconds
-        return TSToABSTime(&ts) - g_timestart;
+	return TSToABSTime(&ts) - g_timestart;
 }
 
 timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 {
 	uint64_t abs_time = offset_time + g_timestart;
-        struct timespec ts;
+	struct timespec ts = {};
 	ts.tv_sec = abs_time / 1000000;
 	ts.tv_nsec = (abs_time % 1000000) * 1000;
 
@@ -177,9 +206,9 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 
 timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
 {
-        struct timespec ts;
+	struct timespec ts;
 
-       	clock_gettime(CLOCK_REALTIME, &ts);
+	clockGetRealtime(&ts);
 
 	uint64_t nsecs = ts.tv_nsec + time_ms*1000000;
 	uint64_t secs = (nsecs/1000000000);
