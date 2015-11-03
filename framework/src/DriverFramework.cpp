@@ -172,7 +172,7 @@ int DriverFramework::clockGetRealtime(struct timespec *ts)
 
 #else
 
-	return clock_gettime(CLOCK_REALTIME, &ts);
+	return clock_gettime(CLOCK_REALTIME, ts);
 
 #endif
 }
