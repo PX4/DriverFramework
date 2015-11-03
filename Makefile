@@ -9,7 +9,7 @@ build: generate
 	cd build && make
 
 run: build
-	cd build && test/testapp
+	cd build && test/df_testapp
 	
 clean:
 	rm -rf build
