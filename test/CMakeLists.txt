@@ -40,10 +40,8 @@ add_executable(df_testapp
 	)
 
 target_link_libraries(df_testapp
-	-Wl,--start-group
 	df_driver_framework
 	${df_driver_libs}
 	pthread
-	-Wl,--end-group
 	)
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
