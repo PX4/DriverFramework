@@ -175,6 +175,21 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 	return ts;
 }
 
+timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
+{
+        struct timespec ts;
+
+       	clock_gettime(CLOCK_REALTIME, &ts);
+
+	uint64_t nsecs = ts.tv_nsec + time_ms*1000000;
+	uint64_t secs = (nsecs/1000000000);
+	
+	ts.tv_sec += secs;
+	ts.tv_nsec = nsecs - secs*1000000000;
+
+	return ts;
+}
+
 void DriverFramework::backtrace()
 {
 	void *buffer[10];

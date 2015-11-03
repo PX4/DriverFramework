@@ -188,7 +188,6 @@ DevObj *DevMgr::getDevObjByID(union DeviceId id)
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->getId().dev_id == id.dev_id) {
-			g_lock->unlock();
 			break;
 		}
 		++it;
@@ -263,12 +262,13 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 	int ret = wl.m_lock.waitOnSignal(timeout_ms);
 
 	// Remove the List item
-	auto it = g_wait_list->begin();
+	std::list<WaitList *>::iterator it = g_wait_list->begin();
 	while(it != g_wait_list->end()) {
 		if (*it == &wl) {
 			it = g_wait_list->erase(it);
 			break;
 		}
+		++it;
 	}
 
 	wl.m_lock.unlock();

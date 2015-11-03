@@ -149,3 +149,15 @@ void DevObj::updateNotify()
 {
 	DevMgr::updateNotify(*this);
 }
+
+void DevObj::setSampleInterval(unsigned int sample_interval)
+{
+	if (m_sample_interval != sample_interval) {
+		WorkMgr::destroy(m_work_handle);
+		m_sample_interval = sample_interval;
+		m_work_handle = WorkMgr::create(measure, this, m_sample_interval);
+		if (m_sample_interval != 0 && m_driver_instance >= 0) {
+			WorkMgr::schedule(m_work_handle);
+		}
+	}
+}

@@ -70,7 +70,7 @@ int SyncObj::waitOnSignal(unsigned long timeout_ms)
 	int ret;
 	DEBUG("wait %p\n", &m_new_data_cond);
 	if (timeout_ms) {
-		struct timespec ts = DriverFramework::offsetTimeToAbsoluteTime(timeout_ms);
+		struct timespec ts = absoluteTimeInFuture(timeout_ms);
 		ret = pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
 	}
 	else {
