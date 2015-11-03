@@ -52,9 +52,7 @@ DevObj::DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_ty
 
 int DevObj::start(void)
 {
-	printf("start\n");
 	if (m_driver_instance < 0) {
-		printf("Calling registerDriver\n");
 		int ret = DevMgr::registerDriver(this);
 		if (ret < 0) {
 			return ret;
@@ -69,7 +67,6 @@ int DevObj::start(void)
 }
 
 int DevObj::stop(void) {
-	printf("stop\n");
 	if (m_work_handle) {
 		WorkMgr::destroy(m_work_handle);
 		m_work_handle=0;
@@ -80,6 +77,17 @@ int DevObj::stop(void) {
 
 DevObj::~DevObj() 
 {
+	std::list<DevHandle *>::iterator it = m_handles.begin();
+	while (it != m_handles.end()) {
+		if ((*it)->isValid()) {
+			DevMgr::releaseHandle(**m_handles.begin());
+		}
+		else {
+			m_handles.erase(it);
+		}
+		it = m_handles.begin();
+	}
+
 	if (isRegistered()) {
 		DevMgr::unregisterDriver(this);
 	}
@@ -106,7 +114,6 @@ void DevObj::measure(void *arg, const WorkHandle wh)
 	WorkMgr::schedule(wh);
 
 	reinterpret_cast<DevObj *>(arg)->_measure();
-	
 }
 
 // Return -1 on failure, otherwise recount
@@ -133,6 +140,7 @@ int DevObj::removeHandle(DevHandle &h)
 				stop();
 			}
 		}
+		++it;
 	}
 	return m_handles.size();
 }

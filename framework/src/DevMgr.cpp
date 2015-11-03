@@ -59,15 +59,15 @@ static std::list<DriverFramework::DevObj *> *g_driver_list = nullptr;
 
 class WaitList {
 public:
-	WaitList(const UpdateList &in_set, UpdateList &out_set) :
+	WaitList(UpdateList &in_set, UpdateList &out_set) :
 		m_in_set(in_set),
 		m_out_set(out_set)
 	{}
 	~WaitList() {}
 		
-	const UpdateList &	m_in_set;
-	UpdateList &		m_out_set;
-	SyncObj 		m_lock;
+	UpdateList &	m_in_set;
+	UpdateList &	m_out_set;
+	SyncObj 	m_lock;
 };
 
 static std::list<WaitList *> *g_wait_list = 0;
@@ -244,6 +244,8 @@ void DevMgr::releaseHandle(DevHandle &h)
 	if (driver) {
 		driver->removeHandle(h);
 	}
+	h.m_handle = nullptr;
+	h.m_errno = 0;
 }
 
 void DevMgr::setDevHandleError(DevHandle &h, int error)
@@ -251,7 +253,7 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
-int DevMgr::waitForUpdate(const UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
+int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
 {
 	WaitList wl(in_set, out_set);
 
@@ -275,22 +277,20 @@ int DevMgr::waitForUpdate(const UpdateList &in_set, UpdateList &out_set, unsigne
 
 void  DevMgr::updateNotify(DevObj &obj)
 {
-	std::list<WaitList *>::const_iterator it =  g_wait_list->begin();
+	std::list<WaitList *>::iterator it =  g_wait_list->begin();
 
 	for (; it != g_wait_list->end(); ++it) {
 
-#if 0
-		std::list<const UpdateList &>::iterator in_it = (*it)->m_in_set.begin();
+		UpdateList::iterator in_it = (*it)->m_in_set.begin();
 		for (; in_it != (*it)->m_in_set.end(); ++in_it) {
 
 			// If the obj is equal the obj of DevHandle
-			if (in_it->m_handle == &obj) {
+			if ((*in_it)->m_handle == &obj) {
 
 				// Add obj to the out set
-				(*it)->m_out_set.push_back(const_cast<DevHandle &>(&(*in_it)));
+				(*it)->m_out_set.push_back((*in_it));
 			}
 		}
-#endif
 		if ((*it)->m_out_set.size() > 0) {
 			(*it)->m_lock.lock();
 			(*it)->m_lock.signal();

@@ -25,7 +25,6 @@ public:
 	// New way to read Device or Device subclass specific APIs
 	static int readMessages(DevHandle &h, TestMessage *m, unsigned int count)
 	{
-		printf("readMessages");
 		TestDriver *me = DevMgr::getDevObjByHandle<TestDriver>(h);
 		if (me != nullptr) {
 			if (count > me->m_count)
@@ -48,7 +47,6 @@ public:
 	// Alternate (old) way to read
 	virtual ssize_t devRead(void *buf, size_t len)
 	{
-		printf("devRead");
 		if (len > sizeof(m_message))
 		{
 			len = sizeof(m_message);
@@ -61,7 +59,6 @@ public:
 
 	virtual int devIOCTL(unsigned long cmd, void *arg)
 	{
-		printf("devIOCTL");
 		if (cmd == TEST_IOCTL_CMD)
 		{
 			*reinterpret_cast<int *>(arg) = TEST_IOCTL_RESULT;

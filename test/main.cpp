@@ -27,14 +27,11 @@ int main()
 	// Start the driver
 	test.start();
 
-	printf("sleeping\n");
 	sleep(1);
 
 	const std::string devname = std::string(TEST_DRIVER_DEV_PATH) + std::to_string(0);
 	DevHandle h;
-	printf("sleeping\n");
 	DevMgr::getHandle(devname.c_str(), h);
-	printf("sleeping\n");
 
 	if (!h.isValid()) {
 		printf("Failed to open %s (%d)\n", TEST_DRIVER_DEV_PATH, h.getError());
@@ -42,9 +39,7 @@ int main()
 	else {
 		TestMessage message[5];
 
-		printf("before readMessages\n");
 		int count = TestDriver::readMessages(h, message, 5);
-		printf("after readMessages\n");
 		if (count < 0) {
 			printf("Failed to readMessages from adcsim (%d)\n", h.getError());
 		}
@@ -52,7 +47,6 @@ int main()
 			printMessages(message, count);
 		}
 
-		printf("sleeping\n");
 		sleep(1);
 
 		int len = h.read(&message, sizeof(message));
@@ -78,7 +72,7 @@ int main()
 		UpdateList in_set, out_set;
 		in_set.push_back(&h);
 		in_set.push_back(&h2);
-		result = DevMgr::waitForUpdate(in_set, out_set, 10000);
+		result = DevMgr::waitForUpdate(in_set, out_set, 0);
 		if (result > 0) {
 			UpdateList::iterator it = out_set.begin();
 			for (; it != out_set.end(); ++it) {
@@ -87,7 +81,6 @@ int main()
 			}
 		}
 	}
-	printf("stop\n");
 	test.stop();
 
 	Framework::shutdown();

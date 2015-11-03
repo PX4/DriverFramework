@@ -67,17 +67,22 @@ void SyncObj::unlock()
 
 int SyncObj::waitOnSignal(unsigned long timeout_ms)
 {
+	int ret;
+	DEBUG("wait %p\n", &m_new_data_cond);
 	if (timeout_ms) {
-		pthread_cond_wait(&m_new_data_cond, &m_lock);
+		struct timespec ts = DriverFramework::offsetTimeToAbsoluteTime(timeout_ms);
+		ret = pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
 	}
 	else {
-		struct timespec ts = DriverFramework::offsetTimeToAbsoluteTime(timeout_ms);
-		pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
+		ret = pthread_cond_wait(&m_new_data_cond, &m_lock);
 	}
+
+	return ret;
 }
 
 void SyncObj::signal(void)
 {
+	DEBUG("signal %p\n", &m_new_data_cond);
 	pthread_cond_signal(&m_new_data_cond);
 }
 

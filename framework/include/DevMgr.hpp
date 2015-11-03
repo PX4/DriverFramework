@@ -118,7 +118,7 @@ public:
 	static void updateNotify(DevObj &obj);
 
 	// Similar to poll
-	static int waitForUpdate(const UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms);
+	static int waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms);
 
 	static void setDevHandleError(DevHandle &h, int error);
 private:
