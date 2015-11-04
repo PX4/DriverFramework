@@ -43,7 +43,11 @@ set(package-contact "charlebm@gmail.com")
 # as it breaks everywhere
 #set(CMAKE_C_COMPILER /usr/bin/clang-3.6)
 #set(CMAKE_CXX_COMPILER /usr/bin/clang++-3.6)
-#set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -g")
+
+SET(DF_CXX_FLAGS "-std=c++11 -Wall -g" CACHE STRING
+    "DF_CXX_FLAGS")
+# Enable this directory's flags:
+SET(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS}")
 
 include_directories(
 	framework/include
