@@ -52,6 +52,8 @@
 #include <mach/mach_time.h>
 #define MAC_NANO (+1.0E-9)
 #define MAC_GIGA (UINT64_C(1000000000))
+#else
+#include <time.h>
 #endif
 
 #define SHOW_STATS 0
