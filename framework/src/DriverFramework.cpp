@@ -560,7 +560,6 @@ void WorkMgr::finalize()
 void WorkMgr::getWorkHandle(workCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
 {
 	if (!g_lock || !g_work_items) {
-		printf("error (%p) (%p)\n", g_lock, g_work_items);
 		wh.m_errno = ESRCH;
 		wh.m_handle = nullptr;
 		return;
@@ -592,7 +591,6 @@ void WorkMgr::getWorkHandle(workCallback cb, void *arg, uint32_t delay, WorkHand
 
 void WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
-	printf("releaseWorkHandle\n");
 	if (g_lock == nullptr) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = nullptr;
@@ -603,15 +601,12 @@ void WorkMgr::releaseWorkHandle(WorkHandle &wh)
 		return;
 	}
 
-	printf("releaseWorkHandle 2\n");
 	g_lock->lock();
 	auto it = g_work_items->find(&wh);
 	if (it != g_work_items->end()) {
-		printf("releaseWorkHandle 3\n");
 		HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
 		g_work_items->erase(it);
 	}
-	printf("releaseWorkHandle 4\n");
 	// mark the handle as cleared
 	wh.m_handle = nullptr;
 	g_lock->unlock();
