@@ -43,5 +43,6 @@ target_link_libraries(df_testapp
 	df_driver_framework
 	${df_driver_libs}
 	pthread
+	rt
 	)
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

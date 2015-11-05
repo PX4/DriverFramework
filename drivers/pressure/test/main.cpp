@@ -19,7 +19,7 @@ public:
 		m_sensor(PRESSURE_DEVICE_PATH)
 	{}
 
-	static void readSensorCallback(void *arg, WorkHandle wh);
+	static void readSensorCallback(void *arg, WorkHandle &wh);
 
 	int run(void);
 
@@ -28,7 +28,7 @@ private:
 	void wait();
 
 	PressureSensor	m_sensor;
-	WorkHandle	m_work_handle = 0;
+	WorkHandle	m_work_handle;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
 	struct pressure_sensor_data m_sensor_data;
@@ -44,7 +44,7 @@ static void printPressureValues(struct pressure_sensor_data &sensor_data)
 		sensor_data.pressure_in_pa, sensor_data.temperature_in_c);
 }
 
-void PressureTester::readSensorCallback(void *arg, WorkHandle wh)
+void PressureTester::readSensorCallback(void *arg, WorkHandle &wh)
 {
 	PressureTester *me = (PressureTester *)arg;
 	me->readSensor();
@@ -93,7 +93,7 @@ int PressureTester::run(void) {
 	else {
 		m_done = false;
 		m_sensor_data.sensor_read_counter = 0;
-		m_work_handle = WorkMgr::create(readSensorCallback, this, 1000);
+		WorkMgr::getWorkHandle(readSensorCallback, this, 1000, m_work_handle);
 
 		WorkMgr::schedule(m_work_handle);
 	}
