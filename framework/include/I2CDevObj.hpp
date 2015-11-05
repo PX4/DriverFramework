@@ -37,6 +37,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include "DevObj.hpp"
 
 #pragma once
