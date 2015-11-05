@@ -135,13 +135,16 @@ int main()
 
 		printf("TEST 6: Read after setSampleInterval\n");
 		test.setSampleInterval(100000);
+		printf("start\n");
 		test.start();
+		printf("reading\n");
 		test_read(h, h2, 1000, true);
 
-
 	}
+	printf("tests done\n");
 	test.stop();
 
+	printf("shutdown\n");
 	Framework::shutdown();
 
 	return 0;
