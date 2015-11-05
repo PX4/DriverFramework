@@ -67,7 +67,7 @@ void run()
 {
 	DriverFramework::initialize();
 	Gyro myGyro();
-	myGyro.init(); // Calls DevObj::init() unless overridden
+	myGyro.init(); // register the driver
 
 	DevHandle h;
 	DevMgr::getHandle("/dev/gyro0", h); // Starts the driver running
@@ -108,7 +108,26 @@ and stopped when the last handle is released.
 The driver can be explicitly started or stopped using start() or stop():
 
 ```
-Gyro.start();
+myGyro.start();
 ...
-Gyro.stop();
+myGyro.stop();
 ```
+
+### Calling POSIX functions
+
+The read, write and ioctl calls are wrapped and provided as calls via the DevHandle.
+
+The functions follow the POSIX sematics and the errno value can be accessed via getError().
+```
+DevHandle h;
+DevMgr::getHandle("/dev/gyro0", h); // Starts the driver running
+
+SomeDataStruct data[3];
+int ret = h.read(data, sizeof(data);
+if (ret < 0) {
+	printf("Error read failed (%d)\n", h.getError());
+}
+
+```
+Errors can be checked by testing for errors after a
+
