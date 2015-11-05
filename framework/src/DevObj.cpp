@@ -38,9 +38,10 @@
 
 using namespace DriverFramework;
 
-DevObj::DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval_usecs) :
+DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type, unsigned int sample_interval_usecs) :
 	m_name(name),
-	m_dev_base_path(dev_base_path),
+	m_dev_path(dev_path),
+	m_dev_class_path(dev_class_path),
 	m_sample_interval_usecs(sample_interval_usecs),
 	m_driver_instance(-1),
 	m_refcount(0)
@@ -55,7 +56,7 @@ int DevObj::init(void)
 	if (m_driver_instance < 0) {
 		int ret = DevMgr::registerDriver(this);
 		if (ret < 0) {
-			return -1;
+			return ret;
 		}
 		m_driver_instance = ret;
 	}
@@ -92,11 +93,14 @@ DevObj::~DevObj()
 	std::list<DevHandle *>::iterator it = m_handles.begin();
 	while (it != m_handles.end()) {
 		if ((*it)->isValid()) {
+			m_handle_lock.unlock();
 			DevMgr::releaseHandle(**m_handles.begin());
+			m_handle_lock.lock();
 		}
 		else {
 			m_handles.erase(it);
 		}
+		// m_handles may have been modified by DevMgr::releaseHandle()
 		it = m_handles.begin();
 	}
 	m_handle_lock.unlock();

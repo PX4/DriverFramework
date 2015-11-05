@@ -76,14 +76,17 @@ static std::list<WaitList *> *g_wait_list = 0;
 int DevMgr::initialize(void)
 {
 	g_wait_list = new std::list<WaitList *>;
+	if (g_wait_list == nullptr) {
+		return -1;
+	}
 	g_driver_list = new std::list<DriverFramework::DevObj *>;
 	if (g_driver_list == nullptr) {
-		return -1;
+		return -2;
 	}
 	g_lock = new SyncObj();
 	if (g_lock == nullptr) {
 		delete g_driver_list;
-		return -2;
+		return -3;
 	}
 
 	m_initialized = true;
@@ -118,28 +121,40 @@ int DevMgr::registerDriver(DevObj *obj)
 		return -1;
 	}
 
+	if (obj->m_dev_path.empty()) {
+		return -2;
+	}
+
 	int found = false;
 	g_lock->lock();
-	for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
-	{
-		std::string tmp_path = obj->m_dev_base_path + std::to_string(i);;
-		std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
-		while (it != g_driver_list->end()) {
-			if ( tmp_path == (*it)->m_dev_instance_path) {
+	int ret = 0;
+	if (!obj->m_dev_class_path.empty()) {
+		for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
+		{
+			std::string tmp_path = obj->m_dev_class_path + std::to_string(i);
+			std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
+			while (it != g_driver_list->end()) {
+				if ( tmp_path == (*it)->m_dev_instance_path) {
+					found = true;
+					break;
+				}
+				++it;
+			}
+			if (!found)  {
+				obj->m_dev_instance_path = tmp_path;
+				g_driver_list->push_back(obj);
+				DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path.c_str());
 				found = true;
 				break;
 			}
-			++it;
 		}
-		if (!found)  {
-			obj->m_dev_instance_path = tmp_path;
-			g_driver_list->push_back(obj);
-			DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path.c_str());
-			break;
+		if (!found) {
+			// Error - no available dev class instance
+			ret = -3;
 		}
 	}
 	g_lock->unlock();
-	return 0;
+	return ret;
 }
 
 void DevMgr::unregisterDriver(DevObj *obj)
@@ -169,7 +184,7 @@ DevObj *DevMgr::getDevObjByName(const char *name, unsigned int instance)
 	while (it != g_driver_list->end()) {
 		if ((*it)->m_name == name) {
 			// see if instance matches
-			const std::string tmp_path = (*it)->m_dev_base_path + std::to_string(instance);
+			const std::string tmp_path = (*it)->m_dev_class_path + std::to_string(instance);
 			if (tmp_path == (*it)->m_dev_instance_path) {
 				break;
 			}
@@ -218,13 +233,20 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 		h.m_errno = ESRCH;
 		return;
 	}
+	if (dev_path == nullptr) {
+		h.m_errno = EINVAL;
+		return;
+	}
+
 	const std::string name(dev_path);
 	h.m_errno = EBADF;
 
 	//g_lock->lock();
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
-		if ( name == (*it)->m_dev_instance_path) {
+
+		// The dev path may be a class instance path or a dev name
+		if ((name == (*it)->m_dev_instance_path) || (name == (*it)->m_dev_path)) {
 			// Device is registered
 			//g_lock->unlock();
 			(*it)->addHandle(h);

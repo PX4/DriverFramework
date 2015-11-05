@@ -38,6 +38,7 @@
 #include "I2CDevObj.hpp"
 
 #define PRESSURE_DEVICE_PATH "/dev/i2c-2"
+#define PRESSURE_CLASS_PATH  "/dev/pressure"
 
 /**
  * The sensor independent data structure containing pressure values.
@@ -58,7 +59,7 @@ class PressureSensor : public I2CDevObj
 {
 public:
 	PressureSensor(const char *device_path) :
-		I2CDevObj("PressureSensor", device_path, 1000)
+		I2CDevObj("PressureSensor", device_path, PRESSURE_CLASS_PATH, 1000)
 	{}
 
 	void setAltimeter(float altimeter_setting_in_mbars);

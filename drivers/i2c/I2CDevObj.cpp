@@ -47,7 +47,7 @@ using namespace DriverFramework;
 
 int I2CDevObj::start()
 {
-	m_fd = ::open(m_dev_instance_path.c_str(), O_RDWR);
+	m_fd = ::open(m_dev_path.c_str(), O_RDWR);
 	return (m_fd < 0) ? m_fd : 0;
 }
 

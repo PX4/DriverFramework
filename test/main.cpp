@@ -46,25 +46,34 @@ int main()
 {
 	int ret = Framework::initialize();
 	if (ret < 0) {
+		printf("Framework::initialize() failed\n");
 		return ret;
 	}
 
 	TestDriver test;
 
 	// Register the driver
-	test.init();
+	ret = test.init();
+	if (ret < 0) {
+		printf("init() failed (%d))\n", ret);
+		return ret;
+	}
 
 	// Start the driver
-	test.start();
+	ret = test.start();
+	if (ret < 0) {
+		printf("start() failed (%d)\n", ret);
+		return ret;
+	}
 
 	sleep(1);
 
-	const std::string devname = std::string(TEST_DRIVER_DEV_PATH) + std::to_string(0);
+	const std::string devname = std::string(TEST_DRIVER_CLASS_PATH) + std::to_string(0);
 	DevHandle h;
 	DevMgr::getHandle(devname.c_str(), h);
 
 	if (!h.isValid()) {
-		printf("Failed to open %s (%d)\n", TEST_DRIVER_DEV_PATH, h.getError());
+		printf("Failed to open %s (%d)\n", devname.c_str(), h.getError());
 	}
 	else {
 		TestMessage message[5];
@@ -111,7 +120,10 @@ int main()
 		printf("TEST 4: Polling blocking read\n");
 		ret = 0;
 		DevHandle h2;
-		DevMgr::getHandle(devname.c_str(), h2);
+		DevMgr::getHandle(TEST_DRIVER_PATH, h2);
+		if (!h2.isValid()) {
+			printf("Failed to open %s (%d)\n", TEST_DRIVER_PATH, h2.getError());
+		}
 		test_read(h, h2, 0, true);
 
 		printf("TEST 5: Polling timeout\n");

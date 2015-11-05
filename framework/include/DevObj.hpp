@@ -76,15 +76,15 @@ union DeviceId {
 class DevObj : public DisableCopy
 {
 public:
-	DevObj(const char *name, const char *dev_path, DeviceBusType bus_type, unsigned int sample_interval);
+	DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type, unsigned int sample_interval_usec);
 
-	virtual int init(void);
+	virtual int init();
 
 	virtual int start(void);
 
 	virtual int stop(void);
 
-	void setSampleInterval(unsigned int sample_interval);
+	void setSampleInterval(unsigned int sample_interval_usecs);
 
 	virtual ~DevObj();
 
@@ -112,7 +112,8 @@ public:
 	void updateNotify();
 
 	const std::string 	m_name;
-	const std::string 	m_dev_base_path;
+	const std::string 	m_dev_path;
+	const std::string 	m_dev_class_path;
 	std::string 		m_dev_instance_path;
 	unsigned int 		m_sample_interval_usecs;
 	union DeviceId		m_id;

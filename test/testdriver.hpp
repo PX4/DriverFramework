@@ -2,7 +2,8 @@
 #include "SyncObj.hpp"
 #include "VirtDevObj.hpp"
 
-#define TEST_DRIVER_DEV_PATH "/dev/test"
+#define TEST_DRIVER_PATH "/dev/foo"
+#define TEST_DRIVER_CLASS_PATH "/dev/test"
 
 #define TEST_IOCTL_CMD 		1
 #define TEST_IOCTL_RESULT 	10
@@ -17,7 +18,7 @@ class TestDriver : public VirtDevObj
 {
 public:
 	TestDriver() :
-		VirtDevObj("TestDriver", TEST_DRIVER_DEV_PATH, 1000),
+		VirtDevObj("TestDriver", TEST_DRIVER_PATH, TEST_DRIVER_CLASS_PATH, 1000),
 		m_count(sizeof(m_message)/sizeof(m_message[0]))
 	{}
 	virtual ~TestDriver() {}
