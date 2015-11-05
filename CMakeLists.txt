@@ -46,7 +46,7 @@ set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS}")
 
 set(df_link_libs pthread CACHE STRING
 	"DF_LINK_LIBS")
-if (NOT ${APPLE})
+if (NOT APPLE)
 	list(APPEND df_link_libs rt)
 endif()
 
