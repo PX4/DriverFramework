@@ -115,9 +115,12 @@ int main()
 		test_read(h, h2, 0, true);
 
 		printf("TEST 5: Polling timeout\n");
+		printf("stopping\n");
 		test.stop();
 		// wait for scheduled work to expire
+		printf("sleeping\n");
 		sleep(1);
+		printf("reading\n");
 		test_read(h, h2, 1000, false);
 
 		printf("TEST 6: Read after setSampleInterval\n");
