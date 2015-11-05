@@ -37,6 +37,7 @@
 #include <list>
 #include <map>
 #include <pthread.h>
+#include <errno.h>
 #include "DriverFramework.hpp"
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
