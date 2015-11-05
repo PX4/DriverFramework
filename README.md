@@ -123,7 +123,7 @@ DevHandle h;
 DevMgr::getHandle("/dev/gyro0", h); // Starts the driver running
 
 SomeDataStruct data[3];
-int ret = h.read(data, sizeof(data);
+int ret = h.read(data, sizeof(data));
 if (ret < 0) {
 	printf("Error read failed (%d)\n", h.getError());
 }
