@@ -17,7 +17,7 @@ class TestDriver : public VirtDevObj
 {
 public:
 	TestDriver() :
-		VirtDevObj("TestDriver", TEST_DRIVER_DEV_PATH, 100),
+		VirtDevObj("TestDriver", TEST_DRIVER_DEV_PATH, 1000),
 		m_count(sizeof(m_message)/sizeof(m_message[0]))
 	{}
 	virtual ~TestDriver() {}

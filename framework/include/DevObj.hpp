@@ -37,6 +37,7 @@
 #include <string>
 #include "DriverFramework.hpp"
 #include "DevMgr.hpp"
+#include "SyncObj.hpp"
 #include "DisableCopy.hpp"
 
 #pragma once
@@ -135,6 +136,7 @@ private:
 
 	int 			m_driver_instance;	// m_driver_instance = -1 when unregistered
 	std::list<DevHandle *>	m_handles;
+	SyncObj			m_handle_lock;
 	unsigned 		m_refcount;
 };
 

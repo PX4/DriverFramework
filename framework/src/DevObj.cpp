@@ -88,6 +88,7 @@ int DevObj::stop(void) {
 
 DevObj::~DevObj() 
 {
+	m_handle_lock.lock();
 	std::list<DevHandle *>::iterator it = m_handles.begin();
 	while (it != m_handles.end()) {
 		if ((*it)->isValid()) {
@@ -98,6 +99,7 @@ DevObj::~DevObj()
 		}
 		it = m_handles.begin();
 	}
+	m_handle_lock.unlock();
 
 	if (isRegistered()) {
 		DevMgr::unregisterDriver(this);
@@ -130,13 +132,16 @@ void DevObj::measure(void *arg, WorkHandle &wh)
 // Return -1 on failure, otherwise recount
 int DevObj::addHandle(DevHandle &h)
 {
+	int ret = 0;
+	m_handle_lock.lock();
 	if (m_handles.size() == 0) {
-		int ret = start();
+		ret = start();
 		if (ret < 0) {
 			return -1;
 		}
 	}
 	m_handles.push_back(&h);
+	m_handle_lock.unlock();
 	return m_handles.size();
 }
 
@@ -144,6 +149,7 @@ int DevObj::addHandle(DevHandle &h)
 int DevObj::removeHandle(DevHandle &h)
 {
 	int ret = 0;
+	m_handle_lock.lock();
 	std::list<DevHandle *>::iterator it = m_handles.begin();
 	while (it != m_handles.end()) {
 		if (*it == &h) {
@@ -157,6 +163,7 @@ int DevObj::removeHandle(DevHandle &h)
 		}
 		++it;
 	}
+	m_handle_lock.unlock();
 	return (ret == 0) ? m_handles.size() : ret;
 }
 
