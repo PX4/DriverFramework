@@ -38,10 +38,10 @@
 
 using namespace DriverFramework;
 
-DevObj::DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval) :
+DevObj::DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval_usecs) :
 	m_name(name),
 	m_dev_base_path(dev_base_path),
-	m_sample_interval(sample_interval),
+	m_sample_interval_usecs(sample_interval_usecs),
 	m_driver_instance(-1),
 	m_refcount(0)
 {
@@ -50,27 +50,38 @@ DevObj::DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_ty
 	m_id.dev_id_s.devtype = bus_type;
 }
 
-int DevObj::start(void)
+int DevObj::init(void)
 {
 	if (m_driver_instance < 0) {
 		int ret = DevMgr::registerDriver(this);
 		if (ret < 0) {
-			return ret;
+			return -1;
 		}
 		m_driver_instance = ret;
 	}
-	if (m_sample_interval && !m_work_handle) {
-		m_work_handle = WorkMgr::create(measure, this, m_sample_interval);
-		WorkMgr::schedule(m_work_handle);
+	return 0;
+}
+
+int DevObj::start(void)
+{
+	if (m_driver_instance < 0) {
+		return -1;
+	}
+	if (m_sample_interval_usecs && !m_work_handle.isValid()) {
+		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
+		if (m_work_handle.isValid()) {
+			WorkMgr::schedule(m_work_handle);
+		}
+		else {
+			return -2;
+		}
 	}
 	return 0;
 }
 
 int DevObj::stop(void) {
-	if (m_work_handle) {
-		WorkMgr::destroy(m_work_handle);
-		m_work_handle=0;
-		DevMgr::unregisterDriver(this);
+	if (m_work_handle.isValid()) {
+		WorkMgr::releaseWorkHandle(m_work_handle);
 	}
 	return 0;
 }
@@ -108,7 +119,7 @@ ssize_t DevObj::devWrite(void *buf, size_t count)
 	return -1;
 }
 
-void DevObj::measure(void *arg, const WorkHandle wh)
+void DevObj::measure(void *arg, WorkHandle &wh)
 {
 	// Reschedule callback
 	WorkMgr::schedule(wh);
@@ -132,17 +143,21 @@ int DevObj::addHandle(DevHandle &h)
 // Return -1 on failure, otherwise recount
 int DevObj::removeHandle(DevHandle &h)
 {
+	int ret = 0;
 	std::list<DevHandle *>::iterator it = m_handles.begin();
 	while (it != m_handles.end()) {
 		if (*it == &h) {
 			it = m_handles.erase(it);
 			if (it == m_handles.end()) {
-				stop();
+				ret = stop();
+				if (ret != 0) {
+					ret = -1;
+				}
 			}
 		}
 		++it;
 	}
-	return m_handles.size();
+	return (ret == 0) ? m_handles.size() : ret;
 }
 
 void DevObj::updateNotify()
@@ -150,13 +165,13 @@ void DevObj::updateNotify()
 	DevMgr::updateNotify(*this);
 }
 
-void DevObj::setSampleInterval(unsigned int sample_interval)
+void DevObj::setSampleInterval(unsigned int sample_interval_usecs)
 {
-	if (m_sample_interval != sample_interval) {
-		WorkMgr::destroy(m_work_handle);
-		m_sample_interval = sample_interval;
-		m_work_handle = WorkMgr::create(measure, this, m_sample_interval);
-		if (m_sample_interval != 0 && m_driver_instance >= 0) {
+	if (m_sample_interval_usecs != sample_interval_usecs) {
+		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
+
+		// If running, then reschedule
+		if (m_sample_interval_usecs != 0 && m_driver_instance >= 0) {
 			WorkMgr::schedule(m_work_handle);
 		}
 	}

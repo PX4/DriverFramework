@@ -33,86 +33,47 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <stdint.h>
-#include <time.h>
-#include <list>
 
 #pragma once
 
-#define NO_VERIFY 1 // Use fast method to get Driver Obj by Handle
-
 namespace DriverFramework {
 
-// Forward class declarations
-class DevMgr;
-class DevObj;
-
-class DevHandle : public HandleObj
+class DisableCopy
 {
 public:
-	DevHandle() {}
-
-	virtual ~DevHandle();
-
-	int ioctl(unsigned long cmd, void *arg);
-	ssize_t read(void *buf, size_t len);
-	ssize_t write(void *buf, size_t len);
+	DisableCopy() {}
+	virtual ~DisableCopy() {}
 
 private:
-	friend DevMgr;
+	DisableCopy(const DisableCopy&);
+	DisableCopy& operator=(const DisableCopy&);
 };
 
-typedef std::list<DevHandle *> UpdateList;
+class WorkMgr;
+class DevMgr;
 
-
-
-// DevMgr Is initalized by DriverFramework::initialize()
-class DevMgr
-{    
+class HandleObj : public DisableCopy
+{
 public:
+	HandleObj() {}
 
-	static int registerDriver(DevObj *obj);
-	static void unregisterDriver(DevObj *obj);
+	virtual ~HandleObj() {}
 
-	static DevObj *getDevObjByName(const char *name, unsigned int instance);
-	static DevObj *getDevObjByID(union DeviceId id);
-
-	template <typename T>
-	static T *getDevObjByHandle(DevHandle &handle)
+	bool isValid()
 	{
-		if (!m_initialized || handle.m_handle == nullptr) {
-			return nullptr;
-		}
-
-#ifdef NO_VERIFY
-		return reinterpret_cast<T *>(handle.m_handle);
-#else
-		return dynamic_cast<T *>(_getDevObjByHandle(handle));
-#endif
+		return m_handle != nullptr;
 	}
 
-	static void getHandle(const char *dev_path, DevHandle &handle);
-	static void releaseHandle(DevHandle &handle);
+	int getError()
+	{
+		return m_errno;
+	}
 
-	// Called by DevObj to notify threads waiting on an update
-	static void updateNotify(DevObj &obj);
+protected:
+	friend WorkMgr;
+	friend DevMgr;
 
-	// Similar to poll
-	static int waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms);
-
-	static void setDevHandleError(DevHandle &h, int error);
-private:
-	friend Framework;
-
-	static DevObj *_getDevObjByHandle(DevHandle &handle);
-
-	DevMgr();
-	~DevMgr();
-
-	static int initialize(void);
-	static void finalize(void);
-
-	static bool m_initialized;
+	void *	m_handle = nullptr;
+	int 	m_errno = 0;
 };
-
 };

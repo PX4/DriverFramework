@@ -49,7 +49,6 @@ This will block until DriverFramework::shutdown() is called from another thread;
 When the driver is initialized, it will register with the framework and provide an instance
 the base class path. 
 
-
 For instance, if the driver was created with:
 
 ```
@@ -88,9 +87,14 @@ void run()
 
 ```
 
-This would create a virtual /dev/gyro0 node that was acquired using:
+The init() call would create a virtual /dev/gyro0 node. A second driver also regsitering with
+GYRO_BASE_PATH would create a virtual /dev/gyro1 node.
+
+A handle to the device can be acquired using:
 
 ```
+myGyro.init();
+...
 DevMgr::getHandle("/dev/gyro0", h);
 ```
 

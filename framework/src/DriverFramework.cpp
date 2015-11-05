@@ -40,6 +40,7 @@
 #include "DriverFramework.hpp"
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
+#include "SyncObj.hpp"
 
 // Used for backtrace
 #ifdef DF_ENABLE_BACKTRACE
@@ -63,7 +64,7 @@ using namespace DriverFramework;
 class WorkItem
 {
 public:
-	WorkItem(workCallback callback, void *arg, uint32_t delay, WorkHandle handle) : 
+	WorkItem(workCallback callback, void *arg, uint32_t delay, WorkHandle *handle) : 
 		m_arg(arg),
 		m_queue_time(0),
 		m_callback(callback),
@@ -84,7 +85,7 @@ public:
 	uint64_t	m_queue_time;
 	workCallback	m_callback;
 	uint32_t	m_delay;
-	WorkHandle	m_handle;
+	WorkHandle *	m_handle;
 
 	// statistics
 	unsigned long m_last;
@@ -94,7 +95,7 @@ public:
 	unsigned long m_count;
 };
 
-class HRTWorkQueue
+class HRTWorkQueue : public DisableCopy
 {
 public:
 	static HRTWorkQueue *instance(void);
@@ -103,6 +104,7 @@ public:
 	static void finalize(void);
 
 	void scheduleWorkItem(WorkItem *item);
+	void unscheduleWorkItem(WorkItem *item);
 
 	void shutdown(void);
 	void enableStats(bool enable);
@@ -139,7 +141,9 @@ static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
 
-static std::map<WorkHandle, WorkItem> *g_work_items = nullptr;
+static std::map<WorkHandle *, WorkItem> *g_work_items = nullptr;
+
+static SyncObj *g_lock = nullptr;
 
 //-----------------------------------------------------------------------
 // Static Functions
@@ -266,21 +270,23 @@ void Framework::shutdown()
 	pthread_mutex_lock(&g_framework_exit);
 	pthread_cond_signal(&g_framework_cond);
 	pthread_mutex_unlock(&g_framework_exit);
+	delete g_lock;
+	g_lock = nullptr;
 }
 
 int Framework::initialize()
 {
 	int ret = HRTWorkQueue::initialize();
 	if (ret < 0) {
-		return ret;
+		return ret-10;
 	}
 	ret = DevMgr::initialize();
 	if (ret < 0) {
-		return ret-10;
+		return ret-20;
 	}
 	ret = WorkMgr::initialize();
 	if (ret < 0) {
-		return ret-20;
+		return ret-30;
 	}
 	return 0;
 }
@@ -329,7 +335,7 @@ void WorkItem::resetStats()
 
 void WorkItem::dumpStats() 
 {
-	DF_LOG_INFO("Stats for id=%d callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
+	DF_LOG_INFO("Stats for handle=%p callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
 		m_handle, m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
@@ -412,6 +418,19 @@ void HRTWorkQueue::scheduleWorkItem(WorkItem *item)
 	hrtUnlock();
 }
 
+void HRTWorkQueue::unscheduleWorkItem(WorkItem *item)
+{
+	hrtLock();
+	std::list<WorkItem *>::iterator it = m_work.begin();;
+	while (it != m_work.end()) {
+		if (*it == item) {
+			m_work.erase(it);
+			break;
+		}
+	}
+	hrtUnlock();
+}
+
 void HRTWorkQueue::clearAll()
 {
 	hrtLock();
@@ -455,7 +474,7 @@ void HRTWorkQueue::process(void)
 				// while the lock is held
 				dequeuedWork->updateStats(now);
 				hrtUnlock();
-				dequeuedWork->m_callback(dequeuedWork->m_arg, dequeuedWork->m_handle);
+				dequeuedWork->m_callback(dequeuedWork->m_arg, *(dequeuedWork->m_handle));
 				hrtLock();
 
 				work_itr = m_work.erase(work_itr);
@@ -495,50 +514,127 @@ void HRTWorkQueue::hrtUnlock()
 *************************************************************************/
 int WorkMgr::initialize()
 {
-	g_work_items = new std::map<WorkHandle,WorkItem>;
+	if (g_lock) {
+		// Already initialized
+		return 0;
+	}
+	g_lock = new SyncObj();
+	if (g_lock == nullptr) {
+		return -1;
+	}
+	g_work_items = new std::map<WorkHandle*,WorkItem>;
+	if (g_work_items == nullptr) {
+		delete g_lock;
+		g_lock = nullptr;
+		return -2;
+	}
 	return 0;
 }
 
 void WorkMgr::finalize()
 {
-	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
+	if (g_lock) {
+		return;
+	}
+
+	g_lock->lock();
+	std::map<WorkHandle*,WorkItem>::iterator it = g_work_items->begin();
 	while(it != g_work_items->end())
 	{
+		HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
+
 		// Remove the element from the map
 		g_work_items->erase(it);
 		it = g_work_items->begin();
 	}
 	delete g_work_items;
 	g_work_items = nullptr;
+	g_lock->unlock();
+	delete g_lock;
+	g_lock = nullptr;
 }
 
-WorkHandle WorkMgr::create(workCallback cb, void *arg, uint32_t delay)
+void WorkMgr::getWorkHandle(workCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
 {
-	static WorkHandle i=1000;
-	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->begin();
-	++i;
-  	g_work_items->insert (it, std::pair<WorkHandle,WorkItem>(i, WorkItem(cb, arg, delay, i)));
-	return i;
+	if (!g_lock || !g_work_items) {
+		printf("error (%p) (%p)\n", g_lock, g_work_items);
+		wh.m_errno = ESRCH;
+		wh.m_handle = nullptr;
+		return;
+	}
+
+	g_lock->lock();
+
+	std::map<WorkHandle *,WorkItem>::iterator it;
+	// unschedule work and erase the handle if handle exists
+	if (wh.m_handle) {
+		it = g_work_items->find(&wh);
+		if (it != g_work_items->end()) {
+			if (&(it->second) == reinterpret_cast<WorkItem *>(&wh)) {
+				HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
+				g_work_items->erase(it);
+			}
+		}
+	}
+
+	it = g_work_items->begin();
+	g_work_items->insert(it, std::pair<WorkHandle *,WorkItem>(&wh, WorkItem(cb, arg, delay, &wh)));
+
+	// Set handle to the address of the new WorkItem
+	wh.m_handle = &(it->second);
+
+	g_lock->unlock();
+	wh.m_errno = 0;
 }
 
-void WorkMgr::destroy(WorkHandle &handle)
+void WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
-	// remove from map, then from work queue, then delete
-	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->find(handle);
+	if (g_lock == nullptr) {
+		wh.m_errno = ESRCH;
+		wh.m_handle = nullptr;
+		return;
+	}
+	if (wh.m_handle == nullptr) {
+		setError(wh, EBADF);
+		return;
+	}
+
+	g_lock->lock();
+	auto it = g_work_items->find(&wh);
 	if (it != g_work_items->end()) {
+		HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
 		g_work_items->erase(it);
 	}
 	// mark the handle as cleared
-	handle = 0;
+	wh.m_handle = nullptr;
+	g_lock->unlock();
+	wh.m_errno = 0;
 }
 
-bool WorkMgr::schedule(WorkHandle handle)
+void WorkMgr::schedule(WorkHandle &wh)
 {
-	std::map<WorkHandle,WorkItem>::iterator it = g_work_items->find(handle);
+	if (g_lock == nullptr) {
+		wh.m_errno = ESRCH;
+		wh.m_handle = nullptr;
+		return;
+	}
+	if (wh.m_handle == nullptr) {
+		wh.m_errno = EBADF;
+		return;
+	}
+
+	auto it = g_work_items->find(&wh);
 	bool ret = it != g_work_items->end();
 	if (ret) {
 		HRTWorkQueue::instance()->scheduleWorkItem(&(it->second));
 	}
-	return ret;
+	else {
+		wh.m_errno = EBADF;
+		wh.m_handle = nullptr;
+	}
+}
+void WorkMgr::setError(WorkHandle &h, int error)
+{
+	h.m_errno = error;
 }
 
