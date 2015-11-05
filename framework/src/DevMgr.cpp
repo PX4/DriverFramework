@@ -241,23 +241,23 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 	const std::string name(dev_path);
 	h.m_errno = EBADF;
 
-	//g_lock->lock();
+	g_lock->lock();
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
 
 		// The dev path may be a class instance path or a dev name
 		if ((name == (*it)->m_dev_instance_path) || (name == (*it)->m_dev_path)) {
 			// Device is registered
-			//g_lock->unlock();
+			g_lock->unlock();
 			(*it)->addHandle(h);
-			//g_lock->lock();
+			g_lock->lock();
 			h.m_handle = *it;
 			h.m_errno = 0;
 			break;
 		}
 		++it;
 	}
-	//g_lock->unlock();
+	g_lock->unlock();
 }
 
 void DevMgr::releaseHandle(DevHandle &h)
