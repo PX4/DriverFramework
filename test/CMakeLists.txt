@@ -42,7 +42,6 @@ add_executable(df_testapp
 target_link_libraries(df_testapp
 	df_driver_framework
 	${df_driver_libs}
-	pthread
-	rt
+	${df_link_libs}
 	)
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

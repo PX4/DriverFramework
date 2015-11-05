@@ -43,7 +43,6 @@ target_link_libraries(df_pressure_test
 	df_driver_framework
 	df_pressure
 	df_i2c
-	pthread
-	rt
+	${df_link_libs}
 	)
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
