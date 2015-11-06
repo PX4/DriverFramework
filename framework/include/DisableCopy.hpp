@@ -49,6 +49,7 @@ private:
 	DisableCopy& operator=(const DisableCopy&);
 };
 
+class HRTWorkQueue;
 class WorkMgr;
 class DevMgr;
 
@@ -70,10 +71,34 @@ public:
 	}
 
 protected:
-	friend WorkMgr;
 	friend DevMgr;
 
 	void *	m_handle = nullptr;
+	int 	m_errno = 0;
+};
+
+class IntHandleObj : public DisableCopy
+{
+public:
+	IntHandleObj() {}
+
+	virtual ~IntHandleObj() {}
+
+	bool isValid()
+	{
+		return m_handle != -1;
+	}
+
+	int getError()
+	{
+		return m_errno;
+	}
+
+protected:
+	friend HRTWorkQueue;;
+	friend WorkMgr;
+
+	int	m_handle = -1;
 	int 	m_errno = 0;
 };
 };

@@ -125,11 +125,8 @@ ssize_t DevObj::devWrite(void *buf, size_t count)
 	return -1;
 }
 
-void DevObj::measure(void *arg, WorkHandle &wh)
+void DevObj::measure(void *arg)
 {
-	// Reschedule callback
-	WorkMgr::schedule(wh);
-
 	reinterpret_cast<DevObj *>(arg)->_measure();
 }
 

@@ -19,7 +19,7 @@ public:
 		m_sensor(PRESSURE_DEVICE_PATH)
 	{}
 
-	static void readSensorCallback(void *arg, WorkHandle &wh);
+	static void readSensorCallback(void *arg);
 
 	int run(void);
 
@@ -44,7 +44,7 @@ static void printPressureValues(struct pressure_sensor_data &sensor_data)
 		sensor_data.pressure_in_pa, sensor_data.temperature_in_c);
 }
 
-void PressureTester::readSensorCallback(void *arg, WorkHandle &wh)
+void PressureTester::readSensorCallback(void *arg)
 {
 	PressureTester *me = (PressureTester *)arg;
 	me->readSensor();

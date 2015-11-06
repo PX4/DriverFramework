@@ -35,7 +35,7 @@
 *************************************************************************/
 #include <stdio.h>
 #include <list>
-#include <map>
+#include <vector>
 #include <pthread.h>
 #include <errno.h>
 #include "DriverFramework.hpp"
@@ -59,43 +59,49 @@
 
 #define SHOW_STATS 0
 
-using namespace DriverFramework;
-
+namespace DriverFramework {
 //-----------------------------------------------------------------------
 // Types
 //-----------------------------------------------------------------------
 class WorkItem
 {
 public:
-	WorkItem(workCallback callback, void *arg, uint32_t delay, WorkHandle *handle) : 
-		m_arg(arg),
-		m_queue_time(0),
-		m_callback(callback),
-		m_delay(delay),
-		m_handle(handle)
+	WorkItem()
 	{
 		resetStats();
 	}
 	~WorkItem() {}
 
 	void schedule();
-
 	void updateStats(unsigned int cur_usec);
 	void resetStats();
 	void dumpStats();
 
+	void set(WorkCallback callback, void *arg, uint32_t delay)
+	{
+		m_arg = arg;
+		m_queue_time = 0;
+		m_callback = callback;
+		m_delay =delay;
+		m_in_use = false;
+
+		resetStats();
+	}
+
 	void *		m_arg;
 	uint64_t	m_queue_time;
-	workCallback	m_callback;
+	WorkCallback	m_callback;
 	uint32_t	m_delay;
-	WorkHandle *	m_handle;
+	//WorkHandle 	m_handle;
 
 	// statistics
-	unsigned long m_last;
-	unsigned long m_min;
-	unsigned long m_max;
-	unsigned long m_total;
-	unsigned long m_count;
+	unsigned long 	m_last;
+	unsigned long 	m_min;
+	unsigned long 	m_max;
+	unsigned long 	m_total;
+	unsigned long 	m_count;
+
+	bool		m_in_use = false;
 };
 
 class HRTWorkQueue : public DisableCopy
@@ -106,8 +112,8 @@ public:
 	static int initialize(void);
 	static void finalize(void);
 
-	void scheduleWorkItem(WorkItem *item);
-	void unscheduleWorkItem(WorkItem *item);
+	void scheduleWorkItem(WorkHandle &wh);
+	void unscheduleWorkItem(WorkHandle &wh);
 
 	void shutdown(void);
 	void enableStats(bool enable);
@@ -124,13 +130,17 @@ private:
 	void hrtLock(void);
 	void hrtUnlock(void);
 
-	std::list<WorkItem *>	m_work;
+	std::list<unsigned int>	m_work_list;
 
 	bool m_enable_stats = false;
 	bool m_exit_requested = false;
 
 	static HRTWorkQueue *m_instance;
 };
+
+};
+
+using namespace DriverFramework;
 
 //-----------------------------------------------------------------------
 // Static Variables
@@ -144,13 +154,18 @@ static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
 
-static std::map<WorkHandle *, WorkItem> *g_work_items = nullptr;
+static std::vector<WorkItem> *g_work_items = nullptr;
 
 static SyncObj *g_lock = nullptr;
 
 //-----------------------------------------------------------------------
 // Static Functions
 //-----------------------------------------------------------------------
+
+bool WorkMgr::isValid(const WorkHandle &h)
+{
+	return (g_work_items && (h.m_handle >=0) && (h.m_handle < (*g_work_items).size()));
+}
 
 static uint64_t TSToABSTime(struct timespec *ts)
 {
@@ -254,12 +269,6 @@ void DriverFramework::backtrace()
 *************************************************************************/
 void Framework::shutdown()
 {
-	// Stop the HRT queue thread
-	HRTWorkQueue *wq = HRTWorkQueue::instance();
-	if (wq) {
-		wq->shutdown();
-	}
-
 	// Free the HRTWorkQueue resources
 	HRTWorkQueue::finalize();
 
@@ -338,8 +347,8 @@ void WorkItem::resetStats()
 
 void WorkItem::dumpStats() 
 {
-	DF_LOG_INFO("Stats for handle=%p callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
-		m_handle, m_callback, m_count, m_total/m_count, m_min, m_max);
+	DF_LOG_INFO("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
+		m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
 /*************************************************************************
@@ -401,9 +410,15 @@ int HRTWorkQueue::initialize(void)
 
 void HRTWorkQueue::finalize(void)
 {
-	pthread_join(g_tid, NULL);
+
+	// Stop the HRT queue thread
 	HRTWorkQueue *wq = HRTWorkQueue::instance();
 	if (wq) {
+		wq->shutdown();
+
+		// Wait for work queue thread to exit
+		pthread_join(g_tid, NULL);
+
 		wq->clearAll();
 		pthread_mutex_destroy(&g_hrt_lock);
 
@@ -412,23 +427,31 @@ void HRTWorkQueue::finalize(void)
 	}
 }
 
-void HRTWorkQueue::scheduleWorkItem(WorkItem *item)
+void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 {
+	// Handle is known to be valid
 	hrtLock();
-	m_work.push_back(item);
-	item->m_queue_time = offsetTime();
+	WorkItem &item = (*g_work_items)[wh.m_handle];
+	item.m_queue_time = offsetTime();
+	item.m_in_use = true;
+	m_work_list.push_back(wh.m_handle);
 	pthread_cond_signal(&g_reschedule_cond);
 	hrtUnlock();
 }
 
-void HRTWorkQueue::unscheduleWorkItem(WorkItem *item)
+void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 {
 	hrtLock();
-	std::list<WorkItem *>::iterator it = m_work.begin();;
-	while (it != m_work.end()) {
-		if (*it == item) {
-			m_work.erase(it);
+	std::list<unsigned int>::iterator it = m_work_list.begin();
+	while (it != m_work_list.end()) {
+
+		// remove all unscheduled items
+		if ((*g_work_items)[(*it)].m_in_use == false) {
+			it = m_work_list.erase(it);
 			break;
+		}
+		else {
+			++it;
 		}
 	}
 	hrtUnlock();
@@ -437,7 +460,11 @@ void HRTWorkQueue::unscheduleWorkItem(WorkItem *item)
 void HRTWorkQueue::clearAll()
 {
 	hrtLock();
-	m_work.clear();
+	std::list<unsigned int>::iterator it = m_work_list.begin();
+	while (it != m_work_list.end()) {
+		(*g_work_items)[(*it)].m_in_use = false;
+		it = m_work_list.erase(it);
+	}
 	hrtUnlock();
 }
 
@@ -451,7 +478,7 @@ void HRTWorkQueue::shutdown(void)
 
 void HRTWorkQueue::process(void)
 {
-	std::list<WorkItem *>::iterator work_itr;
+	std::list<unsigned int>::iterator work_itr;
 	uint64_t next;
 	uint64_t elapsed;
 	uint64_t remaining;
@@ -463,35 +490,42 @@ void HRTWorkQueue::process(void)
 
 		// Wake up every 10 sec if nothing scheduled
 		next = 10000000;
-		work_itr = m_work.begin();
+		work_itr = m_work_list.begin();
 
 		now = offsetTime();
-		while (work_itr != m_work.end()) {
+		while ((!m_exit_requested) && (work_itr != m_work_list.end())) {
 			now = offsetTime();
-			elapsed = now - (*work_itr)->m_queue_time;
+			unsigned int index = *work_itr;
+			if (index < (*g_work_items).size()) {
+				WorkItem &item = (*g_work_items)[*work_itr];
+				elapsed = now - item.m_queue_time;
+				//printf("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
 
-			if (elapsed >= (*work_itr)->m_delay) {
-				WorkItem *dequeuedWork = *work_itr;
+				if (elapsed >= item.m_delay) {
 
-				// Mutex is recursive so the WorkItem can be rescheduled
-				// while the lock is held
-				dequeuedWork->updateStats(now);
-				hrtUnlock();
-				dequeuedWork->m_callback(dequeuedWork->m_arg, *(dequeuedWork->m_handle));
-				hrtLock();
+					item.updateStats(now);
 
-				work_itr = m_work.erase(work_itr);
-			} else {
-				remaining = (*work_itr)->m_delay - elapsed;
-				if (remaining < next) {
-					next = remaining;
+					// reschedule work
+					item.m_queue_time = offsetTime();
+					item.m_in_use = true;
+
+					hrtUnlock();
+					item.m_callback(item.m_arg);
+					hrtLock();
+
+					// Start again from the top to ge rescheduled work
+					work_itr = m_work_list.begin();
+				} else {
+					remaining = item.m_delay - elapsed;
+					if (remaining < next) {
+						next = remaining;
+					}
+
+					// try the next in the list
+					++work_itr;
 				}
-
-				// try the next in the list
-				++work_itr;
 			}
 		}
-
 
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now+next);
@@ -525,7 +559,7 @@ int WorkMgr::initialize()
 	if (g_lock == nullptr) {
 		return -1;
 	}
-	g_work_items = new std::map<WorkHandle*,WorkItem>;
+	g_work_items = new std::vector<WorkItem>(10);
 	if (g_work_items == nullptr) {
 		delete g_lock;
 		g_lock = nullptr;
@@ -536,20 +570,22 @@ int WorkMgr::initialize()
 
 void WorkMgr::finalize()
 {
-	if (g_lock) {
+	if (!g_lock) {
 		return;
 	}
 
 	g_lock->lock();
-	std::map<WorkHandle*,WorkItem>::iterator it = g_work_items->begin();
+	std::vector<WorkItem>::iterator it = g_work_items->begin();
 	while(it != g_work_items->end())
 	{
-		HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
-
-		// Remove the element from the map
-		g_work_items->erase(it);
-		it = g_work_items->begin();
+		//verify not in use
+		if (it->m_in_use) {
+			DF_LOG_ERR("ERROR: no work items should be in use");
+		}
+		++it;
 	}
+	
+	g_work_items->clear();
 	delete g_work_items;
 	g_work_items = nullptr;
 	g_lock->unlock();
@@ -557,86 +593,122 @@ void WorkMgr::finalize()
 	g_lock = nullptr;
 }
 
-void WorkMgr::getWorkHandle(workCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
+void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
 {
 	if (!g_lock || !g_work_items) {
 		wh.m_errno = ESRCH;
-		wh.m_handle = nullptr;
+		wh.m_handle = -1;
 		return;
 	}
 
 	g_lock->lock();
 
-	std::map<WorkHandle *,WorkItem>::iterator it;
 	// unschedule work and erase the handle if handle exists
-	if (wh.m_handle) {
-		it = g_work_items->find(&wh);
-		if (it != g_work_items->end()) {
-			if (&(it->second) == reinterpret_cast<WorkItem *>(&wh)) {
-				HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
-				g_work_items->erase(it);
+	if (isValid(wh) && (*g_work_items)[wh.m_handle].m_in_use) {
+		HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+	}
+	else if (!isValid(wh)) {
+
+		// find an available WorkItem
+		unsigned int i=0;
+		for(; i<g_work_items->size(); ++i) {
+			if (!(*g_work_items)[i].m_in_use) {
+				wh.m_handle = i;
+				break;
 			}
+		}
+
+		if (!isValid(wh)) {
+			DF_LOG_ERR("warning - no WorkItems available, adding a work item\n");
+			WorkItem wi;
+			i = (*g_work_items).size();
+			(*g_work_items).resize(i+1, wi);
+			wh.m_handle = (int)i;
 		}
 	}
 
-	it = g_work_items->begin();
-	g_work_items->insert(it, std::pair<WorkHandle *,WorkItem>(&wh, WorkItem(cb, arg, delay, &wh)));
+	if (isValid(wh)) {
+	
+		// Re-use the WorkItem
+		WorkItem &item = (*g_work_items)[wh.m_handle];
 
-	// Set handle to the address of the new WorkItem
-	wh.m_handle = &(it->second);
+		item.set(cb, arg, delay);
+	}
 
 	g_lock->unlock();
 	wh.m_errno = 0;
 }
 
-void WorkMgr::releaseWorkHandle(WorkHandle &wh)
+int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
-	if (g_lock == nullptr) {
+	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
 		wh.m_errno = ESRCH;
-		wh.m_handle = nullptr;
-		return;
+		wh.m_handle = -1;
+		return -1;
 	}
-	if (wh.m_handle == nullptr) {
+	if (wh.m_handle == -1) {
 		setError(wh, EBADF);
-		return;
+		return -2;
 	}
 
+	int ret = 0;
 	g_lock->lock();
-	auto it = g_work_items->find(&wh);
-	if (it != g_work_items->end()) {
-		HRTWorkQueue::instance()->unscheduleWorkItem(&(it->second));
-		g_work_items->erase(it);
+	if (isValid(wh)) {
+		if ((*g_work_items)[wh.m_handle].m_in_use) {
+			(*g_work_items)[wh.m_handle].m_in_use = false;
+			HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+			wh.m_handle = -1;
+		}
+		wh.m_errno = 0;
 	}
-	// mark the handle as cleared
-	wh.m_handle = nullptr;
+	else {
+		setError(wh, EBADF);
+		ret = -1;
+	}
+	
 	g_lock->unlock();
-	wh.m_errno = 0;
+	return ret;
 }
 
-void WorkMgr::schedule(WorkHandle &wh)
+int WorkMgr::schedule(WorkHandle &wh)
 {
-	if (g_lock == nullptr) {
+	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
 		wh.m_errno = ESRCH;
-		wh.m_handle = nullptr;
-		return;
+		return -1;
 	}
-	if (wh.m_handle == nullptr) {
+	if (wh.m_handle == -1) {
 		wh.m_errno = EBADF;
-		return;
+		return -2;
 	}
 
-	auto it = g_work_items->find(&wh);
-	bool ret = it != g_work_items->end();
-	if (ret) {
-		HRTWorkQueue::instance()->scheduleWorkItem(&(it->second));
+	int ret = 0;
+	g_lock->lock();
+	if (isValid(wh)) {
+		if ((*g_work_items)[wh.m_handle].m_in_use) {
+			DF_LOG_ERR("can't schedule a handle that's in use");
+			wh.m_errno = EBUSY;
+			ret = -3;
+		}
+		else {
+			HRTWorkQueue::instance()->scheduleWorkItem(wh);
+		}
 	}
 	else {
 		wh.m_errno = EBADF;
-		wh.m_handle = nullptr;
+		wh.m_handle = -1;
+		ret = -4;
 	}
+	g_lock->unlock();
+	wh.m_errno = 0;
+	return ret;
 }
 void WorkMgr::setError(WorkHandle &h, int error)
 {
 	h.m_errno = error;
 }
 
+
+WorkHandle::~WorkHandle()
+{
+	WorkMgr::releaseWorkHandle(*this);
+}

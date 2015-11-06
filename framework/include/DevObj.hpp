@@ -130,7 +130,7 @@ private:
 
 	friend DevMgr;
 
-	static void measure(void *arg, WorkHandle &wh);
+	static void measure(void *arg);
 
 	// Disallow copy
 	DevObj(const DevObj&);

@@ -53,16 +53,16 @@
 namespace DriverFramework {
 
 // Types
-class WorkHandle : public HandleObj
+class WorkHandle : public IntHandleObj
 {
 public:
 	WorkHandle() {}
-	virtual ~WorkHandle() {}
 
+	virtual ~WorkHandle();
 	friend WorkMgr;
 };
 
-typedef void (*workCallback)(void *arg, WorkHandle &wh);
+typedef void (*WorkCallback)(void *arg);
 
 // Get the offset time from startup
 uint64_t offsetTime(void);
@@ -106,14 +106,15 @@ class WorkMgr
 {
 public:
 	// Interface functions
-	static void getWorkHandle(workCallback cb, void *arg, uint32_t delay, WorkHandle& handle);
-	static void releaseWorkHandle(WorkHandle &handle);
-	static void schedule(WorkHandle &handle);
+	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle& handle);
+	static int releaseWorkHandle(WorkHandle &handle);
+	static int schedule(WorkHandle &handle);
 	static void setError(WorkHandle &h, int error);
 
 private:
 	friend class Framework;
 
+	static bool isValid(const WorkHandle &h);
 	static int initialize(void);
 	static void finalize(void);
 };
