@@ -35,6 +35,7 @@
 *************************************************************************/
 #include <stdint.h>
 #include <time.h>
+#include "DisableCopy.hpp"
 
 #pragma once
 
@@ -52,8 +53,16 @@
 namespace DriverFramework {
 
 // Types
-typedef uint32_t WorkHandle;
-typedef void (*workCallback)(void *arg, WorkHandle wh);
+class WorkHandle : public IntHandleObj
+{
+public:
+	WorkHandle() {}
+
+	virtual ~WorkHandle();
+	friend WorkMgr;
+};
+
+typedef void (*WorkCallback)(void *arg);
 
 // Get the offset time from startup
 uint64_t offsetTime(void);
@@ -97,13 +106,15 @@ class WorkMgr
 {
 public:
 	// Interface functions
-	static WorkHandle create(workCallback cb, void *arg, uint32_t delay);
-	static void destroy(WorkHandle &handle);
-	static bool schedule(WorkHandle handle);
+	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle& handle);
+	static int releaseWorkHandle(WorkHandle &handle);
+	static int schedule(WorkHandle &handle);
+	static void setError(WorkHandle &h, int error);
 
 private:
 	friend class Framework;
 
+	static bool isValid(const WorkHandle &h);
 	static int initialize(void);
 	static void finalize(void);
 };

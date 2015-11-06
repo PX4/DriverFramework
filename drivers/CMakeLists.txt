@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-FILE(GLOB drivers RELATIVE ./ ./*)
+set(drivers i2c pressure)
 
 set(df_driver_libs)
 

@@ -37,6 +37,8 @@
 #include <string>
 #include "DriverFramework.hpp"
 #include "DevMgr.hpp"
+#include "SyncObj.hpp"
+#include "DisableCopy.hpp"
 
 #pragma once
 
@@ -71,16 +73,18 @@ union DeviceId {
 	uint32_t dev_id;
 };
 
-class DevObj
+class DevObj : public DisableCopy
 {
 public:
-	DevObj(const char *name, const char *dev_base_path, DeviceBusType bus_type, unsigned int sample_interval);
+	DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type, unsigned int sample_interval_usec);
+
+	virtual int init();
 
 	virtual int start(void);
 
 	virtual int stop(void);
 
-	void setSampleInterval(unsigned int sample_interval);
+	void setSampleInterval(unsigned int sample_interval_usecs);
 
 	virtual ~DevObj();
 
@@ -108,14 +112,17 @@ public:
 	void updateNotify();
 
 	const std::string 	m_name;
-	const std::string 	m_dev_base_path;
+	const std::string 	m_dev_path;
+	const std::string 	m_dev_class_path;
 	std::string 		m_dev_instance_path;
-	unsigned int 		m_sample_interval;
+	unsigned int 		m_sample_interval_usecs;
 	union DeviceId		m_id;
 
-	virtual void _measure() = 0;
+	// _measure() is the periodic callback that is called every 
+	// m_sample_interval_usecs
+	virtual void _measure() = 0; // periodic callback 
 
-	WorkHandle 	m_work_handle	= 0;
+	WorkHandle 	m_work_handle;
 
 private:
 	int addHandle(DevHandle &h);
@@ -123,13 +130,14 @@ private:
 
 	friend DevMgr;
 
-	static void measure(void *arg, const WorkHandle wh);
+	static void measure(void *arg);
 
 	// Disallow copy
 	DevObj(const DevObj&);
 
 	int 			m_driver_instance;	// m_driver_instance = -1 when unregistered
 	std::list<DevHandle *>	m_handles;
+	SyncObj			m_handle_lock;
 	unsigned 		m_refcount;
 };
 

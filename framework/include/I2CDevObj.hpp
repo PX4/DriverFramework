@@ -37,6 +37,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include "DevObj.hpp"
 
 #pragma once
@@ -55,8 +56,8 @@ public:
 class I2CDevObj : public DevObj
 {
 public:
-	I2CDevObj(const char *name, const char *dev_base_path, unsigned int sample_interval) :
-		DevObj(name, dev_base_path, DeviceBusType_I2C, sample_interval)
+	I2CDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
+		DevObj(name, dev_path, dev_class_path, DeviceBusType_I2C, sample_interval_usec)
 	{}
 
 	virtual ~I2CDevObj() {}

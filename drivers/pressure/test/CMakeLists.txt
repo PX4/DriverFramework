@@ -40,10 +40,9 @@ add_executable(df_pressure_test
 	)
 
 target_link_libraries(df_pressure_test
-	-Wl,--start-group
 	df_driver_framework
-	${df_driver_libraries}
-	pthread
-	-Wl,--end-group
+	df_pressure
+	df_i2c
+	${df_link_libs}
 	)
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

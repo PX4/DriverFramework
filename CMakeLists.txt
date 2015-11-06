@@ -39,15 +39,24 @@ set(version_patch 0)
 set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
-# Do not hardcode a compiler version,
-# as it breaks everywhere
-#set(CMAKE_C_COMPILER /usr/bin/clang-3.6)
-#set(CMAKE_CXX_COMPILER /usr/bin/clang++-3.6)
+if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
+# Used for unit testing
+set(CMAKE_C_COMPILER /usr/bin/clang)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 
-SET(DF_CXX_FLAGS "-std=c++11 -Wall -g" CACHE STRING
-    "DF_CXX_FLAGS")
+set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
+else()
+set(DF_CXX_FLAGS "-std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
+endif()
+
 # Enable this directory's flags:
-SET(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS}")
+
+set(df_link_libs pthread CACHE STRING
+	"DF_LINK_LIBS")
+if (NOT APPLE)
+	list(APPEND df_link_libs rt)
+endif()
 
 include_directories(
 	framework/include
