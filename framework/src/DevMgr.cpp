@@ -47,7 +47,7 @@
 
 using namespace DriverFramework;
 
-SyncObj *g_lock = nullptr;
+static SyncObj *g_lock = nullptr;
 
 bool DevMgr::m_initialized = false;
 
@@ -279,8 +279,8 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 {
 	WaitList wl(in_set, out_set);
 
-	wl.m_lock.lock();
-	g_lock->lock();
+	g_lock->lock();	  // HERE
+	wl.m_lock.lock(); // HERE
 	g_wait_list->push_front(&wl);
 	g_lock->unlock();
 
@@ -304,7 +304,7 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 
 void  DevMgr::updateNotify(DevObj &obj)
 {
-	g_lock->lock();
+	g_lock->lock(); // HERE
 	std::list<WaitList *>::iterator it =  g_wait_list->begin();
 	for (; it != g_wait_list->end(); ++it) {
 
@@ -319,7 +319,7 @@ void  DevMgr::updateNotify(DevObj &obj)
 			}
 		}
 		if ((*it)->m_out_set.size() > 0) {
-			(*it)->m_lock.lock();
+			(*it)->m_lock.lock(); // HERE
 			(*it)->m_lock.signal();
 			(*it)->m_lock.unlock();
 		}

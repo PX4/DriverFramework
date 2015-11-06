@@ -164,7 +164,7 @@ static SyncObj *g_lock = nullptr;
 
 bool WorkMgr::isValid(const WorkHandle &h)
 {
-	return (g_work_items && (h.m_handle >=0) && (h.m_handle < (*g_work_items).size()));
+	return (g_work_items && (h.m_handle >=0) && ((unsigned int)h.m_handle < (*g_work_items).size()));
 }
 
 static uint64_t TSToABSTime(struct timespec *ts)
