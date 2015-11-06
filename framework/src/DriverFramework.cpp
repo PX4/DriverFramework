@@ -347,7 +347,7 @@ void WorkItem::resetStats()
 
 void WorkItem::dumpStats() 
 {
-	DF_LOG_INFO("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu\n", 
+	DF_LOG_INFO("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu", 
 		m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
@@ -486,7 +486,7 @@ void HRTWorkQueue::process(void)
 	uint64_t now;
 
 	while(!m_exit_requested) {
-		printf("In while\n");
+		DF_LOG_INFO("HRTWorkQueue::process In while");
 		hrtLock();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -495,16 +495,17 @@ void HRTWorkQueue::process(void)
 
 		now = offsetTime();
 		while ((!m_exit_requested) && (work_itr != m_work_list.end())) {
-		printf("In while 2\n");
+			DF_LOG_INFO("HRTWorkQueue::process work exists");
 			now = offsetTime();
 			unsigned int index = *work_itr;
 			if (index < (*g_work_items).size()) {
 				WorkItem &item = (*g_work_items)[*work_itr];
 				elapsed = now - item.m_queue_time;
-				//printf("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
+				//DF_LOG_INFO("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
 
 				if (elapsed >= item.m_delay) {
 
+					DF_LOG_INFO("HRTWorkQueue::process do work (%p)", item.m_callback);
 					item.updateStats(now);
 
 					// reschedule work
@@ -532,6 +533,7 @@ void HRTWorkQueue::process(void)
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now+next);
 		
+		DF_LOG_INFO("waiting for work (%lu)", next);
 		// Wait until next expiry or until a new item is rescheduled
 		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();
@@ -674,7 +676,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 
 int WorkMgr::schedule(WorkHandle &wh)
 {
-	printf("schedule\n");
+	DF_LOG_INFO("schedule");
 	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
 		wh.m_errno = ESRCH;
 		return -1;
@@ -684,7 +686,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 		return -2;
 	}
 
-	printf("schedule 2\n");
+	DF_LOG_INFO("schedule 2");
 	int ret = 0;
 	g_lock->lock();
 	if (isValid(wh)) {
@@ -694,7 +696,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 			ret = -3;
 		}
 		else {
-			printf("schedule 3\n");
+			DF_LOG_INFO("schedule 3");
 			HRTWorkQueue::instance()->scheduleWorkItem(wh);
 		}
 	}

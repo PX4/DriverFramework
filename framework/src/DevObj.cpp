@@ -132,6 +132,7 @@ ssize_t DevObj::devWrite(void *buf, size_t count)
 
 void DevObj::measure(void *arg)
 {
+	DF_LOG_INFO("DevObj::measure");
 	reinterpret_cast<DevObj *>(arg)->_measure();
 }
 
@@ -178,6 +179,7 @@ int DevObj::removeHandle(DevHandle &h)
 
 void DevObj::updateNotify()
 {
+	DF_LOG_INFO("DevObj::updateNotify");
 	DevMgr::updateNotify(*this);
 }
 
