@@ -279,12 +279,13 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 {
 	WaitList wl(in_set, out_set);
 
-	g_lock->lock();	  // HERE
-	wl.m_lock.lock(); // HERE
+	g_lock->lock();	  // HERE M7
+	wl.m_lock.lock(); // HERE M11
 	g_wait_list->push_front(&wl);
 	g_lock->unlock();
 
 	int ret = wl.m_lock.waitOnSignal(timeout_ms);
+	wl.m_lock.unlock();
 
 	// Remove the List item
 	g_lock->lock();
@@ -298,13 +299,12 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 	}
 	g_lock->unlock();
 
-	wl.m_lock.unlock();
 	return ret;
 }
 
 void  DevMgr::updateNotify(DevObj &obj)
 {
-	g_lock->lock(); // HERE
+	g_lock->lock(); // HERE M7
 	std::list<WaitList *>::iterator it =  g_wait_list->begin();
 	for (; it != g_wait_list->end(); ++it) {
 
@@ -319,7 +319,7 @@ void  DevMgr::updateNotify(DevObj &obj)
 			}
 		}
 		if ((*it)->m_out_set.size() > 0) {
-			(*it)->m_lock.lock(); // HERE
+			(*it)->m_lock.lock(); // HERE M11
 			(*it)->m_lock.signal();
 			(*it)->m_lock.unlock();
 		}
