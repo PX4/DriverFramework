@@ -48,12 +48,23 @@ using namespace DriverFramework;
 int I2CDevObj::start()
 {
 	m_fd = ::open(m_dev_path.c_str(), O_RDWR);
+	if (m_fd >=0) {
+		DevObj::start();
+	}
 	return (m_fd < 0) ? m_fd : 0;
 }
 
 int I2CDevObj::stop()
 {
-	return  ::close(m_fd);
+	int ret;
+	if (m_fd >=0) {
+		ret = ::close(m_fd);
+		if (ret < 0) {
+			DF_LOG_ERR("Error: I2CDevObj::stop failed on ::close()");
+		}
+	}
+	ret = DevObj::stop();
+	return ret;
 }
 
 int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)

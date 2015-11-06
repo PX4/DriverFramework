@@ -64,7 +64,7 @@ public:
 
 	void setAltimeter(float altimeter_setting_in_mbars);
 
-	int getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required);
+	static int getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required);
 
 protected:
 	virtual void _measure();

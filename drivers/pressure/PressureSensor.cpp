@@ -42,16 +42,21 @@ void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
 	m_altimeter_mbars = altimeter_setting_in_mbars;
 }
 
-int PressureSensor::getSensorData(struct pressure_sensor_data &out_data, bool is_new_data_required)
+int PressureSensor::getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required)
 {
-	m_synchronize.lock();
-	if (is_new_data_required) {
-		m_synchronize.waitOnSignal(0);
+	PressureSensor *me = DevMgr::getDevObjByHandle<PressureSensor>(h);
+	int ret = -1;
+	if (me != nullptr) {
+		me->m_synchronize.lock();
+		if (is_new_data_required) {
+			me->m_synchronize.waitOnSignal(0);
+		}
+		out_data = me->m_sensor_data;
+		me->m_synchronize.unlock();
+		ret = 0;
 	}
-	out_data = m_sensor_data;
-	m_synchronize.unlock();
 
-	return 1;
+	return ret;
 }
 
 uint32_t PressureSensor::getPressure()

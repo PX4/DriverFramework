@@ -486,6 +486,7 @@ void HRTWorkQueue::process(void)
 	uint64_t now;
 
 	while(!m_exit_requested) {
+		printf("In while\n");
 		hrtLock();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -494,6 +495,7 @@ void HRTWorkQueue::process(void)
 
 		now = offsetTime();
 		while ((!m_exit_requested) && (work_itr != m_work_list.end())) {
+		printf("In while 2\n");
 			now = offsetTime();
 			unsigned int index = *work_itr;
 			if (index < (*g_work_items).size()) {
@@ -672,6 +674,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 
 int WorkMgr::schedule(WorkHandle &wh)
 {
+	printf("schedule\n");
 	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
 		wh.m_errno = ESRCH;
 		return -1;
@@ -681,6 +684,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 		return -2;
 	}
 
+	printf("schedule 2\n");
 	int ret = 0;
 	g_lock->lock();
 	if (isValid(wh)) {
@@ -690,6 +694,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 			ret = -3;
 		}
 		else {
+			printf("schedule 3\n");
 			HRTWorkQueue::instance()->scheduleWorkItem(wh);
 		}
 	}
