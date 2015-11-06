@@ -40,13 +40,22 @@ set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
+
 # Used for unit testing
 set(CMAKE_C_COMPILER /usr/bin/clang)
 set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 
 set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
+
+elseif ("$ENV{ENABLE_ASAN}" STREQUAL "1")
+
+# Used for unit testing, works with gcc 4.8 or clang
+set(DF_CXX_FLAGS "-O1 -g -fsanitize=address -fno-omit-frame-pointer -std=c++11 -Wall" CACHE STRING "DF_CXX_FLAGS")
+
 else()
+
 set(DF_CXX_FLAGS "-std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
+
 endif()
 
 # Enable this directory's flags:
