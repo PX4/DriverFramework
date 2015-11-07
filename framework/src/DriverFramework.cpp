@@ -178,6 +178,8 @@ static uint64_t TSToABSTime(struct timespec *ts)
 }
 
 #if defined(__APPLE__) && defined(__MACH__)
+#include <time.h>
+#include <sys/time.h>
 #define CLOCK_REALTIME 0
 static int clock_gettime(int clk_id, struct timespec* t)
 {
