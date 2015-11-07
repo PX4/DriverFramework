@@ -47,8 +47,8 @@
 //-----------------------------------------------------------------------
 
 // Substitute logging implemntation here
-#define DF_LOG_INFO(FMT, ...) printf(FMT "\n", ##__VA_ARGS__)
-#define DF_LOG_ERR(FMT, ...)  printf(FMT "\n", ##__VA_ARGS__)
+#define DF_LOG_INFO(FMT, ...) printf("%lu " FMT "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...) printf("%lu " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
 namespace DriverFramework {
 
