@@ -9,15 +9,15 @@ using namespace DriverFramework;
 
 static void printMessages(TestMessage *message, unsigned int count)
 {
-	printf("Read %d messages\n", count);
+	DF_LOG_INFO("Read %d messages", count);
 	for (unsigned i = 0; i < count; i++) {
-		printf("message %d: %d\n", i, message[i].val);
+		DF_LOG_INFO("message %d: %d", i, message[i].val);
 	}
 }
 
 void showResult(int result, bool expected_pass)
 {
-	printf("test %s (%d)\n", (((result != 0) && !expected_pass) || ((result == 0) && expected_pass)) ? "PASSED" : "FAILED", result);
+	DF_LOG_INFO("test %s (%d)", (((result != 0) && !expected_pass) || ((result == 0) && expected_pass)) ? "PASSED" : "FAILED", result);
 }
 
 static void test_read(DevHandle &h1, DevHandle &h2, unsigned int timeout_ms, bool expected_pass)
@@ -37,7 +37,7 @@ static void test_read(DevHandle &h1, DevHandle &h2, unsigned int timeout_ms, boo
 		}
 	}
 	else {
-		printf("timed out %d\n", result);
+		DF_LOG_INFO("timed out: %s (ret: %d)", strerror(result), result);
 	}
 	showResult(result, expected_pass);
 }
@@ -46,7 +46,7 @@ int main()
 {
 	int ret = Framework::initialize();
 	if (ret < 0) {
-		printf("Framework::initialize() failed\n");
+		DF_LOG_INFO("Framework::initialize() failed");
 		return ret;
 	}
 
@@ -55,14 +55,14 @@ int main()
 	// Register the driver
 	ret = test.init();
 	if (ret < 0) {
-		printf("init() failed (%d))\n", ret);
+		DF_LOG_INFO("init() failed (%d))", ret);
 		return ret;
 	}
 
 	// Start the driver
 	ret = test.start();
 	if (ret < 0) {
-		printf("start() failed (%d)\n", ret);
+		DF_LOG_INFO("start() failed (%d)", ret);
 		return ret;
 	}
 
@@ -73,16 +73,16 @@ int main()
 	DevMgr::getHandle(devname.c_str(), h);
 
 	if (!h.isValid()) {
-		printf("Failed to open %s (%d)\n", devname.c_str(), h.getError());
+		DF_LOG_INFO("Failed to open %s (%d)", devname.c_str(), h.getError());
 	}
 	else {
 		TestMessage message[5];
 
-		printf("TEST 1: readMessages\n");
+		DF_LOG_INFO("TEST 1: readMessages");
 		int count = TestDriver::readMessages(h, message, 5);
 		int ret = 0;
 		if (count < 0) {
-			printf("Failed to readMessages from TestDriver (%d)\n", h.getError());
+			DF_LOG_INFO("Failed to readMessages from TestDriver (%d)", h.getError());
 			ret = 1;
 		}
 		else {
@@ -92,12 +92,12 @@ int main()
 
 		sleep(1);
 
-		printf("TEST 2: read\n");
+		DF_LOG_INFO("TEST 2: read");
 		ret = 0;
 		int len = h.read(&message, sizeof(message));
-		printf("Read %d bytes (message = %zu bytes)\n", len, sizeof(message[0]));
+		DF_LOG_INFO("Read %d bytes (message = %zu bytes)", len, sizeof(message[0]));
 		if (len <= 0) { 
-			printf("Failed to read from adcsim (%d)\n", h.getError());
+			DF_LOG_INFO("Failed to read from adcsim (%d)", h.getError());
 			ret = 1;
 		}
 		else {
@@ -105,46 +105,46 @@ int main()
 		}
 		showResult(ret, true);
 
-		printf("TEST 3: ioctl\n");
+		DF_LOG_INFO("TEST 3: ioctl");
 		ret = 0;
 		int result;
 		if (h.ioctl(TEST_IOCTL_CMD, &result) < 0 || result != TEST_IOCTL_RESULT) {
-			printf("ioctl failed (%d)\n", h.getError());
+			DF_LOG_INFO("ioctl failed (%d)", h.getError());
 			ret = 1;
 		}
 		else {
-			printf("ioctl TEST_IOCTL_RESULT received\n");
+			DF_LOG_INFO("ioctl TEST_IOCTL_RESULT received");
 		}
 		showResult(ret, true);
 
-		printf("TEST 4: Polling blocking read\n");
+		DF_LOG_INFO("TEST 4: Polling blocking read");
 		ret = 0;
 		DevHandle h2;
 		DevMgr::getHandle(TEST_DRIVER_PATH, h2);
 		if (!h2.isValid()) {
-			printf("Failed to open %s (%d)\n", TEST_DRIVER_PATH, h2.getError());
+			DF_LOG_INFO("Failed to open %s (%d)", TEST_DRIVER_PATH, h2.getError());
 		}
 		test_read(h, h2, 0, true);
 
-		printf("TEST 5: Polling timeout\n");
-		printf("Stopping driver and waiting for timeout\n");
+		DF_LOG_INFO("TEST 5: Polling timeout");
+		DF_LOG_INFO("Stopping driver and waiting for timeout");
 		test.stop();
 		// wait for scheduled work to expire
-		printf("reading\n");
+		DF_LOG_INFO("reading");
 		test_read(h, h2, 1000, false);
 
-		printf("TEST 6: Read after setSampleInterval\n");
+		DF_LOG_INFO("TEST 6: Read after setSampleInterval");
 		test.setSampleInterval(100000);
-		printf("start\n");
+		DF_LOG_INFO("start");
 		test.start();
-		printf("reading\n");
+		DF_LOG_INFO("reading");
 		test_read(h, h2, 1000, true);
 
 	}
-	printf("tests done\n");
+	DF_LOG_INFO("tests done");
 	test.stop();
 
-	printf("shutdown\n");
+	DF_LOG_INFO("shutdown");
 	Framework::shutdown();
 
 	return 0;
