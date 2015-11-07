@@ -37,7 +37,7 @@ static void test_read(DevHandle &h1, DevHandle &h2, unsigned int timeout_ms, boo
 		}
 	}
 	else {
-		printf("timed out %d\n", result);
+		printf("timed out: %s (ret: %d)\n", strerror(result), result);
 	}
 	showResult(result, expected_pass);
 }
