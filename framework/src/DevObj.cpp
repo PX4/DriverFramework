@@ -53,7 +53,7 @@ DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_pat
 
 int DevObj::init(void)
 {
-	DF_LOG_INFO("DevObj::init");
+	DF_LOG_DEBUG("DevObj::init");
 	if (m_driver_instance < 0) {
 		int ret = DevMgr::registerDriver(this);
 		if (ret < 0) {
@@ -66,15 +66,15 @@ int DevObj::init(void)
 
 int DevObj::start(void)
 {
-	DF_LOG_INFO("DevObj::start");
+	DF_LOG_DEBUG("DevObj::start");
 	if (m_driver_instance < 0) {
 		return -1;
 	}
-	DF_LOG_INFO("DevObj::start 2");
+	DF_LOG_DEBUG("DevObj::start - instance exists");
 	if (m_sample_interval_usecs && !m_work_handle.isValid()) {
 		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
 		if (m_work_handle.isValid()) {
-			DF_LOG_INFO("DevObj::start schedule");
+			DF_LOG_DEBUG("DevObj::start schedule");
 			WorkMgr::schedule(m_work_handle);
 		}
 		else {
@@ -85,7 +85,7 @@ int DevObj::start(void)
 }
 
 int DevObj::stop(void) {
-	DF_LOG_INFO("DevObj::stop");
+	DF_LOG_DEBUG("DevObj::stop");
 	if (m_work_handle.isValid()) {
 		WorkMgr::releaseWorkHandle(m_work_handle);
 	}
@@ -132,32 +132,32 @@ ssize_t DevObj::devWrite(void *buf, size_t count)
 
 void DevObj::measure(void *arg)
 {
-	DF_LOG_INFO("DevObj::measure");
+	DF_LOG_DEBUG("DevObj::measure");
 	reinterpret_cast<DevObj *>(arg)->_measure();
 }
 
 // Return -1 on failure, otherwise recount
 int DevObj::addHandle(DevHandle &h)
 {
-	DF_LOG_INFO("DevObj::addHandle (%p)", &h);
+	DF_LOG_DEBUG("DevObj::addHandle (%p)", &h);
 	int ret = 0;
 	m_handle_lock.lock();
 	if (m_handles.size() == 0) {
 		ret = start();
 		if (ret < 0) {
-			DF_LOG_INFO("DevObj::addHandle start failed (%p)", &h);
+			DF_LOG_DEBUG("DevObj::addHandle start failed (%p)", &h);
 		}
 	}
 	m_handles.push_back(&h);
 	m_handle_lock.unlock();
-	DF_LOG_INFO("DevObj::addHandle end (%p)", &h);
+	DF_LOG_DEBUG("DevObj::addHandle end (%p)", &h);
 	return (ret < 0) ? -1 : m_handles.size();
 }
 
 // Return -1 on failure, otherwise recount
 int DevObj::removeHandle(DevHandle &h)
 {
-	DF_LOG_INFO("DevObj::removeHandle (%p)", &h);
+	DF_LOG_DEBUG("DevObj::removeHandle (%p)", &h);
 	int ret = 0;
 	m_handle_lock.lock();
 	std::list<DevHandle *>::iterator it = m_handles.begin();
@@ -179,7 +179,7 @@ int DevObj::removeHandle(DevHandle &h)
 
 void DevObj::updateNotify()
 {
-	DF_LOG_INFO("DevObj::updateNotify");
+	DF_LOG_DEBUG("DevObj::updateNotify");
 	DevMgr::updateNotify(*this);
 }
 

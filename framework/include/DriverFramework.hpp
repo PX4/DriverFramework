@@ -53,6 +53,13 @@
 #define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
 #define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
+#define DF_DEBUG 0
+#if DF_DEBUG
+#define DF_LOG_DEBUG(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
+#else
+#define DF_LOG_DEBUG(FMT, ...)  
+#endif
+
 namespace DriverFramework {
 
 // Types

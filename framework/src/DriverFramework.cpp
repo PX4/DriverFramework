@@ -254,10 +254,10 @@ void DriverFramework::backtrace()
 	bt_size = ::backtrace(buffer, 10);
 	callstack = ::backtrace_symbols(buffer, bt_size);
 
-	DF_LOG_INFO("Backtrace: %d", bt_size);
+	DF_LOG_DEBUG("Backtrace: %d", bt_size);
 
 	for (idx = 0; idx < bt_size; idx++) {
-		DF_LOG_INFO("%s", callstack[idx]);
+		DF_LOG_DEBUG("%s", callstack[idx]);
 	}
 
 	free(callstack);
@@ -350,7 +350,7 @@ void WorkItem::resetStats()
 
 void WorkItem::dumpStats() 
 {
-	DF_LOG_INFO("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu", 
+	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu", 
 		m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
@@ -388,6 +388,7 @@ static int setRealtimeSched(pthread_attr_t &attr)
 
 int HRTWorkQueue::initialize(void)
 {
+	DF_LOG_DEBUG("HRTWorkQueue::initialize");
 	m_instance = new HRTWorkQueue();
 
 	if (m_instance == nullptr) {
@@ -413,6 +414,7 @@ int HRTWorkQueue::initialize(void)
 
 void HRTWorkQueue::finalize(void)
 {
+	DF_LOG_DEBUG("HRTWorkQueue::finalize");
 
 	// Stop the HRT queue thread
 	HRTWorkQueue *wq = HRTWorkQueue::instance();
@@ -432,6 +434,7 @@ void HRTWorkQueue::finalize(void)
 
 void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 {
+	DF_LOG_DEBUG("HRTWorkQueue::scheduleWorkItem (%p)", &wh);
 	// Handle is known to be valid
 	hrtLock();
 	WorkItem &item = (*g_work_items)[wh.m_handle];
@@ -444,6 +447,7 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 
 void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 {
+	DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem (%p)", &wh);
 	hrtLock();
 	std::list<unsigned int>::iterator it = m_work_list.begin();
 	while (it != m_work_list.end()) {
@@ -462,6 +466,7 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 
 void HRTWorkQueue::clearAll()
 {
+	DF_LOG_DEBUG("HRTWorkQueue::clearAll");
 	hrtLock();
 	std::list<unsigned int>::iterator it = m_work_list.begin();
 	while (it != m_work_list.end()) {
@@ -473,6 +478,7 @@ void HRTWorkQueue::clearAll()
 
 void HRTWorkQueue::shutdown(void)
 {
+	DF_LOG_DEBUG("HRTWorkQueue::shutdown");
 	hrtLock();
 	m_exit_requested = true;
 	pthread_cond_signal(&g_reschedule_cond);
@@ -481,6 +487,7 @@ void HRTWorkQueue::shutdown(void)
 
 void HRTWorkQueue::process(void)
 {
+	DF_LOG_DEBUG("HRTWorkQueue::process");
 	std::list<unsigned int>::iterator work_itr;
 	uint64_t next;
 	uint64_t elapsed;
@@ -489,7 +496,7 @@ void HRTWorkQueue::process(void)
 	uint64_t now;
 
 	while(!m_exit_requested) {
-		DF_LOG_INFO("HRTWorkQueue::process In while");
+		DF_LOG_DEBUG("HRTWorkQueue::process In while");
 		hrtLock();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -498,17 +505,17 @@ void HRTWorkQueue::process(void)
 
 		now = offsetTime();
 		while ((!m_exit_requested) && (work_itr != m_work_list.end())) {
-			DF_LOG_INFO("HRTWorkQueue::process work exists");
+			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
 			now = offsetTime();
 			unsigned int index = *work_itr;
 			if (index < (*g_work_items).size()) {
 				WorkItem &item = (*g_work_items)[*work_itr];
 				elapsed = now - item.m_queue_time;
-				//DF_LOG_INFO("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
+				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
 
 				if (elapsed >= item.m_delay) {
 
-					DF_LOG_INFO("HRTWorkQueue::process do work (%p)", item.m_callback);
+					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item.m_callback);
 					item.updateStats(now);
 
 					// reschedule work
@@ -536,7 +543,7 @@ void HRTWorkQueue::process(void)
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now+next);
 		
-		DF_LOG_INFO("waiting for work (%" PRIu64 ")", next);
+		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
 		// Wait until next expiry or until a new item is rescheduled
 		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();
@@ -558,6 +565,7 @@ void HRTWorkQueue::hrtUnlock()
 *************************************************************************/
 int WorkMgr::initialize()
 {
+	DF_LOG_DEBUG("WorkMgr::initialize");
 	if (g_lock) {
 		// Already initialized
 		return 0;
@@ -577,6 +585,7 @@ int WorkMgr::initialize()
 
 void WorkMgr::finalize()
 {
+	DF_LOG_DEBUG("WorkMgr::finalize");
 	if (!g_lock) {
 		return;
 	}
@@ -602,6 +611,7 @@ void WorkMgr::finalize()
 
 void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
 {
+	DF_LOG_DEBUG("WorkMgr::getWorkHandle");
 	if (!g_lock || !g_work_items) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = -1;
@@ -648,6 +658,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHand
 
 int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
+	DF_LOG_DEBUG("WorkMgr::releaseWorkHandle");
 	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = -1;
@@ -679,7 +690,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 
 int WorkMgr::schedule(WorkHandle &wh)
 {
-	DF_LOG_INFO("schedule");
+	DF_LOG_DEBUG("WorkMgr::schedule");
 	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
 		wh.m_errno = ESRCH;
 		return -1;
@@ -689,17 +700,17 @@ int WorkMgr::schedule(WorkHandle &wh)
 		return -2;
 	}
 
-	DF_LOG_INFO("schedule 2");
+	DF_LOG_DEBUG("WorkMgr::schedule - checks ok");
 	int ret = 0;
 	g_lock->lock();
 	if (isValid(wh)) {
 		if ((*g_work_items)[wh.m_handle].m_in_use) {
-			DF_LOG_ERR("can't schedule a handle that's in use");
+			DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
 			wh.m_errno = EBUSY;
 			ret = -3;
 		}
 		else {
-			DF_LOG_INFO("schedule 3");
+			DF_LOG_DEBUG("WorkMgr::schedule - do scedule");
 			HRTWorkQueue::instance()->scheduleWorkItem(wh);
 		}
 	}
