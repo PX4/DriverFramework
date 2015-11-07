@@ -177,26 +177,27 @@ static uint64_t TSToABSTime(struct timespec *ts)
         return result;
 }
 
-int DriverFramework::clockGetRealtime(struct timespec *ts)
-{
 #if defined(__APPLE__) && defined(__MACH__)
+#define CLOCK_REALTIME 0
+static int clock_gettime(int clk_id, struct timespec* t)
+{
+	struct timeval now;
+	int rv = gettimeofday(&now, NULL);
 
-	mach_timebase_info_data_t tb = {};
-	mach_timebase_info(&tb);
-	double px4_timebase = tb.numer;
-	px4_timebase /= tb.denom;
+	if(rv) {
+		return rv;
+	}
 
-	double diff = mach_absolute_time() * px4_timebase;
-	ts->tv_sec = diff * MAC_NANO;
-	ts->tv_nsec = diff - (ts->tv_sec * MAC_GIGA);
+	t->tv_sec = now.tv_sec;
+	t->tv_nsec = now.tv_usec * 1000;
 
 	return 0;
-
-#else
-
-	return clock_gettime(CLOCK_REALTIME, ts);
-
+}
 #endif
+
+int DriverFramework::clockGetRealtime(struct timespec *ts)
+{
+	return clock_gettime(CLOCK_REALTIME, ts);
 }
 
 //-----------------------------------------------------------------------
