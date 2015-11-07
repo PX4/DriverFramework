@@ -75,6 +75,9 @@ int SyncObj::waitOnSignal(unsigned long timeout_ms)
 	}
 	else {
 		ret = pthread_cond_wait(&m_new_data_cond, &m_lock);
+
+		// Hopeful workaround for MacOS bug
+		pthread_testcancel();
 	}
 
 	return ret;
