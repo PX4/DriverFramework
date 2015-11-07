@@ -533,7 +533,7 @@ void HRTWorkQueue::process(void)
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now+next);
 		
-		DF_LOG_INFO("waiting for work (%llu)", next);
+		DF_LOG_INFO("waiting for work (%" PRIu64 ")", next);
 		// Wait until next expiry or until a new item is rescheduled
 		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();

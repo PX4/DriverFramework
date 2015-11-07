@@ -33,6 +33,9 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 #include <stdint.h>
 #include <time.h>
 #include "DisableCopy.hpp"
@@ -47,8 +50,8 @@
 //-----------------------------------------------------------------------
 
 // Substitute logging implemntation here
-#define DF_LOG_INFO(FMT, ...) printf("%lu " FMT "\n", offsetTime(), ##__VA_ARGS__)
-#define DF_LOG_ERR(FMT, ...) printf("%lu " FMT "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
 namespace DriverFramework {
 
