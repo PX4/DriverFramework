@@ -52,7 +52,6 @@ int PressureTester::run()
 	int ret = m_sensor.init();
 
 	// Open the pressure sensor
-	PressureSensor *p = nullptr;
 	DevHandle h;
 	DevMgr::getHandle(PRESSURE_DEVICE_PATH, h);
 	if (!h.isValid())
@@ -64,14 +63,13 @@ int PressureTester::run()
 	else {
 		m_done = false;
 		m_sensor_data.sensor_read_counter = 0;
-		p = DevMgr::getDevObjByHandle<PressureSensor>(h);
 	}
 
 	while (!m_done) {
 		++m_read_attempts;
 		ret = PressureSensor::getSensorData(h, m_sensor_data, true);
 		if (ret == 0) {
-			int count = m_sensor_data.sensor_read_counter;
+			uint32_t count = m_sensor_data.sensor_read_counter;
 			if (m_read_counter != count) {
 				m_read_counter = count;
 				printPressureValues(m_sensor_data);
