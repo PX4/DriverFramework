@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <list>
+#include <string>
 
 #pragma once
 
@@ -101,6 +102,8 @@ public:
 	static int waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms);
 
 	static void setDevHandleError(DevHandle &h, int error);
+
+	static int getNextDeviceName(unsigned int &index, std::string &devname);
 private:
 	friend Framework;
 
