@@ -140,6 +140,14 @@ int main()
 		DF_LOG_INFO("reading");
 		test_read(h, h2, 1000, true);
 
+		unsigned int index = 0;
+		std::string devname;
+		DF_LOG_INFO("Devices:");
+		while (DevMgr::getNextDeviceName(index, devname) == 0) {
+			DF_LOG_INFO("    %s", devname.c_str());
+		}
+		
+
 	}
 	DF_LOG_INFO("tests done");
 	test.stop();

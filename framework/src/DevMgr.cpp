@@ -275,6 +275,28 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
+int DevMgr::getNextDeviceName(unsigned int &index, std::string &devname)
+{
+	if (g_driver_list == nullptr) {
+		return -1;
+	}
+	unsigned int i = 0;
+	int ret = -1;
+	g_lock->lock();
+	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
+	while (it != g_driver_list->end()) {
+		if (i == index) {
+			devname = (*it)->m_dev_path;
+			index+=1;
+			ret = 0;
+			break;
+		}
+		++it;
+	}
+	g_lock->unlock();
+	return ret;
+}
+
 int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
 {
 	WaitList wl(in_set, out_set);
