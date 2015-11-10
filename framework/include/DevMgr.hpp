@@ -57,7 +57,7 @@ public:
 
 	int ioctl(unsigned long cmd, void *arg);
 	ssize_t read(void *buf, size_t len);
-	ssize_t write(void *buf, size_t len);
+	ssize_t write(const void *buf, size_t len);
 
 private:
 	friend DevMgr;
