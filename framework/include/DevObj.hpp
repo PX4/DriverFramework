@@ -39,8 +39,29 @@
 #include "DevMgr.hpp"
 #include "SyncObj.hpp"
 #include "DisableCopy.hpp"
+#include <stdint.h>
+#include <sys/ioctl.h>
 
 #pragma once
+
+/*
+ * ioctl() definitions
+ */
+
+#define _DEVICEIOCBASE          (0x100)
+#define _DEVICEIOC(_n)          (_DF_IOC(_DEVICEIOCBASE, _n))
+
+/** ask device to stop publishing */
+#define DEVIOCSPUBBLOCK _DEVICEIOC(0)
+
+/** check publication block status */
+#define DEVIOCGPUBBLOCK _DEVICEIOC(1)
+
+/**
+ * Return device ID, to enable matching of configuration parameters
+ * (such as compass offsets) to specific sensors
+ */
+#define DEVIOCGDEVICEID _DEVICEIOC(2)
 
 #define DRIVER_MAX_INSTANCES 5
 
@@ -111,6 +132,10 @@ public:
 
 	void updateNotify();
 
+	// _measure() is the periodic callback that is called every 
+	// m_sample_interval_usecs
+	virtual void _measure() = 0; // periodic callback 
+
 	const std::string 	m_name;
 	const std::string 	m_dev_path;
 	const std::string 	m_dev_class_path;
@@ -118,11 +143,8 @@ public:
 	unsigned int 		m_sample_interval_usecs;
 	union DeviceId		m_id;
 
-	// _measure() is the periodic callback that is called every 
-	// m_sample_interval_usecs
-	virtual void _measure() = 0; // periodic callback 
-
-	WorkHandle 	m_work_handle;
+	WorkHandle 		m_work_handle;
+	bool 			m_pub_blocked;
 
 private:
 	int addHandle(DevHandle &h);

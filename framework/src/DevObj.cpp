@@ -16,7 +16,7 @@
 *    documentation and/or other materials provided with the
 *    distribution.
 * 
-*  * Neither the name of Dronecode Project nor the names of its
+*  * Neither the name of PX4 Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
 * 
@@ -43,6 +43,7 @@ DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_pat
 	m_dev_path(dev_path),
 	m_dev_class_path(dev_class_path),
 	m_sample_interval_usecs(sample_interval_usecs),
+	m_pub_blocked(false),
 	m_driver_instance(-1),
 	m_refcount(0)
 {
@@ -117,7 +118,30 @@ DevObj::~DevObj()
 
 int DevObj::devIOCTL(unsigned long request, void *arg)
 {
-	return -1;
+	int ret = -1;
+
+	switch (request) {
+
+	// If the driver is using a pub-sub model, enable/disable publish
+        case DEVIOCSPUBBLOCK:
+                m_pub_blocked = (arg != nullptr);
+                ret = 0;
+                break;
+
+	// If the driver is using a pub-sub model, get publish state
+        case DEVIOCGPUBBLOCK:
+		ret = m_pub_blocked;
+                break;
+
+	// Get the device ID
+	case DEVIOCGDEVICEID:
+                return (int)m_id.dev_id;
+
+	default:
+                break;
+        }
+
+	return ret;
 }
 
 ssize_t DevObj::devRead(void *buf, size_t count)
