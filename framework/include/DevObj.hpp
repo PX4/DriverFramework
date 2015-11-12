@@ -128,7 +128,7 @@ public:
 
         virtual ssize_t devRead(void *buf, size_t count);
 
-        virtual ssize_t devWrite(void *buf, size_t count);
+        virtual ssize_t devWrite(const void *buf, size_t count);
 
 	void updateNotify();
 

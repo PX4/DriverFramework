@@ -149,7 +149,7 @@ ssize_t DevObj::devRead(void *buf, size_t count)
 	return -1;
 }
 
-ssize_t DevObj::devWrite(void *buf, size_t count)
+ssize_t DevObj::devWrite(const void *buf, size_t count)
 {
 	return -1;
 }
