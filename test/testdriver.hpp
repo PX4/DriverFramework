@@ -58,7 +58,7 @@ public:
 		return len;
 	}
 
-	virtual int devIOCTL(unsigned long cmd, void *arg)
+	virtual int devIOCTL(unsigned long cmd, unsigned long arg)
 	{
 		if (cmd == TEST_IOCTL_CMD)
 		{
