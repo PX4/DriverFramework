@@ -367,6 +367,7 @@ int DevHandle::ioctl(unsigned long cmd, void *arg)
 	}
 	return -1;
 }
+
 ssize_t DevHandle::read(void *buf, size_t len)
 {
 	if (m_handle) {
@@ -374,6 +375,7 @@ ssize_t DevHandle::read(void *buf, size_t len)
 	}
 	return -1;
 }
+
 ssize_t DevHandle::write(const void *buf, size_t len)
 {
 	if (m_handle) {
