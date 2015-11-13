@@ -138,7 +138,7 @@ public:
 
 	const std::string 	m_name;
 	const std::string 	m_dev_path;
-	const std::string 	m_dev_class_path;
+	std::string 		m_dev_class_path;
 	std::string 		m_dev_instance_path;
 	unsigned int 		m_sample_interval_usecs;
 	union DeviceId		m_id;
