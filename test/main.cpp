@@ -146,7 +146,7 @@ int main()
 		while (DevMgr::getNextDeviceName(index, devname) == 0) {
 			DF_LOG_INFO("    %s", devname.c_str());
 		}
-		
+
 
 	}
 	DF_LOG_INFO("tests done");
