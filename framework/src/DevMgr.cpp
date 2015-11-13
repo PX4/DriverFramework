@@ -363,7 +363,7 @@ DevHandle::~DevHandle()
 int DevHandle::ioctl(unsigned long cmd, void *arg)
 {
 	if (m_handle) {
-		return reinterpret_cast<DevObj *>(m_handle)->devIOCTL(cmd, arg);
+		return reinterpret_cast<DevObj *>(m_handle)->devIOCTL(cmd, (unsigned long)arg);
 	}
 	return -1;
 }

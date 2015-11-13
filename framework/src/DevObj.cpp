@@ -120,7 +120,7 @@ DevObj::~DevObj()
 	}
 }
 
-int DevObj::devIOCTL(unsigned long request, void *arg)
+int DevObj::devIOCTL(unsigned long request, unsigned long arg)
 {
 	int ret = -1;
 
@@ -128,7 +128,7 @@ int DevObj::devIOCTL(unsigned long request, void *arg)
 
 	// If the driver is using a pub-sub model, enable/disable publish
         case DEVIOCSPUBBLOCK:
-                m_pub_blocked = (arg != nullptr);
+                m_pub_blocked = ((void *)arg != nullptr);
                 ret = 0;
                 break;
 

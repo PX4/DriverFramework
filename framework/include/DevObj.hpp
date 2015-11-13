@@ -124,7 +124,7 @@ public:
 		return m_driver_instance;
 	}
 
-        virtual int devIOCTL(unsigned long request, void *arg);
+        virtual int devIOCTL(unsigned long request, unsigned long arg);
 
         virtual ssize_t devRead(void *buf, size_t count);
 
