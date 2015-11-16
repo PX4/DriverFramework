@@ -360,10 +360,10 @@ DevHandle::~DevHandle()
 	}
 }
 
-int DevHandle::ioctl(unsigned long cmd, void *arg)
+int DevHandle::ioctl(unsigned long cmd, unsigned long arg)
 {
 	if (m_handle) {
-		return reinterpret_cast<DevObj *>(m_handle)->devIOCTL(cmd, (unsigned long)arg);
+		return reinterpret_cast<DevObj *>(m_handle)->devIOCTL(cmd, arg);
 	}
 	return -1;
 }

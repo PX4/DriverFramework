@@ -62,8 +62,7 @@ public:
 	{
 		if (cmd == TEST_IOCTL_CMD)
 		{
-			*reinterpret_cast<int *>(arg) = TEST_IOCTL_RESULT;
-			return 0;
+			return TEST_IOCTL_RESULT;
 		}
 		return -1;
 	}

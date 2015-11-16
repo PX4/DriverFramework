@@ -55,7 +55,7 @@ public:
 
 	virtual ~DevHandle();
 
-	int ioctl(unsigned long cmd, void *arg);
+	int ioctl(unsigned long cmd, unsigned long arg);
 	ssize_t read(void *buf, size_t len);
 	ssize_t write(const void *buf, size_t len);
 

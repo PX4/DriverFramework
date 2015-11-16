@@ -107,8 +107,9 @@ int main()
 
 		DF_LOG_INFO("TEST 3: ioctl");
 		ret = 0;
-		int result;
-		if (h.ioctl(TEST_IOCTL_CMD, &result) < 0 || result != TEST_IOCTL_RESULT) {
+		int result = h.ioctl(TEST_IOCTL_CMD, 0);
+
+		if (result != TEST_IOCTL_RESULT) {
 			DF_LOG_INFO("ioctl failed (%d)", h.getError());
 			ret = 1;
 		}
