@@ -154,9 +154,10 @@ int DevMgr::registerDriver(DevObj *obj)
 		}
 	}
 #if 1
+	DF_LOG_INFO("Driver List:");
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 	while (it != g_driver_list->end()) {
-		DF_LOG_INFO("Driver name=%s dev_path=%s instance_path%s\n", (*it)->m_name.c_str(), (*it)->m_dev_path.c_str(), (*it)->m_dev_instance_path.c_str());
+		DF_LOG_INFO("   name=%s dev_path=%s instance_path=%s", (*it)->m_name.c_str(), (*it)->m_dev_path.c_str(), (*it)->m_dev_instance_path.c_str());
 		++it;
 	}
 #endif
