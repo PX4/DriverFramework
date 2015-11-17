@@ -153,14 +153,6 @@ int DevMgr::registerDriver(DevObj *obj)
 			ret = -3;
 		}
 	}
-#if 1
-	DF_LOG_INFO("Driver List:");
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
-	while (it != g_driver_list->end()) {
-		DF_LOG_INFO("   name=%s dev_path=%s instance_path=%s", (*it)->m_name.c_str(), (*it)->m_dev_path.c_str(), (*it)->m_dev_instance_path.c_str());
-		++it;
-	}
-#endif
 	g_lock->unlock();
 	return ret;
 }
@@ -283,7 +275,7 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
-int DevMgr::getNextDeviceName(unsigned int &index, std::string &devname)
+int DevMgr::getNextDevicePath(unsigned int &index, std::string &dev_path, std::string &instance_path)
 {
 	if (g_driver_list == nullptr) {
 		return -1;
@@ -294,7 +286,8 @@ int DevMgr::getNextDeviceName(unsigned int &index, std::string &devname)
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if (i == index) {
-			devname = (*it)->m_dev_path;
+			dev_path = (*it)->m_dev_path;
+			instance_path = (*it)->m_dev_instance_path;
 			index+=1;
 			ret = 0;
 			break;

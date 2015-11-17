@@ -103,7 +103,7 @@ public:
 
 	static void setDevHandleError(DevHandle &h, int error);
 
-	static int getNextDeviceName(unsigned int &index, std::string &devname);
+	static int getNextDevicePath(unsigned int &index, std::string &dev_path, std::string &instance_path);
 private:
 	friend Framework;
 

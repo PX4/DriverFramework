@@ -142,10 +142,10 @@ int main()
 		test_read(h, h2, 1000, true);
 
 		unsigned int index = 0;
-		std::string devname;
+		std::string dev_path, instance_path;
 		DF_LOG_INFO("Devices:");
-		while (DevMgr::getNextDeviceName(index, devname) == 0) {
-			DF_LOG_INFO("    %s", devname.c_str());
+		while (DevMgr::getNextDevicePath(index, dev_path, instance_path) == 0) {
+			DF_LOG_INFO("    %s %s", dev_path.c_str(), instance_path.c_str());
 		}
 
 
