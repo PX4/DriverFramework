@@ -15,7 +15,7 @@ static void printMessages(TestMessage *message, unsigned int count)
 	}
 }
 
-void showResult(int result, bool expected_pass)
+static void showResult(int result, bool expected_pass)
 {
 	DF_LOG_INFO("test %s (%d)", (((result != 0) && !expected_pass) || ((result == 0) && expected_pass)) ? "PASSED" : "FAILED", result);
 }
