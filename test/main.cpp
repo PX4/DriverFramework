@@ -66,7 +66,7 @@ int main()
 		return ret;
 	}
 
-	sleep(1);
+	usleep(1000000);
 
 	const std::string devname = std::string(TEST_DRIVER_CLASS_PATH) + std::to_string(0);
 	DevHandle h;
