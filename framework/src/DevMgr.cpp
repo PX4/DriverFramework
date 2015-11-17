@@ -300,6 +300,7 @@ int DevMgr::getNextDeviceName(unsigned int &index, std::string &devname)
 			break;
 		}
 		++it;
+		++i;
 	}
 	g_lock->unlock();
 	return ret;
