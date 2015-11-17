@@ -68,7 +68,7 @@ int main()
 
 	usleep(1000000);
 
-	const std::string devname = std::string(TEST_DRIVER_CLASS_PATH) + std::to_string(0);
+	const std::string devname = std::string(TEST_DRIVER_CLASS_PATH) + std::string("0");
 	DevHandle h;
 	DevMgr::getHandle(devname.c_str(), h);
 
@@ -90,7 +90,7 @@ int main()
 		}
 		showResult(ret, true);
 
-		sleep(1);
+		usleep(1000000);
 
 		DF_LOG_INFO("TEST 2: read");
 		ret = 0;
