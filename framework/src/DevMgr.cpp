@@ -42,7 +42,6 @@
 #include "DevMgr.hpp"
 
 #include <stdlib.h>
-#include <execinfo.h>
 #include <errno.h>
 
 using namespace DriverFramework;
@@ -115,6 +114,10 @@ void DevMgr::finalize(void)
 	g_lock = nullptr;
 }
 
+#if DRIVER_MAX_INSTANCES > 9
+#error must redo algorithm below
+#endif
+
 int DevMgr::registerDriver(DevObj *obj)
 {
 	if (g_driver_list == nullptr) {
@@ -128,10 +131,12 @@ int DevMgr::registerDriver(DevObj *obj)
 	int found = false;
 	g_lock->lock();
 	int ret = 0;
+	char numstr[2] = { '0', '\0' };
 	if (!obj->m_dev_class_path.empty()) {
 		for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
 		{
-			std::string tmp_path = obj->m_dev_class_path + std::to_string(i);
+			numstr[0] = '0'+i;
+			std::string tmp_path = obj->m_dev_class_path + std::string(numstr);
 			std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
 			while (it != g_driver_list->end()) {
 				if (tmp_path == (*it)->m_dev_instance_path) {
@@ -179,12 +184,18 @@ DevObj *DevMgr::getDevObjByName(const char *name, unsigned int instance)
 	if (g_driver_list == nullptr) {
 		return nullptr;
 	}
+	// Simple num to str implementation only handles 0-9
+	if (instance > 9) {
+		return nullptr;
+	}
+	char numstr[2] = { '0', '\0' };
 	g_lock->lock();
 	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
 	while (it != g_driver_list->end()) {
 		if ((*it)->m_name == name) {
 			// see if instance matches
-			const std::string tmp_path = (*it)->m_dev_class_path + std::to_string(instance);
+			numstr[0] = '0' + instance;
+			const std::string tmp_path = (*it)->m_dev_class_path + std::string(numstr);
 			if (tmp_path == (*it)->m_dev_instance_path) {
 				break;
 			}

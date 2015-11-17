@@ -244,6 +244,7 @@ timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
 	return ts;
 }
 
+#if DF_ENABLE_BACKTRACE
 void DriverFramework::backtrace()
 {
 	void *buffer[10];
@@ -262,6 +263,7 @@ void DriverFramework::backtrace()
 
 	free(callstack);
 }
+#endif
 
 //-----------------------------------------------------------------------
 // Class Methods
@@ -341,8 +343,8 @@ void WorkItem::updateStats(unsigned int cur_usec)
 
 void WorkItem::resetStats() 
 {
-	m_last = ~(uint64_t)0;
-	m_min = ~(uint64_t)0;
+	m_last = ~(unsigned long)0;
+	m_min = ~(unsigned long)0;
 	m_max = 0;
 	m_total = 0;
 	m_count = 0;
@@ -382,7 +384,9 @@ static int setRealtimeSched(pthread_attr_t &attr)
 	param.sched_priority = sched_get_priority_max(SCHED_FIFO);
 
 	ret = (!ret) ? ret : pthread_attr_setschedparam (&attr, &param);
+#ifndef __DF_QURT
 	ret = (!ret) ? ret : pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED);
+#endif
 	return ret;
 }
 

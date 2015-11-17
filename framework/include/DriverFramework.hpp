@@ -42,8 +42,10 @@
 
 #pragma once
 
+#ifdef __DF_LINUX
 // Show backtrace on error
 #define DF_ENABLE_BACKTRACE 1
+#endif
 
 //-----------------------------------------------------------------------
 // Macros

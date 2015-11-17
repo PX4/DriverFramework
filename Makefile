@@ -1,15 +1,25 @@
-all: build
+all: linux qurt
 
-.PHONY: build
-generate:
-	mkdir -p build
-	cd build && cmake ..
+define df_cmake_generate
+mkdir -p build_$(1) && cd build_$(1) && cmake .. -DDF_TARGET=$(1)
+endef
 
-build: generate
-	cd build && make
+define df_build
+	$(call df_cmake_generate,$(1))
+	cd build_$(1) && make
+endef
 
-run: build
-	cd build && test/df_testapp
+linux nuttx:
+	$(call df_build,$@)
+
+external/dspal:
+	cd external && git clone https://github.com/mcharleb/dspal
+
+dspal_sync: external/dspal
+	cd external/dspal && git pull
+
+qurt: dspal_sync
+	$(call df_build,$@)
 	
 clean:
-	rm -rf build
+	rm -rf build_*

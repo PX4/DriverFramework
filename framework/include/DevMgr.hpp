@@ -34,6 +34,7 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdint.h>
+#include <sys/types.h>
 #include <time.h>
 #include <list>
 #include <string>

@@ -37,7 +37,7 @@ private:
 
 static void printPressureValues(struct pressure_sensor_data &sensor_data)
 {
-	DF_LOG_INFO("bmp280 data [cntr: %d, time stamp: %" PRId64 ", pressure (pascals): %d, temp (C): %f]",
+	DF_LOG_INFO("bmp280 data [cntr: %" PRIu32 ", time stamp: %" PRId64 ", pressure (pascals): %" PRIu32 ", temp (C): %f]",
         	sensor_data.sensor_read_counter, sensor_data.last_read_time_in_usecs, 
 		sensor_data.pressure_in_pa, sensor_data.temperature_in_c);
 }

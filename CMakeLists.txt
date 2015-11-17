@@ -33,11 +33,15 @@
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
+include(cmake/toolchains/Toolchain-${DF_TARGET}.cmake)
+
 set(version_major 0)
 set(version_minor 1)
 set(version_patch 0)
 set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
+
+message("DF_TARGET = ${DF_TARGET}")
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 message("Enabling Thread Sanitizer")
@@ -61,7 +65,7 @@ set(DF_CXX_FLAGS "-std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
 endif()
 
 # Enable this directory's flags:
-set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
 set(df_link_libs pthread CACHE STRING
 	"DF_LINK_LIBS")
@@ -73,6 +77,8 @@ include_directories(
 	framework/include
 	os/qurt/include
 	)
+
+set(DF_TARGET "linux" CACHE STRING "desired target")
 
 # Add framework library
 add_subdirectory(framework/src)

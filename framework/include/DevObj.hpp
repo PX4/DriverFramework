@@ -40,7 +40,12 @@
 #include "SyncObj.hpp"
 #include "DisableCopy.hpp"
 #include <stdint.h>
+#ifdef __DF_LINUX
 #include <sys/ioctl.h>
+#endif
+#ifdef __DF_QURT
+#include <unistd.h>
+#endif
 
 #pragma once
 

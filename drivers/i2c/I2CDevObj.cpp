@@ -36,7 +36,6 @@
 #include <stdint.h>
 #include <string>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "OSConfig.h"
