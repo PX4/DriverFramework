@@ -59,20 +59,24 @@ DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_pat
 
 int DevObj::init(void)
 {
-	DF_LOG_DEBUG("DevObj::init");
-	if (m_driver_instance < 0) {
+	DF_LOG_DEBUG("DevObj::init %s", m_name.c_str());
+	if (!isRegistered()) {
+		DF_LOG_DEBUG("DevObj::init registering %s", m_name.c_str());
 		int ret = DevMgr::registerDriver(this);
 		if (ret < 0) {
+			DF_LOG_DEBUG("DevObj::init register failed %s", m_name.c_str());
 			return ret;
 		}
 		m_driver_instance = ret;
+	} else {
+		DF_LOG_DEBUG("DevObj::init already registered %s", m_name.c_str());
 	}
 	return 0;
 }
 
 int DevObj::start(void)
 {
-	DF_LOG_DEBUG("DevObj::start");
+	DF_LOG_DEBUG("DevObj::start %s", m_name.c_str());
 	if (m_driver_instance < 0) {
 		return -1;
 	}
@@ -91,7 +95,7 @@ int DevObj::start(void)
 }
 
 int DevObj::stop(void) {
-	DF_LOG_DEBUG("DevObj::stop");
+	DF_LOG_DEBUG("DevObj::stop %s", m_name.c_str());
 	if (m_work_handle.isValid()) {
 		WorkMgr::releaseWorkHandle(m_work_handle);
 	}

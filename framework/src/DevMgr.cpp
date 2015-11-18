@@ -120,6 +120,7 @@ void DevMgr::finalize(void)
 
 int DevMgr::registerDriver(DevObj *obj)
 {
+	DF_LOG_INFO("DevMgr::registerDriver %s", obj->m_name.c_str());
 	if (g_driver_list == nullptr) {
 		return -1;
 	}
@@ -128,13 +129,14 @@ int DevMgr::registerDriver(DevObj *obj)
 		return -2;
 	}
 
-	int found = false;
+	bool registered = false;
 	g_lock->lock();
 	int ret = 0;
 	char numstr[2] = { '0', '\0' };
 	if (!obj->m_dev_class_path.empty()) {
 		for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
 		{
+			bool found = false;
 			numstr[0] = '0'+i;
 			std::string tmp_path = obj->m_dev_class_path + std::string(numstr);
 			std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
@@ -149,14 +151,18 @@ int DevMgr::registerDriver(DevObj *obj)
 				obj->m_dev_instance_path = tmp_path;
 				g_driver_list->push_back(obj);
 				DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path.c_str());
-				found = true;
+				registered = true;
 				break;
 			}
 		}
-		if (!found) {
+		if (!registered) {
 			// Error - no available dev class instance
 			ret = -3;
 		}
+	} else {
+		// Some drivers do not specify a base class, or hardcode a specific instance
+		g_driver_list->push_back(obj);
+		DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_path.c_str());
 	}
 	g_lock->unlock();
 	return ret;
