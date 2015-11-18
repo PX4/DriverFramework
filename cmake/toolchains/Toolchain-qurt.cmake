@@ -195,23 +195,23 @@ list2string(AFLAGS
 
 # Set cmake flags
 #
-list2string(CMAKE_C_FLAGS
+list2string(QURT_CMAKE_C_FLAGS
 	${CMAKE_C_FLAGS}
 	${CFLAGS}
 	)
 
-set(QURT_CMAKE_C_FLAGS ${CMAKE_C_FLAGS} CACHE STRING "cflags")
+set(CMAKE_C_FLAGS ${QURT_CMAKE_C_FLAGS} CACHE STRING "cflags")
 
-message(STATUS "CMAKE_C_FLAGS: -${CMAKE_C_FLAGS}-")
 
-list2string(CMAKE_CXX_FLAGS
+list2string(QURT_CMAKE_CXX_FLAGS
 	${CMAKE_CXX_FLAGS}
 	${CXXFLAGS}
 	)
 
-set(QURT_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} CACHE STRING "cxxflags")
+set(CMAKE_CXX_FLAGS ${QURT_CMAKE_CXX_FLAGS} CACHE STRING "cxxflags")
 
-message(STATUS "CMAKE_CXX_FLAGS: -${CMAKE_CXX_FLAGS}-")
+message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 # Flags we pass to the linker
 #

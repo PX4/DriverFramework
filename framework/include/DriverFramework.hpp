@@ -38,7 +38,7 @@
 
 #include <stdint.h>
 #include <time.h>
-#include "DisableCopy.hpp"
+#include "HandleObj.hpp"
 
 #pragma once
 

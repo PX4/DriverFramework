@@ -35,9 +35,15 @@ include_directories(
 	../
 	)
 
+if("${DF_TARGET}" STREQUAL "qurt")
+add_library(df_pressure_test
+	main.cpp
+	)
+else()
 add_executable(df_pressure_test
 	main.cpp
 	)
+endif()
 
 target_link_libraries(df_pressure_test
 	df_driver_framework

@@ -33,8 +33,6 @@
 
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-include(cmake/toolchains/Toolchain-${DF_TARGET}.cmake)
-
 set(version_major 0)
 set(version_minor 1)
 set(version_patch 0)
@@ -67,10 +65,17 @@ endif()
 # Enable this directory's flags:
 set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
-set(df_link_libs pthread CACHE STRING
+set(df_link_libs CACHE STRING
 	"DF_LINK_LIBS")
-if (NOT APPLE)
-	list(APPEND df_link_libs rt)
+
+if (NOT "${DF_TARGET}" STREQUAL "qurt")
+
+	list(APPEND df_link_libs pthread)
+
+	if (NOT APPLE)
+		list(APPEND df_link_libs rt)
+	endif()
+
 endif()
 
 include_directories(
@@ -88,5 +93,8 @@ add_subdirectory(drivers)
 
 # Add unit test
 add_subdirectory(test)
+
+message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
