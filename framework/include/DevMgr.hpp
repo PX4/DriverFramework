@@ -38,6 +38,7 @@
 #include <time.h>
 #include <list>
 #include <string>
+#include "HandleObj.hpp"
 
 #pragma once
 
