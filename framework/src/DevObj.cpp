@@ -35,6 +35,7 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include "DevObj.hpp"
+#include "DevIOCTL.h"
 
 using namespace DriverFramework;
 

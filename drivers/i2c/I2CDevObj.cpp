@@ -41,6 +41,7 @@
 #include "OSConfig.h"
 #include "dev_fs_lib_i2c.h"
 #include "I2CDevObj.hpp"
+#include "DevIOCTL.h"
 
 using namespace DriverFramework;
 

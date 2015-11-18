@@ -50,7 +50,6 @@
 //-----------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------
-#define _DF_IOC(x,y) _IO(x,y)
 
 // Substitute logging implemntation here
 #define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
