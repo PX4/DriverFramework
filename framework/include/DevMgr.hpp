@@ -107,7 +107,7 @@ public:
 
 	static int getNextDevicePath(unsigned int &index, std::string &dev_path, std::string &instance_path);
 private:
-	friend Framework;
+	friend class Framework;
 
 	static DevObj *_getDevObjByHandle(DevHandle &handle);
 

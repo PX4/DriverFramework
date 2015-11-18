@@ -381,10 +381,10 @@ static int setRealtimeSched(pthread_attr_t &attr)
 	int ret = pthread_attr_init (&attr);
 	ret = (!ret) ? ret : pthread_attr_getschedparam (&attr, &param);
 
+#ifndef __DF_QURT
 	param.sched_priority = sched_get_priority_max(SCHED_FIFO);
 
 	ret = (!ret) ? ret : pthread_attr_setschedparam (&attr, &param);
-#ifndef __DF_QURT
 	ret = (!ret) ? ret : pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED);
 #endif
 	return ret;
