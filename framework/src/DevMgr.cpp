@@ -120,7 +120,7 @@ void DevMgr::finalize(void)
 
 int DevMgr::registerDriver(DevObj *obj)
 {
-	DF_LOG_INFO("DevMgr::registerDriver %s", obj->m_name.c_str());
+	DF_LOG_DEBUG("DevMgr::registerDriver %s", obj->m_name.c_str());
 	if (g_driver_list == nullptr) {
 		return -1;
 	}
@@ -170,6 +170,7 @@ int DevMgr::registerDriver(DevObj *obj)
 
 void DevMgr::unregisterDriver(DevObj *obj)
 {
+	DF_LOG_DEBUG("DevMgr::unregisterDriver %s", obj->m_name.c_str());
 	if (g_driver_list == nullptr) {
 		return;
 	}

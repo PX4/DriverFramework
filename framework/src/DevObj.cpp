@@ -59,7 +59,7 @@ DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_pat
 
 int DevObj::init(void)
 {
-	DF_LOG_DEBUG("DevObj::init %s", m_name.c_str());
+	DF_LOG_INFO("DevObj::init %s", m_name.c_str());
 	if (!isRegistered()) {
 		DF_LOG_DEBUG("DevObj::init registering %s", m_name.c_str());
 		int ret = DevMgr::registerDriver(this);
@@ -76,26 +76,33 @@ int DevObj::init(void)
 
 int DevObj::start(void)
 {
-	DF_LOG_DEBUG("DevObj::start %s", m_name.c_str());
+	DF_LOG_INFO("DevObj::start %s", m_name.c_str());
+
 	if (m_driver_instance < 0) {
 		return -1;
 	}
-	DF_LOG_DEBUG("DevObj::start - instance exists");
-	if (m_sample_interval_usecs && !m_work_handle.isValid()) {
+
+	if (m_work_handle.isValid()) {
+		DF_LOG_INFO("Err: %s was already started", m_name.c_str());
+		return -2;
+	}
+
+	// Only schedule periodic work if an interval was specfied
+	if (m_sample_interval_usecs) {
 		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
 		if (m_work_handle.isValid()) {
-			DF_LOG_DEBUG("DevObj::start schedule");
+			DF_LOG_DEBUG("DevObj::start schedule %s", m_name.c_str());
 			WorkMgr::schedule(m_work_handle);
 		}
 		else {
-			return -2;
+			return -3;
 		}
 	}
 	return 0;
 }
 
 int DevObj::stop(void) {
-	DF_LOG_DEBUG("DevObj::stop %s", m_name.c_str());
+	DF_LOG_INFO("DevObj::stop %s", m_name.c_str());
 	if (m_work_handle.isValid()) {
 		WorkMgr::releaseWorkHandle(m_work_handle);
 	}
@@ -165,7 +172,6 @@ ssize_t DevObj::devWrite(const void *buf, size_t count)
 
 void DevObj::measure(void *arg)
 {
-	DF_LOG_DEBUG("DevObj::measure");
 	reinterpret_cast<DevObj *>(arg)->_measure();
 }
 
@@ -176,9 +182,13 @@ int DevObj::addHandle(DevHandle &h)
 	int ret = 0;
 	m_handle_lock.lock();
 	if (m_handles.size() == 0) {
-		ret = start();
-		if (ret < 0) {
-			DF_LOG_DEBUG("DevObj::addHandle start failed (%p)", &h);
+
+		// Start the driver if its not running
+		if (!m_work_handle.isValid()) {
+			ret = start();
+			if (ret < 0) {
+				DF_LOG_DEBUG("DevObj::addHandle start failed (%p)", &h);
+			}
 		}
 	}
 	m_handles.push_back(&h);
@@ -198,7 +208,9 @@ int DevObj::removeHandle(DevHandle &h)
 		if (*it == &h) {
 			it = m_handles.erase(it);
 			if (it == m_handles.end()) {
-				ret = stop();
+
+				// TODO - do we need special handling if that last handle to a device is closed?
+
 				if (ret != 0) {
 					ret = -1;
 				}
