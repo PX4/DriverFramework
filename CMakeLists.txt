@@ -91,8 +91,10 @@ add_subdirectory(framework/src)
 # Add driver libraries
 add_subdirectory(drivers)
 
-# Add unit test
-add_subdirectory(test)
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
+	# Add unit test
+	add_subdirectory(test)
+endif()
 
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")

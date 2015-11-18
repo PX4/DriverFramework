@@ -1,7 +1,7 @@
 all: linux qurt
 
 define df_cmake_generate
-mkdir -p build_$(1) && cd build_$(1) && cmake -Wno-dev .. -DDF_TARGET=$(1) -DCMAKE_TOOLCHAIN_FILE=$(2)
+mkdir -p build_$(1) && cd build_$(1) && cmake -Wno-dev .. -DDF_TARGET=$(1) -DCMAKE_TOOLCHAIN_FILE=$(2) -DDF_ENABLE_TESTS=1
 endef
 
 define df_build

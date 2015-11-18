@@ -35,6 +35,8 @@ add_library(df_pressure
 	PressureSensor.cpp
 	)
 
-add_subdirectory(test)
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
+	add_subdirectory(test)
+endif()
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
