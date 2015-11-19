@@ -43,9 +43,8 @@ using namespace DriverFramework;
 // Static Variables
 //-----------------------------------------------------------------------
 
-#define PTHREAD_COND_INITIALIZER_HACK {{0, (tcb_s *)0xffff}}
 static pthread_mutex_t g_framework_exit = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER_HACK;
+static pthread_cond_t g_framework_cond;
 
 //-----------------------------------------------------------------------
 // Class Methods
@@ -68,6 +67,8 @@ void Framework::shutdown()
 int Framework::initialize()
 {
 	int ret = DevMgr::initialize();
+
+	pthread_cond_init(&g_framework_cond, NULL);
 	return (ret < 0) ? -1 : 0;
 }
 
