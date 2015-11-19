@@ -74,6 +74,7 @@ class DevMgr
 {    
 public:
 
+#ifndef __DF_NUTTX
 	static int registerDriver(DevObj *obj);
 	static void unregisterDriver(DevObj *obj);
 
@@ -83,7 +84,7 @@ public:
 	template <typename T>
 	static T *getDevObjByHandle(DevHandle &handle)
 	{
-		if (!m_initialized || handle.m_handle == nullptr) {
+		if (!m_initialized || !handle.isValid()) {
 			return nullptr;
 		}
 
@@ -94,11 +95,13 @@ public:
 #endif
 	}
 
-	static void getHandle(const char *dev_path, DevHandle &handle);
-	static void releaseHandle(DevHandle &handle);
-
 	// Called by DevObj to notify threads waiting on an update
 	static void updateNotify(DevObj &obj);
+
+#endif
+
+	static void getHandle(const char *dev_path, DevHandle &handle);
+	static void releaseHandle(DevHandle &handle);
 
 	// Similar to poll
 	static int waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms);
@@ -109,15 +112,17 @@ public:
 private:
 	friend class Framework;
 
-	static DevObj *_getDevObjByHandle(DevHandle &handle);
-
 	DevMgr();
 	~DevMgr();
 
 	static int initialize(void);
 	static void finalize(void);
 
+#ifndef __DF_NUTTX
+	static DevObj *_getDevObjByHandle(DevHandle &handle);
+
 	static bool m_initialized;
+#endif
 };
 
 };
