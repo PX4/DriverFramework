@@ -43,7 +43,11 @@
  * ioctl() definitions
  */
 
+#ifdef __DF_NUTTX
+#define _DF_IOC(x,y) _IOC(x,y)
+#else
 #define _DF_IOC(x,y) _IO(x,y)
+#endif
 
 #define _DEVICEIOCBASE          (0x100)
 #define _DEVICEIOC(_n)          (_DF_IOC(_DEVICEIOCBASE, _n))
