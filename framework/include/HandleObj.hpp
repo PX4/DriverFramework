@@ -53,7 +53,11 @@ public:
 
 	bool isValid()
 	{
+#ifdef __DF_NUTTX
+		return m_id != -1;
+#else
 		return m_handle != nullptr;
+#endif
 	}
 
 	int getError()
@@ -64,7 +68,11 @@ public:
 protected:
 	friend DevMgr;
 
+#ifdef __DF_NUTTX
+	void *	m_id = -1;
+#else
 	void *	m_handle = nullptr;
+#endif
 	int 	m_errno = 0;
 };
 
