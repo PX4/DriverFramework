@@ -34,28 +34,19 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <string>
-#include <list>
 #include "DriverFramework.hpp"
-#include "SyncObj.hpp"
-#include "DevObj.hpp"
 #include "DevMgr.hpp"
 
 #include <stdlib.h>
 #include <errno.h>
+#include <dirent.h>
+#include <poll.h>
+#include <sys/ioctl.h>
 
 using namespace DriverFramework;
-
-static SyncObj *g_lock = nullptr;
-
-bool DevMgr::m_initialized = false;
-
-#define NO_VERIFY 1 // Use fast method to get DevObj
-
-// TODO add missing locking and reimplement with map
-// This is meant just to work for now. It hs not been optimized yet.
-
-static std::list<DriverFramework::DevObj *> *g_driver_list = nullptr;
 
 int DevMgr::initialize(void)
 {
@@ -73,43 +64,23 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 		return;
 	}
 
-	const std::string name(dev_path);
 	h.m_errno = EBADF;
 
-	// release the handle if it is valid
-	DevMgr::releaseHandle(h);
-
-	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
-	while (it != g_driver_list->end()) {
-
-		// The dev path may be a class instance path or a dev name
-		if ((name == (*it)->m_dev_instance_path) || (name == (*it)->m_dev_path)) {
-			// Device is registered
-			// Try and open it
-			h.m_fd = ::open(dev_path, O_RDONLY);
-
-			if (h.m_fd >=0) {
-				g_lock->unlock();
-				(*it)->addHandle(h);
-				g_lock->lock();
-				h.m_handle = *it;
-				h.m_errno = 0;
-			} else {
-				h.m_errno = errno;
-			}
-			break;
-		}
-		++it;
+	if (h.m_fd >= 0) {
+		::close(h.m_fd);
 	}
-	g_lock->unlock();
+
+	h.m_fd = ::open(dev_path, O_RDONLY);
+
+	if (h.m_fd < 0) {
+		h.m_errno = errno;
+	}
 }
 
 void DevMgr::releaseHandle(DevHandle &h)
 {
 	::close(h.m_fd);
 	h.m_fd = -1;
-	h.m_handle = nullptr;
 	h.m_errno = 0;
 }
 
@@ -127,11 +98,12 @@ int DevMgr::getNextDevicePath(unsigned int &index, std::string &dev_path, std::s
 
 	if (d) {
 		struct dirent	*direntry;
-		string devname("/dev/");
 
+		char devname[50];
 		while ((direntry = readdir(d)) != NULL) {
 			if (idx == index) {
-				dev_path = devname.append(direntry->d_name);
+				snprintf(devname, sizeof(devname), "/dev/%s", direntry->d_name);
+				dev_path.assign(direntry->d_name);
 				++index;
 				return 0;
 			}
@@ -144,12 +116,13 @@ int DevMgr::getNextDevicePath(unsigned int &index, std::string &dev_path, std::s
 int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
 {
 	// poll on a set of file descriptors
-	struct pollfd fds[in_set.size()];
+	int num = in_set.size();
+	struct pollfd fds[num];
 
 	size_t i = 0;
-	UpdateList::iterator in_it = (*it)->in_set.begin();
-	for (; in_it != (*it)->in_set.end(); ++in_it) {
-		fds[i].fd = in_it->m_fd;
+	UpdateList::iterator in_it = in_set.begin();
+	for (; in_it != in_set.end(); ++in_it) {
+		fds[i].fd = (*in_it)->m_fd;
 		fds[i].events = POLLIN;
 		++i;
 	}
@@ -159,10 +132,10 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 	if (ret > 0) {
 		// build the out_set
 		size_t i = 0;
-		UpdateList::iterator in_it = (*it)->in_set.begin();
-		for (; in_it != (*it)->in_set.end(); ++in_it) {
+		UpdateList::iterator in_it = in_set.begin();
+		for (; in_it != in_set.end(); ++in_it) {
 			if (fds[i].revents & POLLIN) {
-				out_set.push_back((*in_it))
+				out_set.push_back((*in_it));
 			}
 		}
 	}
@@ -183,7 +156,7 @@ DevHandle::~DevHandle()
 
 int DevHandle::ioctl(unsigned long cmd, unsigned long arg)
 {
-	return ::ioctl(m_fd, cmd, (void *)arg);
+	return ::ioctl(m_fd, cmd, arg);
 }
 
 ssize_t DevHandle::read(void *buf, size_t len)

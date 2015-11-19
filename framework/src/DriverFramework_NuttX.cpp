@@ -34,6 +34,8 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include "DriverFramework.hpp"
+#include "DevMgr.hpp"
+#include <pthread.h>
 
 using namespace DriverFramework;
 
@@ -41,8 +43,9 @@ using namespace DriverFramework;
 // Static Variables
 //-----------------------------------------------------------------------
 
+#define PTHREAD_COND_INITIALIZER_HACK {{0, (tcb_s *)0xffff}}
 static pthread_mutex_t g_framework_exit = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER_HACK;
 
 //-----------------------------------------------------------------------
 // Class Methods
@@ -64,11 +67,8 @@ void Framework::shutdown()
 
 int Framework::initialize()
 {
-	ret = DevMgr::initialize();
-	if (ret < 0) {
-		return ret;
-	}
-	return 0;
+	int ret = DevMgr::initialize();
+	return (ret < 0) ? -1 : 0;
 }
 
 void Framework::waitForShutdown()

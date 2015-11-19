@@ -54,7 +54,7 @@ public:
 	bool isValid()
 	{
 #ifdef __DF_NUTTX
-		return m_id != -1;
+		return m_fd != -1;
 #else
 		return m_handle != nullptr;
 #endif
@@ -69,7 +69,7 @@ protected:
 	friend DevMgr;
 
 #ifdef __DF_NUTTX
-	int 	m_id = -1;
+	int 	m_fd = -1;
 #else
 	void *	m_handle = nullptr;
 #endif
