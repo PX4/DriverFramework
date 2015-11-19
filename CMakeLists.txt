@@ -88,12 +88,14 @@ set(DF_TARGET "linux" CACHE STRING "desired target")
 # Add framework library
 add_subdirectory(framework/src)
 
-# Add driver libraries
-add_subdirectory(drivers)
+if(NOT "${DF_TARGET}" STREQUAL "nuttx")
+	# Add driver libraries
+	add_subdirectory(drivers)
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
 	# Add unit test
 	add_subdirectory(test)
+endif()
 endif()
 
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
