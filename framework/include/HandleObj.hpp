@@ -69,7 +69,7 @@ protected:
 	friend DevMgr;
 
 #ifdef __DF_NUTTX
-	void *	m_id = -1;
+	int 	m_id = -1;
 #else
 	void *	m_handle = nullptr;
 #endif
