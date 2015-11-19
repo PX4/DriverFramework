@@ -36,7 +36,7 @@ if("${DF_TARGET}" STREQUAL "nuttx")
 		DriverFramework_NuttX.cpp
 		DevMgr_Nuttx.cpp
 		)
-	add_dependencies(df_driver_framework nuttx_export_${BOARD})
+	add_dependencies(df_driver_framework platforms__nuttx)
 else()
 	add_library(df_driver_framework
 		DriverFramework.cpp
