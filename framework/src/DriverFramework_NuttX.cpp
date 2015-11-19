@@ -33,59 +33,48 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#pragma once
+#include "DriverFramework.hpp"
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
-#include <stdint.h>
-#include <time.h>
-#include "HandleObj.hpp"
-
-#ifndef __DF_NUTTX
-#include "WorkMgr.hpp"
-#endif
-
-#ifdef __DF_LINUX
-// Show backtrace on error
-#define DF_ENABLE_BACKTRACE 1
-#endif
+using namespace DriverFramework;
 
 //-----------------------------------------------------------------------
-// Macros
+// Static Variables
 //-----------------------------------------------------------------------
 
-// Substitute logging implemntation here
-#define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
-#define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
+static pthread_mutex_t g_framework_exit = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
 
-#define DF_DEBUG 0
-#if DF_DEBUG
-#define DF_LOG_DEBUG(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
-#else
-#define DF_LOG_DEBUG(FMT, ...)  
-#endif
+//-----------------------------------------------------------------------
+// Class Methods
+//-----------------------------------------------------------------------
 
-namespace DriverFramework {
-
-#ifdef DF_ENABLE_BACKTRACE
-// Used to show a backtrace while running
-void backtrace();
-#endif
-
-class Framework
+/*************************************************************************
+  Framework
+*************************************************************************/
+void Framework::shutdown()
 {
-public:
-	// Initialize the driver framework
-	// This function must be called before any of the functions below
-	static int initialize(void);
+	// Free the DevMgr resources
+	DevMgr::finalize();
 
-	// Terminate the driver framework
-	static void shutdown(void);
+	// allow Framework to exit
+	pthread_mutex_lock(&g_framework_exit);
+	pthread_cond_signal(&g_framework_cond);
+	pthread_mutex_unlock(&g_framework_exit);
+}
 
+int Framework::initialize()
+{
+	ret = DevMgr::initialize();
+	if (ret < 0) {
+		return ret;
+	}
+	return 0;
+}
+
+void Framework::waitForShutdown()
+{
 	// Block until shutdown requested
-	static void waitForShutdown();
-};
-
-};
-
+	pthread_mutex_lock(&g_framework_exit);
+	pthread_cond_wait(&g_framework_cond, &g_framework_exit);
+	pthread_mutex_unlock(&g_framework_exit);
+}

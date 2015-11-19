@@ -380,6 +380,8 @@ DevHandle::~DevHandle()
 	}
 }
 
+#ifndef __DF_NUTTX
+
 int DevHandle::ioctl(unsigned long cmd, unsigned long arg)
 {
 	if (m_handle) {
@@ -403,3 +405,22 @@ ssize_t DevHandle::write(const void *buf, size_t len)
 	}
 	return -1;
 }
+
+#else
+
+int DevHandle::ioctl(unsigned long cmd, unsigned long arg)
+{
+	return ::ioctl(m_fd, cmd, (void *)arg);
+}
+
+ssize_t DevHandle::read(void *buf, size_t len)
+{
+	return ::read(m_fd, buf, len);
+}
+
+ssize_t DevHandle::write(const void *buf, size_t len)
+{
+	return ::write(m_fd, buf, len);
+}
+
+#endif

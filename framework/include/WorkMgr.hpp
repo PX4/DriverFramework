@@ -42,49 +42,60 @@
 #include <time.h>
 #include "HandleObj.hpp"
 
-#ifndef __DF_NUTTX
-#include "WorkMgr.hpp"
-#endif
-
-#ifdef __DF_LINUX
-// Show backtrace on error
-#define DF_ENABLE_BACKTRACE 1
-#endif
-
-//-----------------------------------------------------------------------
-// Macros
-//-----------------------------------------------------------------------
-
-// Substitute logging implemntation here
-#define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
-#define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
-
-#define DF_DEBUG 0
-#if DF_DEBUG
-#define DF_LOG_DEBUG(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
-#else
-#define DF_LOG_DEBUG(FMT, ...)  
-#endif
-
 namespace DriverFramework {
+
+// Types
+class WorkHandle : public IntHandleObj
+{
+public:
+	WorkHandle() {}
+
+	virtual ~WorkHandle();
+	friend WorkMgr;
+};
+
+typedef void (*WorkCallback)(void *arg);
+
+// Get the offset time from startup
+uint64_t offsetTime(void);
+
+// convert offset time to absolute time
+struct timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
+
+// convert offset time to absolute time
+struct timespec absoluteTimeInFuture(uint64_t time_ms);
+
+/**
+ * Get the absolute time off the system realtime clock
+ *
+ * @param timespec the realtime time
+ *
+ * @return 0 if successful, nonzero else
+ */
+int clockGetRealtime(struct timespec *ts);
 
 #ifdef DF_ENABLE_BACKTRACE
 // Used to show a backtrace while running
 void backtrace();
 #endif
 
-class Framework
+class Framework;
+
+class WorkMgr
 {
 public:
-	// Initialize the driver framework
-	// This function must be called before any of the functions below
+	// Interface functions
+	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle& handle);
+	static int releaseWorkHandle(WorkHandle &handle);
+	static int schedule(WorkHandle &handle);
+	static void setError(WorkHandle &h, int error);
+
+private:
+	friend class Framework;
+
+	static bool isValid(const WorkHandle &h);
 	static int initialize(void);
-
-	// Terminate the driver framework
-	static void shutdown(void);
-
-	// Block until shutdown requested
-	static void waitForShutdown();
+	static void finalize(void);
 };
 
 };
