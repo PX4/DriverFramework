@@ -43,6 +43,10 @@
 
 #pragma once
 
+#if __DF_NUTTX
+#error DevObj not supported in NuttX
+#endif
+
 #define DRIVER_MAX_INSTANCES 5
 
 namespace DriverFramework {

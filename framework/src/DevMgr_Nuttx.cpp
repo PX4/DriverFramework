@@ -119,11 +119,14 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 	struct pollfd fds[num];
 
 	size_t i = 0;
-	UpdateList::iterator in_it = in_set.begin();
-	for (; in_it != in_set.end(); ++in_it) {
-		fds[i].fd = (*in_it)->m_fd;
+	DFPointerList::Index it = nullptr;
+	it = in_set.next(it);
+	while (it != nullptr) {
+		DevHandle *h = reinterpret_cast<DevHandle *>(in_set.get(it));
+		fds[i].fd = h->m_fd;
 		fds[i].events = POLLIN;
 		++i;
+		it = in_set.next(it);
 	}
 
 	int ret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), timeout_ms);
@@ -131,11 +134,15 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 	if (ret > 0) {
 		// build the out_set
 		size_t i = 0;
-		UpdateList::iterator in_it = in_set.begin();
-		for (; in_it != in_set.end(); ++in_it) {
+		DFPointerList::Index it = nullptr;
+		it = in_set.next(it);
+		while (it != nullptr) {
+			DevHandle *h = reinterpret_cast<DevHandle *>(in_set.get(it));
 			if (fds[i].revents & POLLIN) {
-				out_set.push_back((*in_it));
+				out_set.pushBack(h);
 			}
+			++i;
+			it = in_set.next(it);
 		}
 	}
 

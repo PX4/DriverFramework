@@ -220,11 +220,6 @@ static int clock_gettime(int clk_id, struct timespec* t)
 }
 #endif
 
-int DriverFramework::clockGetRealtime(struct timespec *ts)
-{
-	return clock_gettime(CLOCK_REALTIME, ts);
-}
-
 //-----------------------------------------------------------------------
 // Global Functions
 //-----------------------------------------------------------------------
@@ -248,21 +243,6 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 	struct timespec ts = {};
 	ts.tv_sec = abs_time / 1000000;
 	ts.tv_nsec = (abs_time % 1000000) * 1000;
-
-	return ts;
-}
-
-timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
-{
-	struct timespec ts;
-
-	clockGetRealtime(&ts);
-
-	uint64_t nsecs = ts.tv_nsec + time_ms*1000000;
-	uint64_t secs = (nsecs/1000000000);
-	
-	ts.tv_sec += secs;
-	ts.tv_nsec = nsecs - secs*1000000000;
 
 	return ts;
 }

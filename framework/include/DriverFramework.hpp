@@ -68,6 +68,18 @@
 
 namespace DriverFramework {
 
+/**
+ * Get the absolute time off the system realtime clock
+ *
+ * @param timespec the realtime time
+ *
+ * @return 0 if successful, nonzero else
+ */
+int clockGetRealtime(struct timespec *ts);
+
+// convert offset time to absolute time
+struct timespec absoluteTimeInFuture(uint64_t time_ms);
+
 #ifdef DF_ENABLE_BACKTRACE
 // Used to show a backtrace while running
 void backtrace();

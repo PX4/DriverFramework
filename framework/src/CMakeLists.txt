@@ -36,6 +36,8 @@ if("${DF_TARGET}" STREQUAL "nuttx")
 		DriverFramework_NuttX.cpp
 		DevMgr_Nuttx.cpp
 		DFList.cpp
+		SyncObj.cpp
+		Time.cpp
 		)
 	add_dependencies(df_driver_framework platforms__nuttx)
 else()
@@ -45,6 +47,7 @@ else()
 		DevObj.cpp
 		SyncObj.cpp
 		DFList.cpp
+		Time.cpp
 		)
 endif()
 

@@ -33,61 +33,33 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#pragma once
-
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
-#include <stdint.h>
-#include <time.h>
+#include "DriverFramework.hpp"
 #ifdef __DF_QURT
-#include <dspal_time.h>
-#endif
-#include "HandleObj.hpp"
-
-namespace DriverFramework {
-
-// Types
-class WorkHandle : public IntHandleObj
-{
-public:
-	WorkHandle() {}
-
-	virtual ~WorkHandle();
-	friend WorkMgr;
-};
-
-typedef void (*WorkCallback)(void *arg);
-
-// Get the offset time from startup
-uint64_t offsetTime(void);
-
-// convert offset time to absolute time
-struct timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
-
-#ifdef DF_ENABLE_BACKTRACE
-// Used to show a backtrace while running
-void backtrace();
+#include "dspal_time.h"
 #endif
 
-class Framework;
+using namespace DriverFramework;
 
-class WorkMgr
+//-----------------------------------------------------------------------
+// Global Functions
+//-----------------------------------------------------------------------
+
+int DriverFramework::clockGetRealtime(struct timespec *ts)
 {
-public:
-	// Interface functions
-	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle& handle);
-	static int releaseWorkHandle(WorkHandle &handle);
-	static int schedule(WorkHandle &handle);
-	static void setError(WorkHandle &h, int error);
+	return clock_gettime(CLOCK_REALTIME, ts);
+}
 
-private:
-	friend class Framework;
+timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
+{
+	struct timespec ts;
 
-	static bool isValid(const WorkHandle &h);
-	static int initialize(void);
-	static void finalize(void);
-};
+	clockGetRealtime(&ts);
 
-};
+	uint64_t nsecs = ts.tv_nsec + time_ms*1000000;
+	uint64_t secs = (nsecs/1000000000);
+	
+	ts.tv_sec += secs;
+	ts.tv_nsec = nsecs - secs*1000000000;
 
+	return ts;
+}
