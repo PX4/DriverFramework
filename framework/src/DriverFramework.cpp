@@ -34,8 +34,6 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdio.h>
-#include <list>
-#include <vector>
 #include <pthread.h>
 #include <errno.h>
 #include "DriverFramework.hpp"
@@ -130,12 +128,37 @@ private:
 	void hrtLock(void);
 	void hrtUnlock(void);
 
-	std::list<unsigned int>	m_work_list;
+	DFUIntList	m_work_list;
 
 	bool m_enable_stats = false;
 	bool m_exit_requested = false;
 
 	static HRTWorkQueue *m_instance;
+};
+
+class WorkItems : public DFPointerList
+{
+public:
+	WorkItems() :
+		DFPointerList(true)
+	{}
+
+	virtual ~WorkItems()
+	{}
+
+	bool getAt(unsigned int index, WorkItem **item)
+	{
+		Index idx = nullptr;
+		idx = next(idx);
+		for (unsigned int i = 0; i < index; ++i) {
+			if (idx == nullptr) {
+				return false;
+			}
+			idx = next(idx);
+		}
+		*item = reinterpret_cast<WorkItem *>(get(idx));
+		return true;
+	}
 };
 
 };
@@ -154,7 +177,7 @@ static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
 
-static std::vector<WorkItem> *g_work_items = nullptr;
+static WorkItems g_work_items;
 
 static SyncObj *g_lock = nullptr;
 
@@ -164,7 +187,7 @@ static SyncObj *g_lock = nullptr;
 
 bool WorkMgr::isValid(const WorkHandle &h)
 {
-	return (g_work_items && (h.m_handle >=0) && ((unsigned int)h.m_handle < (*g_work_items).size()));
+	return ((h.m_handle >=0) && ((unsigned int)h.m_handle < g_work_items.size()));
 }
 
 static uint64_t TSToABSTime(struct timespec *ts)
@@ -441,10 +464,11 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 	DF_LOG_DEBUG("HRTWorkQueue::scheduleWorkItem (%p)", &wh);
 	// Handle is known to be valid
 	hrtLock();
-	WorkItem &item = (*g_work_items)[wh.m_handle];
-	item.m_queue_time = offsetTime();
-	item.m_in_use = true;
-	m_work_list.push_back(wh.m_handle);
+	WorkItem *item;
+	g_work_items.getAt(wh.m_handle, &item);
+	item->m_queue_time = offsetTime();
+	item->m_in_use = true;
+	m_work_list.pushBack(wh.m_handle);
 	pthread_cond_signal(&g_reschedule_cond);
 	hrtUnlock();
 }
@@ -453,17 +477,24 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem (%p)", &wh);
 	hrtLock();
-	std::list<unsigned int>::iterator it = m_work_list.begin();
-	while (it != m_work_list.end()) {
+	DFUIntList::Index idx = nullptr;
+	idx = m_work_list.next(idx);
+	while (idx != nullptr) {
+		unsigned int index;
+		m_work_list.get(idx, index);
 
-		// remove all unscheduled items
-		if ((*g_work_items)[(*it)].m_in_use == false) {
-			it = m_work_list.erase(it);
-			break;
-		}
+		// remove unscheduled item
+		WorkItem *item;
+		if (!g_work_items.getAt(index, &item)) {
+			DF_LOG_INFO("HRTWorkQueue::unscheduleWorkItem - invalid index");
+		} 
 		else {
-			++it;
+			if (item->m_in_use == false) {
+				idx = m_work_list.erase(idx);
+				break;
+			}
 		}
+		idx = m_work_list.next(idx);
 	}
 	hrtUnlock();
 }
@@ -472,10 +503,15 @@ void HRTWorkQueue::clearAll()
 {
 	DF_LOG_DEBUG("HRTWorkQueue::clearAll");
 	hrtLock();
-	std::list<unsigned int>::iterator it = m_work_list.begin();
-	while (it != m_work_list.end()) {
-		(*g_work_items)[(*it)].m_in_use = false;
-		it = m_work_list.erase(it);
+	DFUIntList::Index idx = nullptr;
+	idx = m_work_list.next(idx);
+	while (idx != nullptr) {
+		unsigned int index;
+		m_work_list.get(idx, index);
+		WorkItem *item;
+		g_work_items.getAt(index, &item);
+		item->m_in_use = false;
+		idx = m_work_list.erase(idx);
 	}
 	hrtUnlock();
 }
@@ -492,7 +528,6 @@ void HRTWorkQueue::shutdown(void)
 void HRTWorkQueue::process(void)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::process");
-	std::list<unsigned int>::iterator work_itr;
 	uint64_t next;
 	uint64_t elapsed;
 	uint64_t remaining;
@@ -505,41 +540,45 @@ void HRTWorkQueue::process(void)
 
 		// Wake up every 10 sec if nothing scheduled
 		next = 10000000;
-		work_itr = m_work_list.begin();
 
+		DFUIntList::Index idx = nullptr;
+		idx = m_work_list.next(idx);
 		now = offsetTime();
-		while ((!m_exit_requested) && (work_itr != m_work_list.end())) {
+		while ((!m_exit_requested) && (idx != nullptr)) {
 			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
 			now = offsetTime();
-			unsigned int index = *work_itr;
-			if (index < (*g_work_items).size()) {
-				WorkItem &item = (*g_work_items)[*work_itr];
-				elapsed = now - item.m_queue_time;
+			unsigned int index; 
+			m_work_list.get(idx, index);
+			if (index < g_work_items.size()) {
+				WorkItem *item;
+				g_work_items.getAt(index, &item);
+				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
 
-				if (elapsed >= item.m_delay) {
+				if (elapsed >= item->m_delay) {
 
-					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item.m_callback);
-					item.updateStats(now);
+					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item->m_callback);
+					item->updateStats(now);
 
 					// reschedule work
-					item.m_queue_time = offsetTime();
-					item.m_in_use = true;
+					item->m_queue_time = offsetTime();
+					item->m_in_use = true;
 
 					hrtUnlock();
-					item.m_callback(item.m_arg);
+					item->m_callback(item->m_arg);
 					hrtLock();
 
 					// Start again from the top to ge rescheduled work
-					work_itr = m_work_list.begin();
+					idx = nullptr;
+					idx = m_work_list.next(idx);
 				} else {
-					remaining = item.m_delay - elapsed;
+					remaining = item->m_delay - elapsed;
 					if (remaining < next) {
 						next = remaining;
 					}
 
 					// try the next in the list
-					++work_itr;
+					idx = m_work_list.next(idx);
 				}
 			}
 		}
@@ -578,12 +617,6 @@ int WorkMgr::initialize()
 	if (g_lock == nullptr) {
 		return -1;
 	}
-	g_work_items = new std::vector<WorkItem>(10);
-	if (g_work_items == nullptr) {
-		delete g_lock;
-		g_lock = nullptr;
-		return -2;
-	}
 	return 0;
 }
 
@@ -595,19 +628,18 @@ void WorkMgr::finalize()
 	}
 
 	g_lock->lock();
-	std::vector<WorkItem>::iterator it = g_work_items->begin();
-	while(it != g_work_items->end())
-	{
+	DFPointerList::Index idx = nullptr;
+	idx = g_work_items.next(idx);
+	while (idx != nullptr) {
+		WorkItem *wi = reinterpret_cast<WorkItem *>(g_work_items.get(idx));
 		//verify not in use
-		if (it->m_in_use) {
+		if (wi->m_in_use) {
 			DF_LOG_ERR("ERROR: no work items should be in use");
 		}
-		++it;
+		idx = g_work_items.next(idx);
 	}
 	
-	g_work_items->clear();
-	delete g_work_items;
-	g_work_items = nullptr;
+	g_work_items.clear();
 	g_lock->unlock();
 	delete g_lock;
 	g_lock = nullptr;
@@ -616,7 +648,7 @@ void WorkMgr::finalize()
 void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::getWorkHandle");
-	if (!g_lock || !g_work_items) {
+	if (!g_lock) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = -1;
 		return;
@@ -625,35 +657,44 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHand
 	g_lock->lock();
 
 	// unschedule work and erase the handle if handle exists
-	if (isValid(wh) && (*g_work_items)[wh.m_handle].m_in_use) {
-		HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+	if (isValid(wh)) {
+		WorkItem *item;
+		g_work_items.getAt(wh.m_handle, &item);
+		if (item->m_in_use) {
+			HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+		}
 	}
-	else if (!isValid(wh)) {
+	else {
 
 		// find an available WorkItem
 		unsigned int i=0;
-		for(; i<g_work_items->size(); ++i) {
-			if (!(*g_work_items)[i].m_in_use) {
+		DFPointerList::Index idx = nullptr;
+		idx = g_work_items.next(idx);
+		while (idx != nullptr) {
+			WorkItem *wi = reinterpret_cast<WorkItem *>(g_work_items.get(idx));
+
+			if (!wi->m_in_use) {
 				wh.m_handle = i;
 				break;
 			}
+			++i;
+			idx = g_work_items.next(idx);
 		}
 
+		// If no free WorkItems, add one to the end
 		if (!isValid(wh)) {
-			DF_LOG_ERR("warning - no WorkItems available, adding a work item\n");
-			WorkItem wi;
-			i = (*g_work_items).size();
-			(*g_work_items).resize(i+1, wi);
-			wh.m_handle = (int)i;
+			g_work_items.pushBack(new WorkItem());
+			wh.m_handle = g_work_items.size()-1;
 		}
 	}
 
 	if (isValid(wh)) {
 	
 		// Re-use the WorkItem
-		WorkItem &item = (*g_work_items)[wh.m_handle];
+		WorkItem *item;
+		g_work_items.getAt(wh.m_handle, &item);
 
-		item.set(cb, arg, delay);
+		item->set(cb, arg, delay);
 	}
 
 	g_lock->unlock();
@@ -663,7 +704,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHand
 int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::releaseWorkHandle");
-	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
+	if (g_lock == nullptr) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = -1;
 		return -1;
@@ -676,8 +717,10 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 	int ret = 0;
 	g_lock->lock();
 	if (isValid(wh)) {
-		if ((*g_work_items)[wh.m_handle].m_in_use) {
-			(*g_work_items)[wh.m_handle].m_in_use = false;
+		WorkItem *item;
+		g_work_items.getAt(wh.m_handle, &item);
+		if (item->m_in_use) {
+			item->m_in_use = false;
 			HRTWorkQueue::instance()->unscheduleWorkItem(wh);
 			wh.m_handle = -1;
 		}
@@ -695,7 +738,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 int WorkMgr::schedule(WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::schedule");
-	if ((g_lock == nullptr) || (g_work_items == nullptr)) {
+	if (g_lock == nullptr) {
 		wh.m_errno = ESRCH;
 		return -1;
 	}
@@ -708,7 +751,9 @@ int WorkMgr::schedule(WorkHandle &wh)
 	int ret = 0;
 	g_lock->lock();
 	if (isValid(wh)) {
-		if ((*g_work_items)[wh.m_handle].m_in_use) {
+		WorkItem *item;
+		g_work_items.getAt(wh.m_handle, &item);
+		if (item->m_in_use) {
 			DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
 			wh.m_errno = EBUSY;
 			ret = -3;

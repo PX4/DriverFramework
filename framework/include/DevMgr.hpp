@@ -33,12 +33,12 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
+#include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
-#include <list>
-#include <string>
 #include "HandleObj.hpp"
+#include "DFList.hpp"
 
 #pragma once
 
@@ -65,7 +65,7 @@ private:
 	friend DevMgr;
 };
 
-typedef std::list<DevHandle *> UpdateList;
+typedef DFPointerList UpdateList;
 
 
 
@@ -108,7 +108,7 @@ public:
 
 	static void setDevHandleError(DevHandle &h, int error);
 
-	static int getNextDevicePath(unsigned int &index, std::string &dev_path, std::string &instance_path);
+	static int getNextDeviceName(unsigned int &index, const char **devname);
 private:
 	friend class Framework;
 

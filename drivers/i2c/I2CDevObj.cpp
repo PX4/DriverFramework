@@ -34,7 +34,6 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdint.h>
-#include <string>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -47,7 +46,7 @@ using namespace DriverFramework;
 
 int I2CDevObj::start()
 {
-	m_fd = ::open(m_dev_path.c_str(), O_RDWR);
+	m_fd = ::open(m_dev_path, O_RDWR);
 	if (m_fd >=0) {
 		DevObj::start();
 	}

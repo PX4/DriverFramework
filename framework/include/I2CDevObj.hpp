@@ -33,7 +33,7 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <string>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -70,7 +70,7 @@ public:
 protected:
 	int dev_open(int flags)
 	{
-		int fd = ::open(m_dev_instance_path.c_str(), flags);
+		int fd = ::open(m_dev_instance_path, flags);
 		if (fd >= 0) {
 			m_fd = fd;
 		}

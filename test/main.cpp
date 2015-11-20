@@ -25,15 +25,18 @@ static void test_read(DevHandle &h1, DevHandle &h2, unsigned int timeout_ms, boo
 	TestMessage message[5];
 
 	UpdateList in_set, out_set;
-	in_set.push_back(&h1);
-	in_set.push_back(&h2);
+	in_set.pushBack(&h1);
+	in_set.pushBack(&h2);
 
 	int result = DevMgr::waitForUpdate(in_set, out_set, timeout_ms);
 	if (result == 0) {
-		UpdateList::iterator it = out_set.begin();
-		for (; it != out_set.end(); ++it) {
-			int len = (*it)->read(&message, sizeof(message));
+		DFPointerList::Index idx = nullptr;
+		idx = out_set.next(idx);
+		while (idx != nullptr) {
+			DevHandle *h = reinterpret_cast<DevHandle *>(out_set.get(idx));
+			int len = h->read(&message, sizeof(message));
 			printMessages(message, len/sizeof(message[0]));
+			idx = out_set.next(idx);
 		}
 	}
 	else {
@@ -68,12 +71,13 @@ int main()
 
 	usleep(1000000);
 
-	const std::string devname = std::string(TEST_DRIVER_CLASS_PATH) + std::string("0");
+	char devname[strlen(TEST_DRIVER_CLASS_PATH)+3];
+	snprintf(devname, sizeof(devname), "%s%d", TEST_DRIVER_CLASS_PATH, 0);
 	DevHandle h;
-	DevMgr::getHandle(devname.c_str(), h);
+	DevMgr::getHandle(devname, h);
 
 	if (!h.isValid()) {
-		DF_LOG_INFO("Failed to open %s (%d)", devname.c_str(), h.getError());
+		DF_LOG_INFO("Failed to open %s (%d)", devname, h.getError());
 	}
 	else {
 		TestMessage message[5];
@@ -142,10 +146,10 @@ int main()
 		test_read(h, h2, 1000, true);
 
 		unsigned int index = 0;
-		std::string dev_path, instance_path;
+		const char *devname;
 		DF_LOG_INFO("Devices:");
-		while (DevMgr::getNextDevicePath(index, dev_path, instance_path) == 0) {
-			DF_LOG_INFO("    %s %s", dev_path.c_str(), instance_path.c_str());
+		while (DevMgr::getNextDeviceName(index, &devname) == 0) {
+			DF_LOG_INFO("    %s", devname);
 		}
 
 
