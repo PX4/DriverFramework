@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <string>
 #include "DriverFramework.hpp"
 #include "DevMgr.hpp"
 
@@ -89,7 +88,7 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
-int DevMgr::getNextDevicePath(unsigned int &index, std::string &dev_path, std::string &instance_path)
+int DevMgr::getNextDeviceName(unsigned int &index, const char **dev_path)
 {
 	int idx = 0;
 
@@ -103,7 +102,7 @@ int DevMgr::getNextDevicePath(unsigned int &index, std::string &dev_path, std::s
 		while ((direntry = readdir(d)) != NULL) {
 			if (idx == index) {
 				snprintf(devname, sizeof(devname), "/dev/%s", direntry->d_name);
-				dev_path.assign(direntry->d_name);
+				*dev_path = direntry->d_name;
 				++index;
 				return 0;
 			}
