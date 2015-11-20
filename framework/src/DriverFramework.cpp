@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <errno.h>
+#include <time.h>
 #include "DriverFramework.hpp"
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
@@ -45,14 +46,6 @@
 #ifdef DF_ENABLE_BACKTRACE
 #include <stdlib.h>
 #include <execinfo.h>
-#endif
-
-#if defined(__APPLE__) && defined(__MACH__)
-#include <mach/mach_time.h>
-#define MAC_NANO (+1.0E-9)
-#define MAC_GIGA (UINT64_C(1000000000))
-#else
-#include <time.h>
 #endif
 
 #define SHOW_STATS 0
@@ -199,26 +192,6 @@ static uint64_t TSToABSTime(struct timespec *ts)
 
         return result;
 }
-
-#if defined(__APPLE__) && defined(__MACH__)
-#include <time.h>
-#include <sys/time.h>
-#define CLOCK_REALTIME 0
-static int clock_gettime(int clk_id, struct timespec* t)
-{
-	struct timeval now;
-	int rv = gettimeofday(&now, NULL);
-
-	if(rv) {
-		return rv;
-	}
-
-	t->tv_sec = now.tv_sec;
-	t->tv_nsec = now.tv_usec * 1000;
-
-	return 0;
-}
-#endif
 
 //-----------------------------------------------------------------------
 // Global Functions
