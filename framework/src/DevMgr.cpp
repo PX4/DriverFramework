@@ -121,7 +121,7 @@ int DevMgr::registerDriver(DevObj *obj)
 			idx = g_driver_list.next(idx);
 			while (idx != nullptr) {
 				DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
-				if (strcmp(tmp_path, list_obj->m_dev_instance_path) == 0) {
+				if ((list_obj->m_dev_instance_path) && (strcmp(tmp_path, list_obj->m_dev_instance_path) == 0)) {
 					found = true;
 					break;
 				}
