@@ -34,9 +34,9 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdio.h>
-#include <string>
-#include <list>
+#include <string.h>
 #include "DriverFramework.hpp"
+#include "DFList.hpp"
 #include "SyncObj.hpp"
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
@@ -55,7 +55,7 @@ bool DevMgr::m_initialized = false;
 // TODO add missing locking and reimplement with map
 // This is meant just to work for now. It hs not been optimized yet.
 
-static std::list<DriverFramework::DevObj *> *g_driver_list = nullptr;
+static DFPointerList g_driver_list(false);
 
 class WaitList {
 public:
@@ -70,21 +70,12 @@ public:
 	SyncObj 	m_lock;
 };
 
-static std::list<WaitList *> *g_wait_list = 0;
+static DFPointerList g_wait_list(false);
 
 int DevMgr::initialize(void)
 {
-	g_wait_list = new std::list<WaitList *>;
-	if (g_wait_list == nullptr) {
-		return -1;
-	}
-	g_driver_list = new std::list<DriverFramework::DevObj *>;
-	if (g_driver_list == nullptr) {
-		return -2;
-	}
 	g_lock = new SyncObj();
 	if (g_lock == nullptr) {
-		delete g_driver_list;
 		return -3;
 	}
 
@@ -94,20 +85,12 @@ int DevMgr::initialize(void)
 
 void DevMgr::finalize(void)
 {
-	if (g_driver_list == nullptr) {
-		return;
-	}
 	g_lock->lock();
 	m_initialized = false;
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
-	while (it != g_driver_list->end()) {
-		it = g_driver_list->erase(it);
-	}
-	delete g_driver_list;
-	g_driver_list = nullptr;
 
-	delete g_wait_list;
-	g_wait_list = nullptr;
+	g_driver_list.clear();
+
+	g_wait_list.clear();
 
 	g_lock->unlock();
 	delete g_lock;
@@ -120,37 +103,38 @@ void DevMgr::finalize(void)
 
 int DevMgr::registerDriver(DevObj *obj)
 {
-	DF_LOG_DEBUG("DevMgr::registerDriver %s", obj->m_name.c_str());
-	if (g_driver_list == nullptr) {
-		return -1;
-	}
-
-	if (obj->m_dev_path.empty()) {
+	DF_LOG_DEBUG("DevMgr::registerDriver %s", obj->m_name);
+	if (obj->m_dev_path == nullptr) {
 		return -2;
 	}
 
 	bool registered = false;
 	g_lock->lock();
 	int ret = 0;
-	char numstr[2] = { '0', '\0' };
-	if (!obj->m_dev_class_path.empty()) {
+	if (obj->m_dev_class_path != nullptr) {
 		for (unsigned int i=0; i < DRIVER_MAX_INSTANCES; i++)
 		{
 			bool found = false;
-			numstr[0] = '0'+i;
-			std::string tmp_path = obj->m_dev_class_path + std::string(numstr);
-			std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
-			while (it != g_driver_list->end()) {
-				if (tmp_path == (*it)->m_dev_instance_path) {
+			char tmp_path[strlen(obj->m_dev_class_path)+3];
+			snprintf(tmp_path,sizeof(tmp_path), "%s%d", obj->m_dev_class_path, i);
+			DFPointerList::Index idx = nullptr;
+			idx = g_driver_list.next(idx);
+			while (idx != nullptr) {
+				DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
+				if (strcmp(tmp_path, list_obj->m_dev_instance_path) == 0) {
 					found = true;
 					break;
 				}
-				++it;
+				idx = g_driver_list.next(idx);
 			}
 			if (!found)  {
-				obj->m_dev_instance_path = tmp_path;
-				g_driver_list->push_back(obj);
-				DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path.c_str());
+				if (obj->m_dev_instance_path) {
+					free(obj->m_dev_instance_path);
+					obj->m_dev_instance_path = nullptr;
+				}
+				obj->m_dev_instance_path = strdup(tmp_path);
+				g_driver_list.pushBack(obj);
+				DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path);
 				registered = true;
 				break;
 			}
@@ -161,8 +145,8 @@ int DevMgr::registerDriver(DevObj *obj)
 		}
 	} else {
 		// Some drivers do not specify a base class, or hardcode a specific instance
-		g_driver_list->push_back(obj);
-		DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_path.c_str());
+		g_driver_list.pushBack(obj);
+		DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_path);
 	}
 	g_lock->unlock();
 	return ret;
@@ -170,110 +154,109 @@ int DevMgr::registerDriver(DevObj *obj)
 
 void DevMgr::unregisterDriver(DevObj *obj)
 {
-	DF_LOG_DEBUG("DevMgr::unregisterDriver %s", obj->m_name.c_str());
-	if (g_driver_list == nullptr) {
+	DF_LOG_DEBUG("DevMgr::unregisterDriver %s", obj->m_name);
+	if (!g_lock) {
 		return;
 	}
 	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
-	while (it != g_driver_list->end()) {
-		if (*it == obj) {
-			g_driver_list->erase(it);
+	DFPointerList::Index idx = nullptr;
+	idx = g_driver_list.next(idx);
+	while (idx != nullptr) {
+		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
+		if (list_obj == obj) {
+			g_driver_list.erase(idx);
 			break;
 		}
-		++it;
+		idx = g_driver_list.next(idx);
 	}
 	g_lock->unlock();
 }
 
 DevObj *DevMgr::getDevObjByName(const char *name, unsigned int instance)
 {
-	if (g_driver_list == nullptr) {
-		return nullptr;
-	}
-	// Simple num to str implementation only handles 0-9
-	if (instance > 9) {
-		return nullptr;
-	}
-	char numstr[2] = { '0', '\0' };
+#if 0
 	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
-	while (it != g_driver_list->end()) {
-		if ((*it)->m_name == name) {
+	DFPointerList::Index idx = nullptr;
+	idx = g_driver_list.next(idx);
+	while (idx != nullptr) {
+		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
+		if (strcmp(list_obj->m_name, name) == 0) {
 			// see if instance matches
-			numstr[0] = '0' + instance;
-			const std::string tmp_path = (*it)->m_dev_class_path + std::string(numstr);
-			if (tmp_path == (*it)->m_dev_instance_path) {
+			char tmp_path[strlen(list_obj->m_dev_class_path)+3];
+			snprintf(tmp_path,sizeof(tmp_path), "%s%d", obj->m_dev_class_path, i);
+			if (strcmp(tmp_path, list_obj->m_dev_instance_path) == 0) {
 				break;
 			}
 		}
-		++it;
+		idx = g_driver_list.next(idx);
 	}
 	g_lock->unlock();
-	return (it != g_driver_list->end()) ? *it : nullptr;
+	return (idx != nullptr) ? reinterpret_cast<DevObj *>(g_driver_list.get(idx)) : nullptr;
+#endif
+	return nullptr;
 }
 
 DevObj *DevMgr::getDevObjByID(union DeviceId id)
 {
-	if (g_driver_list == nullptr) {
-		return nullptr;
-	}
 	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
-	while (it != g_driver_list->end()) {
-		if ((*it)->getId().dev_id == id.dev_id) {
+	DFPointerList::Index idx = nullptr;
+	idx = g_driver_list.next(idx);
+	while (idx != nullptr) {
+		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
+		if (list_obj->getId().dev_id == id.dev_id) {
 			break;
 		}
-		++it;
+		idx = g_driver_list.next(idx);
 	}
 	g_lock->unlock();
-	return (it == g_driver_list->end()) ? nullptr : *it;
+	return (idx != nullptr) ? reinterpret_cast<DevObj *>(g_driver_list.get(idx)) : nullptr;
 }
 
 DevObj *DevMgr::_getDevObjByHandle(DevHandle &h)
 {
 	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
-	while (it != g_driver_list->end()) {
-		if (h.m_handle == *it) {
+	DFPointerList::Index idx = nullptr;
+	idx = g_driver_list.next(idx);
+	while (idx != nullptr) {
+		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
+		if (h.m_handle == list_obj) {
 			break;
 		}
-		++it;
+		idx = g_driver_list.next(idx);
 	}
 
 	g_lock->unlock();
-	return (it == g_driver_list->end()) ? nullptr : *it;
+	return (idx == nullptr) ? nullptr : reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 }
 
 void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 {
-	if (g_driver_list == nullptr) {
-		h.m_errno = ESRCH;
-		return;
-	}
 	if (dev_path == nullptr) {
 		h.m_errno = EINVAL;
 		return;
 	}
 
-	const std::string name(dev_path);
 	h.m_errno = EBADF;
 
 	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin();
-	while (it != g_driver_list->end()) {
+	DFPointerList::Index idx = nullptr;
+	idx = g_driver_list.next(idx);
+	while (idx != nullptr) {
+		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 
 		// The dev path may be a class instance path or a dev name
-		if ((name == (*it)->m_dev_instance_path) || (name == (*it)->m_dev_path)) {
+		if ((strcmp(dev_path, list_obj->m_dev_path) == 0) || 
+			(list_obj->m_dev_instance_path && (strcmp(dev_path, list_obj->m_dev_instance_path) == 0))) {
+
 			// Device is registered
 			g_lock->unlock();
-			(*it)->addHandle(h);
+			list_obj->addHandle(h);
 			g_lock->lock();
-			h.m_handle = *it;
+			h.m_handle = list_obj;
 			h.m_errno = 0;
 			break;
 		}
-		++it;
+		idx = g_driver_list.next(idx);
 	}
 	g_lock->unlock();
 }
@@ -293,24 +276,22 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
-int DevMgr::getNextDevicePath(unsigned int &index, std::string &dev_path, std::string &instance_path)
+int DevMgr::getNextDeviceName(unsigned int &index, const char **devname)
 {
-	if (g_driver_list == nullptr) {
-		return -1;
-	}
 	unsigned int i = 0;
 	int ret = -1;
 	g_lock->lock();
-	std::list<DriverFramework::DevObj *>::iterator it = g_driver_list->begin(); 
-	while (it != g_driver_list->end()) {
+	DFPointerList::Index idx = nullptr;
+	idx = g_driver_list.next(idx);
+	while (idx != nullptr) {
+		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 		if (i == index) {
-			dev_path = (*it)->m_dev_path;
-			instance_path = (*it)->m_dev_instance_path;
+			*devname = list_obj->m_dev_path;
 			index+=1;
 			ret = 0;
 			break;
 		}
-		++it;
+		idx = g_driver_list.next(idx);
 		++i;
 	}
 	g_lock->unlock();
@@ -323,7 +304,7 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 
 	g_lock->lock();	  // HERE M7
 	wl.m_lock.lock(); // HERE M11
-	g_wait_list->push_front(&wl);
+	g_wait_list.pushFront(&wl);
 	g_lock->unlock();
 
 	int ret = wl.m_lock.waitOnSignal(timeout_ms);
@@ -331,13 +312,15 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 
 	// Remove the List item
 	g_lock->lock();
-	std::list<WaitList *>::iterator it = g_wait_list->begin();
-	while(it != g_wait_list->end()) {
-		if (*it == &wl) {
-			it = g_wait_list->erase(it);
+	DFPointerList::Index idx = nullptr;
+	idx = g_wait_list.next(idx);
+	while (idx != nullptr) {
+		WaitList *lwl = reinterpret_cast<WaitList *>(g_wait_list.get(idx));
+		if (lwl == &wl) {
+			idx = g_wait_list.erase(idx);
 			break;
 		}
-		++it;
+		idx = g_wait_list.next(idx);
 	}
 	g_lock->unlock();
 
@@ -347,24 +330,30 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 void  DevMgr::updateNotify(DevObj &obj)
 {
 	g_lock->lock(); // HERE M7
-	std::list<WaitList *>::iterator it =  g_wait_list->begin();
-	for (; it != g_wait_list->end(); ++it) {
+	DFPointerList::Index idx = nullptr;
+	idx = g_wait_list.next(idx);
+	while (idx != nullptr) {
+		WaitList *lwl = reinterpret_cast<WaitList *>(g_wait_list.get(idx));
 
-		UpdateList::iterator in_it = (*it)->m_in_set.begin();
-		for (; in_it != (*it)->m_in_set.end(); ++in_it) {
+		DFPointerList::Index it = nullptr;
+		it = lwl->m_in_set.next(it);
+		while (it != nullptr) {
+			DevHandle *h = reinterpret_cast<DevHandle *>(lwl->m_in_set.get(it));
 
 			// If the obj is equal the obj of DevHandle
-			if ((*in_it)->m_handle == &obj) {
+			if (h->m_handle == &obj) {
 
 				// Add obj to the out set
-				(*it)->m_out_set.push_back((*in_it));
+				lwl->m_out_set.pushBack(h);
 			}
+			lwl->m_in_set.next(it);
 		}
-		if ((*it)->m_out_set.size() > 0) {
-			(*it)->m_lock.lock(); // HERE M11
-			(*it)->m_lock.signal();
-			(*it)->m_lock.unlock();
+		if (!lwl->m_out_set.empty()) {
+			lwl->m_lock.lock(); // HERE M11
+			lwl->m_lock.signal();
+			lwl->m_lock.unlock();
 		}
+		idx = g_wait_list.next(idx);
 	}
 	g_lock->unlock();
 }

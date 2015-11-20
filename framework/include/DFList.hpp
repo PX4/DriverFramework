@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -33,60 +33,110 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include "DevObj.hpp"
-
 #pragma once
+
+#include "DisableCopy.hpp"
+#include "SyncObj.hpp"
 
 namespace DriverFramework {
 
-class I2CDevHandle : public DevHandle
+class DFPointerList : public DisableCopy
 {
 public:
-	I2CDevHandle() :
-		DevHandle()
-	{}
-	virtual ~I2CDevHandle();
-};
+	class DFListNode;
 
-class I2CDevObj : public DevObj
-{
-public:
-	I2CDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
-		DevObj(name, dev_path, dev_class_path, DeviceBusType_I2C, sample_interval_usec)
-	{}
+	typedef DFListNode * Index;
 
-	virtual ~I2CDevObj() {}
-
-	virtual int start();
-	virtual int stop();
-
-	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-	static int writeReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-
-protected:
-	int dev_open(int flags)
+	class DFListNode
 	{
-		int fd = ::open(m_dev_instance_path, flags);
-		if (fd >= 0) {
-			m_fd = fd;
-		}
-		return (fd >= 0) ? 0 : -errno;
-	}
+	public:
+		DFListNode(void *item);
+		~DFListNode();
 
-	int dev_close()
-	{
-		return ::close(m_fd);
-	}
+		Index	m_next;
+		void *	m_item;
+	};
+
+	DFPointerList();
+
+	DFPointerList(bool manage);
+
+	~DFPointerList();
+
+	unsigned int size();
+
+	bool pushBack(void *item);
+
+	bool pushFront(void *item);
+
+	Index erase(Index idx);
+
+	void clear();
+
+	bool empty();
+
+	Index next(Index &idx);
+
+	void *get(Index idx);
+
+	// Caller must lock before using list
+	SyncObj m_sync;
 
 private:
-	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
 
-	int m_fd = 0;
+	void deleteNode(Index node);
+
+	Index		m_head;
+	Index		m_end;
+	bool 		m_manage;
+	unsigned int 	m_size;
+};
+
+class DFUIntList : public DisableCopy
+{
+public:
+	class DFUIListNode;
+
+	typedef DFUIListNode * Index;
+
+	class DFUIListNode
+	{
+	public:
+		DFUIListNode(unsigned int item);
+		~DFUIListNode();
+
+		Index		m_next;
+		unsigned int	m_item;
+	};
+
+	DFUIntList();
+
+	~DFUIntList();
+
+	unsigned int size();
+
+	bool pushBack(unsigned int item);
+
+	bool pushFront(unsigned int item);
+
+	Index erase(Index idx);
+
+	void clear();
+
+	bool empty();
+
+	Index next(Index &idx);
+
+	bool get(Index idx, unsigned int &val);
+
+	// Caller must lock before using list
+	SyncObj m_sync;
+
+private:
+
+	Index		m_head;
+	Index		m_end;
+	unsigned int 	m_size;
 };
 
 };

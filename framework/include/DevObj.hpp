@@ -34,8 +34,8 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <string>
 #include "DriverFramework.hpp"
+#include "DFList.hpp"
 #include "DevMgr.hpp"
 #include "SyncObj.hpp"
 #include "DisableCopy.hpp"
@@ -116,10 +116,10 @@ public:
 	// m_sample_interval_usecs
 	virtual void _measure() = 0; // periodic callback 
 
-	const std::string 	m_name;
-	const std::string 	m_dev_path;
-	std::string 		m_dev_class_path;
-	std::string 		m_dev_instance_path;
+	const char *	 	m_name;
+	const char *	 	m_dev_path;
+	char *	 		m_dev_class_path;
+	char *	 		m_dev_instance_path;
 	unsigned int 		m_sample_interval_usecs;
 	union DeviceId		m_id;
 
@@ -138,7 +138,7 @@ private:
 	DevObj(const DevObj&);
 
 	int 			m_driver_instance;	// m_driver_instance = -1 when unregistered
-	std::list<DevHandle *>	m_handles;
+	DFPointerList		m_handles;
 	SyncObj			m_handle_lock;
 	unsigned 		m_refcount;
 };
