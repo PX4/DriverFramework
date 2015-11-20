@@ -50,149 +50,41 @@ public:
 	class DFListNode
 	{
 	public:
-		DFListNode(void *item) :
-			m_next(nullptr),
-			m_item(item)
-		{}
-
-		~DFListNode() {}
+		DFListNode(void *item);
+		~DFListNode();
 
 		Index	m_next;
 		void *	m_item;
 	};
 
-	DFPointerList() :
-		m_head(nullptr),
-		m_end(nullptr),
-		m_manage(false),
-		m_size(0)
-	{}
+	DFPointerList();
 
-	DFPointerList(bool manage) :
-		m_head(nullptr),
-		m_end(nullptr),
-		m_manage(manage),
-		m_size(0)
-	{}
+	DFPointerList(bool manage);
 
-	~DFPointerList()
-	{
-		for(Index p = m_head; p != nullptr;) {
-			p = p->m_next;
-			if (m_manage) {
-				delete(m_head->m_next);
-			}
-			delete(m_head);
-			m_head = p;
-		}
-	}
+	~DFPointerList();
 
-	unsigned int size()
-	{
-		return m_size;
-	}
+	unsigned int size();
 
-	bool pushBack(void *item)
-	{
-		Index t = new DFListNode(item);
-		if (t == nullptr) {
-			return false;
-		}
-		if (m_head == nullptr) {
-			m_head = t;
-			m_end = t;
-		} else {
-			m_end->m_next = t;
-			m_end = t;
-		}
-		++m_size;
-		return true;
-	}
+	bool pushBack(void *item);
 
-	bool pushFront(void *item)
-	{
-		Index t = new DFListNode(item);
-		if (t == nullptr) {
-			return false;
-		}
-		if (m_head == nullptr) {
-			m_head = t;
-			m_end = t;
-		} else {
-			t->m_next = m_head;
-			m_head = t;
-		}
-		++m_size;
-		return true;
-	}
-	Index erase(Index idx)
-	{
-		if (idx != nullptr && idx == m_head) {
-			Index t = m_head->m_next;
-			deleteNode(m_head);
-			m_head = t;
-			if (t == nullptr) {
-				m_end = nullptr;
-			}
-			--m_size;
-			return m_head;
-		} else {
-			for (Index p = m_head; p->m_next != nullptr;) {
-				Index t = p->m_next;
-				if (idx == t) {
-					p->m_next = t->m_next;
-					deleteNode(t);
-					--m_size;
-					return p->m_next;
-				}
-			}
-		}
-		return nullptr;
-	}
+	bool pushFront(void *item);
 
-	void clear()
-	{
-		while(m_head != nullptr) {
-			erase(m_head);
-		}
-	}
+	Index erase(Index idx);
 
-	bool empty()
-	{
-		return (m_head == nullptr);
-	}
+	void clear();
 
-	Index next(Index &idx)
-	{
-		if (idx == nullptr) {
-			idx = m_head;
-		} else {
-			idx = idx->m_next;
-		}
-		return idx;
+	bool empty();
 
-	}
+	Index next(Index &idx);
 
-	void *get(Index idx)
-	{
-		if (idx) {
-			return idx->m_item;
-		}
-		return nullptr;
-	}
+	void *get(Index idx);
 
 	// Caller must lock before using list
 	SyncObj m_sync;
 
 private:
 
-	void deleteNode(Index node)
-	{
-		if (m_manage) {
-			delete(node->m_next);
-		}
-		delete(node);
-	}
+	void deleteNode(Index node);
 
 	Index		m_head;
 	Index		m_end;
@@ -210,126 +102,32 @@ public:
 	class DFUIListNode
 	{
 	public:
-		DFUIListNode(unsigned int item) :
-			m_next(nullptr),
-			m_item(item)
-		{}
-
-		~DFUIListNode() {}
+		DFUIListNode(unsigned int item);
+		~DFUIListNode();
 
 		Index		m_next;
 		unsigned int	m_item;
 	};
 
-	DFUIntList() :
-		m_head(nullptr),
-		m_end(nullptr),
-		m_size(0)
-	{}
+	DFUIntList();
 
-	~DFUIntList()
-	{
-		for(Index p = m_head; p != nullptr;) {
-			p = p->m_next;
-			delete(m_head);
-			m_head = p;
-		}
-	}
+	~DFUIntList();
 
-	unsigned int size()
-	{
-		return m_size;
-	}
+	unsigned int size();
 
-	bool pushBack(unsigned int item)
-	{
-		Index t = new DFUIListNode(item);
-		if (t == nullptr) {
-			return false;
-		}
-		if (m_head == nullptr) {
-			m_head = t;
-			m_end = t;
-		} else {
-			m_end->m_next = t;
-			m_end = t;
-		}
-		++m_size;
-		return true;
-	}
+	bool pushBack(unsigned int item);
 
-	bool pushFront(unsigned int item)
-	{
-		Index t = new DFUIListNode(item);
-		if (t == nullptr) {
-			return false;
-		}
-		if (m_head == nullptr) {
-			m_head = t;
-			m_end = t;
-		} else {
-			t->m_next = m_head;
-			m_head = t;
-		}
-		++m_size;
-		return true;
-	}
+	bool pushFront(unsigned int item);
 
-	Index erase(Index idx)
-	{
-		if (idx != nullptr && idx == m_head) {
-			Index t = m_head->m_next;
-			delete(m_head);
-			m_head = t;
-			if (t == nullptr) {
-				m_end = nullptr;
-			}
-			--m_size;
-			return m_head;
-		} else {
-			for (Index p = m_head; p->m_next != nullptr;) {
-				Index t = p->m_next;
-				if (idx == t) {
-					p->m_next = t->m_next;
-					delete(t);
-					--m_size;
-					return p->m_next;
-				}
-			}
-		}
-		return nullptr;
-	}
+	Index erase(Index idx);
 
-	void clear()
-	{
-		while(m_head != nullptr) {
-			erase(m_head);
-		}
-	}
+	void clear();
 
-	bool empty()
-	{
-		return (m_head == nullptr);
-	}
+	bool empty();
 
-	Index next(Index &idx)
-	{
-		if (idx == nullptr) {
-			idx = m_head;
-		} else {
-			idx = idx->m_next;
-		}
-		return idx;
-	}
+	Index next(Index &idx);
 
-	bool get(Index idx, unsigned int &val)
-	{
-		if (idx) {
-			val = idx->m_item;
-			return true;
-		}
-		return false;
-	}
+	bool get(Index idx, unsigned int &val);
 
 	// Caller must lock before using list
 	SyncObj m_sync;
