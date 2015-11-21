@@ -712,7 +712,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 			ret = -3;
 		}
 		else {
-			DF_LOG_DEBUG("WorkMgr::schedule - do scedule");
+			DF_LOG_DEBUG("WorkMgr::schedule - do schedule");
 			HRTWorkQueue::instance()->scheduleWorkItem(wh);
 		}
 	}
