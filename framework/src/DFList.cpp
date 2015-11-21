@@ -140,6 +140,11 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 			Index t = p->m_next;
 			if (idx == t) {
 				p->m_next = t->m_next;
+
+				if (t == m_end) {
+					m_end = p;
+				}
+
 				deleteNode(t);
 				--m_size;
 				m_sync.unlock();
@@ -199,6 +204,7 @@ void DFPointerList::deleteNode(Index node)
 		delete(node->m_next);
 	}
 	delete(node);
+	m_sync.unlock();
 }
 
 DFUIntList::DFUIListNode::DFUIListNode(unsigned int item) :
@@ -293,6 +299,11 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 			Index t = p->m_next;
 			if (idx == t) {
 				p->m_next = t->m_next;
+
+				if (t == m_end) {
+					m_end = p;
+				}
+
 				delete(t);
 				--m_size;
 				m_sync.unlock();
