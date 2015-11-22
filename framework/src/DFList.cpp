@@ -158,11 +158,9 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 
 void DFPointerList::clear()
 {
-	m_sync.lock();
 	while (m_head != nullptr) {
 		erase(m_head);
 	}
-	m_sync.unlock();
 }
 
 bool DFPointerList::empty()
@@ -317,11 +315,9 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 
 void DFUIntList::clear()
 {
-	m_sync.lock();
 	while(m_head != nullptr) {
 		erase(m_head);
 	}
-	m_sync.unlock();
 }
 
 bool DFUIntList::empty()
