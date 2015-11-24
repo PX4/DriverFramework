@@ -66,14 +66,13 @@ DFPointerList::DFPointerList(bool manage) :
 DFPointerList::~DFPointerList()
 {
 	m_sync.lock();
-	for(Index p = m_head; p != nullptr;) {
-		p = p->m_next;
-		if (m_manage) {
-			delete(m_head->m_next);
-		}
-		delete(m_head);
-		m_head = p;
+	Index next = m_head;
+	while (next != nullptr) {
+		Index curr = next;
+		next = curr->m_next;
+		delete curr;
 	}
+	m_head = nullptr;
 	m_sync.unlock();
 }
 
@@ -226,11 +225,13 @@ DFUIntList::DFUIntList() :
 DFUIntList::~DFUIntList()
 {
 	m_sync.lock();
-	for(Index p = m_head; p != nullptr;) {
-		p = p->m_next;
-		delete(m_head);
-		m_head = p;
+	Index next = m_head;
+	while (next != nullptr) {
+		Index curr = next;
+		next = curr->m_next;
+		delete curr;
 	}
+	m_head = nullptr;
 	m_sync.unlock();
 }
 
