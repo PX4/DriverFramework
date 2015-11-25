@@ -98,6 +98,7 @@ DevObj::~DevObj()
 
 	if (isRegistered()) {
 		DevMgr::unregisterDriver(this);
+		m_driver_instance = -1;
 	}
 
 	if (m_name) {
@@ -144,15 +145,18 @@ int DevObj::start(void)
 		return -2;
 	}
 
-	// Only schedule periodic work if an interval was specfied
-	if (m_sample_interval_usecs) {
+	// Can't start if no interval specified
+	if (m_sample_interval_usecs == 0) {
+		return -3;
+	}
+	else {
 		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
 		if (m_work_handle.isValid()) {
 			DF_LOG_DEBUG("DevObj::start schedule %s", m_name);
 			WorkMgr::schedule(m_work_handle);
 		}
 		else {
-			return -3;
+			return -4;
 		}
 	}
 	return 0;
@@ -162,6 +166,10 @@ int DevObj::stop(void) {
 	DF_LOG_INFO("DevObj::stop %s", m_name);
 	if (m_work_handle.isValid()) {
 		WorkMgr::releaseWorkHandle(m_work_handle);
+	}
+	else {
+		// Driver wasn't running
+		return -1;
 	}
 	return 0;
 }
@@ -263,11 +271,18 @@ void DevObj::updateNotify()
 
 void DevObj::setSampleInterval(unsigned int sample_interval_usecs)
 {
-	if (m_sample_interval_usecs != sample_interval_usecs) {
-		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
+	m_sample_interval_usecs = sample_interval_usecs;
 
-		// If running, then reschedule
-		if (m_sample_interval_usecs != 0 && m_driver_instance >= 0) {
+	// If running
+	if (m_work_handle.isValid()) {
+		if (m_sample_interval_usecs == 0) {
+			stop();
+			return;
+		}
+
+		// Reschedule if non-zero and initialized
+		if (m_sample_interval_usecs != 0) {
+			WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
 			WorkMgr::schedule(m_work_handle);
 		}
 	}
