@@ -201,7 +201,6 @@ void DFPointerList::deleteNode(Index node)
 		delete(node->m_next);
 	}
 	delete(node);
-	m_sync.unlock();
 }
 
 DFUIntList::DFUIListNode::DFUIListNode(unsigned int item) :
