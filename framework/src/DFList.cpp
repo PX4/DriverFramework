@@ -50,15 +50,6 @@ DFPointerList::DFListNode::~DFListNode()
 DFPointerList::DFPointerList() :
 	m_head(nullptr),
 	m_end(nullptr),
-	m_manage(false),
-	m_size(0)
-{
-}
-
-DFPointerList::DFPointerList(bool manage) :
-	m_head(nullptr),
-	m_end(nullptr),
-	m_manage(manage),
 	m_size(0)
 {
 }
@@ -125,30 +116,31 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 {
 	m_sync.lock();
 	if (idx != nullptr && idx == m_head) {
-		Index t = m_head->m_next;
-		deleteNode(m_head);
-		m_head = t;
-		if (t == nullptr) {
+		Index next = m_head->m_next;
+		delete m_head;
+		m_head = next;
+		if (next == nullptr) {
 			m_end = nullptr;
 		}
 		--m_size;
 		m_sync.unlock();
 		return m_head;
 	} else {
-		for (Index p = m_head; p->m_next != nullptr;) {
-			Index t = p->m_next;
-			if (idx == t) {
-				p->m_next = t->m_next;
+		for (Index curr = m_head; curr->m_next != nullptr;) {
+			Index next = curr->m_next;
+			if (idx == next) {
+				curr->m_next = next->m_next;
 
-				if (t == m_end) {
-					m_end = p;
+				if (next == m_end) {
+					m_end = curr;
 				}
 
-				deleteNode(t);
+				delete next;
 				--m_size;
 				m_sync.unlock();
-				return p->m_next;
+				return curr->m_next;
 			}
+			curr = next;
 		}
 	}
 	m_sync.unlock();
@@ -158,7 +150,7 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 void DFPointerList::clear()
 {
 	while (m_head != nullptr) {
-		erase(m_head);
+		DFPointerList::erase(m_head);
 	}
 }
 
@@ -192,15 +184,6 @@ void *DFPointerList::get(Index idx)
 	}
 	m_sync.unlock();
 	return nullptr;
-}
-
-/* private, needs no internal locking hence */
-void DFPointerList::deleteNode(Index node)
-{
-	if (m_manage) {
-		delete(node->m_next);
-	}
-	delete(node);
 }
 
 DFUIntList::DFUIListNode::DFUIListNode(unsigned int item) :

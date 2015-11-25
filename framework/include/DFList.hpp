@@ -40,6 +40,7 @@
 
 namespace DriverFramework {
 
+
 class DFPointerList : public DisableCopy
 {
 public:
@@ -59,9 +60,7 @@ public:
 
 	DFPointerList();
 
-	DFPointerList(bool manage);
-
-	~DFPointerList();
+	virtual ~DFPointerList();
 
 	unsigned int size();
 
@@ -69,9 +68,9 @@ public:
 
 	bool pushFront(void *item);
 
-	Index erase(Index idx);
+	virtual Index erase(Index idx);
 
-	void clear();
+	virtual void clear();
 
 	bool empty();
 
@@ -84,12 +83,64 @@ public:
 
 private:
 
-	void deleteNode(Index node);
-
 	Index		m_head;
 	Index		m_end;
-	bool 		m_manage;
 	unsigned int 	m_size;
+};
+
+template <class T> 
+class DFManagedList : public DFPointerList
+{
+public:
+	DFManagedList() : DFPointerList() {}
+
+	virtual ~DFManagedList()
+	{
+		Index idx = nullptr;
+		idx = next(idx);
+		while (idx != nullptr) {
+			T *tmp = get(idx);
+			delete tmp;
+			idx = next(idx);
+		}
+	}
+
+	T *get(Index idx)
+	{
+		return static_cast<T *>(DFPointerList::get(idx));
+	}
+
+	virtual Index erase(Index idx)
+	{
+		if (idx != nullptr) {
+			T *tmp = get(idx);
+			delete tmp;
+			return DFPointerList::erase(idx);
+		}
+		return idx;
+	}
+
+	virtual void clear()
+	{
+		Index idx = nullptr;
+		idx = next(idx);
+		while (idx != nullptr) {
+			T *tmp = get(idx);
+			delete tmp;
+			idx = next(idx);
+		}
+		DFPointerList::clear();
+	}
+
+	bool pushBack(T *item)
+	{
+		return DFPointerList::pushBack((void *)item);
+	}
+
+	bool pushFront(T *item)
+	{
+		return DFPointerList::pushFront((void *)item);
+	}
 };
 
 class DFUIntList : public DisableCopy

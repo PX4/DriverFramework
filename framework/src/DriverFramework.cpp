@@ -129,11 +129,11 @@ private:
 	static HRTWorkQueue *m_instance;
 };
 
-class WorkItems : public DFPointerList
+class WorkItems : public DFManagedList<WorkItem>
 {
 public:
 	WorkItems() :
-		DFPointerList(true)
+		DFManagedList()
 	{}
 
 	virtual ~WorkItems()
@@ -149,7 +149,7 @@ public:
 			}
 			idx = next(idx);
 		}
-		*item = reinterpret_cast<WorkItem *>(get(idx));
+		*item = get(idx);
 		return true;
 	}
 };
