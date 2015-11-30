@@ -520,8 +520,9 @@ void HRTWorkQueue::process(void)
 					item->m_queue_time = offsetTime();
 					item->m_in_use = true;
 
+					void* tmpptr = item->m_arg;
 					hrtUnlock();
-					item->m_callback(item->m_arg);
+					item->m_callback(tmpptr);
 					hrtLock();
 
 					// Start again from the top to ge rescheduled work
