@@ -167,6 +167,7 @@ static pthread_t g_tid;
 
 static pthread_mutex_t g_framework_exit = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_timestart_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
 
@@ -202,9 +203,11 @@ uint64_t DriverFramework::offsetTime(void)
 
 	(void)clockGetRealtime(&ts);
 
+	pthread_mutex_lock(&g_timestart_lock);
 	if (!g_timestart) {
 		g_timestart = TSToABSTime(&ts);
 	}
+	pthread_mutex_unlock(&g_timestart_lock);
 
 	// Time is in microseconds
 	return TSToABSTime(&ts) - g_timestart;
@@ -517,8 +520,9 @@ void HRTWorkQueue::process(void)
 					item->m_queue_time = offsetTime();
 					item->m_in_use = true;
 
+					void* tmpptr = item->m_arg;
 					hrtUnlock();
-					item->m_callback(item->m_arg);
+					item->m_callback(tmpptr);
 					hrtLock();
 
 					// Start again from the top to ge rescheduled work
