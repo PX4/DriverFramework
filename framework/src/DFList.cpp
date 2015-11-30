@@ -149,9 +149,13 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 
 void DFPointerList::clear()
 {
+	m_sync.lock();
 	while (m_head != nullptr) {
-		DFPointerList::erase(m_head);
+		Index tmp = m_head;
+		m_head = m_head->m_next;
+		delete tmp;
 	}
+	m_sync.unlock();
 }
 
 bool DFPointerList::empty()
