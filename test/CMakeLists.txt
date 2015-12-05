@@ -38,10 +38,12 @@ include_directories(
 if("${DF_TARGET}" STREQUAL "qurt")
 	add_library(df_testapp
 		main.cpp
+		listtest.cpp
 		)
 else()
 	add_executable(df_testapp
 		main.cpp
+		listtest.cpp
 		)
 endif()
 

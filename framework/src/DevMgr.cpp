@@ -55,7 +55,7 @@ bool DevMgr::m_initialized = false;
 // TODO add missing locking and reimplement with map
 // This is meant just to work for now. It hs not been optimized yet.
 
-static DFPointerList g_driver_list(false);
+static DFPointerList g_driver_list;
 
 class WaitList {
 public:
@@ -70,7 +70,7 @@ public:
 	SyncObj 	m_lock;
 };
 
-static DFPointerList g_wait_list(false);
+static DFPointerList g_wait_list;
 
 int DevMgr::initialize(void)
 {

@@ -56,6 +56,7 @@
 //-----------------------------------------------------------------------
 
 // Substitute logging implemntation here
+#include <stdio.h>
 #define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
 #define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 

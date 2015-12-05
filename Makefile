@@ -20,8 +20,12 @@ dspal_sync: external/dspal
 
 qurt: dspal_sync
 	$(call df_build,$@)
-	
+
 run: linux
 	build_linux/test/df_testapp
+
+helgrind: linux
+	valgrind --tool=helgrind build_linux/test/df_testapp
+
 clean:
 	rm -rf build_*
