@@ -36,7 +36,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 if ("$ENV{HEXAGON_TOOLS_ROOT}" STREQUAL "")
 	message(FATAL_ERROR
 		"The HexagonTools version 7.2.10 must be installed and the environment variable HEXAGON_TOOLS_ROOT must be set"
-		"(e.g. export HEXAGON_TOOLS_ROOT=/opt/HEXAGON_Tools/7.2.10/Tools)")
+		"(e.g. export HEXAGON_TOOLS_ROOT=/opt/HEXAGON_Tools/7.2.10)")
 else()
 	set(HEXAGON_TOOLS_ROOT $ENV{HEXAGON_TOOLS_ROOT})
 endif()
@@ -51,10 +51,10 @@ endmacro(list2string)
 
 set(V_ARCH "v5")
 set(CROSSDEV "hexagon-")
-set(HEXAGON_BIN	${HEXAGON_TOOLS_ROOT}/bin)
-set(HEXAGON_LIB_DIR ${HEXAGON_TOOLS_ROOT}/gnu/hexagon/lib)
-set(HEXAGON_ISS_DIR ${HEXAGON_TOOLS_ROOT}/lib/iss)
-set(TOOLSLIB ${HEXAGON_TOOLS_ROOT}/target/hexagon/lib/${V_ARCH}/G0)
+set(HEXAGON_BIN	${HEXAGON_TOOLS_ROOT}/Tools/bin)
+set(HEXAGON_LIB_DIR ${HEXAGON_TOOLS_ROOT}/Tools/gnu/hexagon/lib)
+set(HEXAGON_ISS_DIR ${HEXAGON_TOOLS_ROOT}/Tools/lib/iss)
+set(TOOLSLIB ${HEXAGON_TOOLS_ROOT}/Tools/target/hexagon/lib/${V_ARCH}/G0/pic)
 
 # Use the HexagonTools compiler (7.2.10)
 set(CMAKE_C_COMPILER	${HEXAGON_BIN}/${CROSSDEV}clang)
@@ -68,11 +68,11 @@ set(CMAKE_OBJDUMP ${HEXAGON_BIN}/${CROSSDEV}objdump)
 set(CMAKE_OBJCOPY ${HEXAGON_BIN}/${CROSSDEV}objcopy)
 
 list2string(HEXAGON_INCLUDE_DIRS 
-	-I${HEXAGON_TOOLS_ROOT}/target/hexagon/include
+	-I${HEXAGON_TOOLS_ROOT}/Tools/target/hexagon/include
 	-I${CMAKE_SOURCE_DIR}/external/dspal/include
 	)
 
-#set(DYNAMIC_LIBS  -Wl,${TOOLSLIB}/pic/libstdc++.a)
+set(DYNAMIC_LIBS  -Wl,${TOOLSLIB}/libstdc++.a)
 
 #set(MAXOPTIMIZATION -O0)
 
@@ -216,11 +216,11 @@ message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 # Flags we pass to the linker
 #
 list2string(CMAKE_EXE_LINKER_FLAGS
-	-g 
-	-mv5 
-	-mG0lib 
-	-G0 
-	-fpic 
+	-g
+	-mv5
+	-mG0lib
+	-G0
+	-fPIC
 	-shared
 	-Wl,-Bsymbolic
 	-Wl,--wrap=malloc
@@ -229,6 +229,27 @@ list2string(CMAKE_EXE_LINKER_FLAGS
 	-Wl,--wrap=realloc
 	-Wl,--wrap=memalign
 	-Wl,--wrap=__stack_chk_fail
+	${DYNAMIC_LIBS}
+	-lc
+	${EXTRALDFLAGS}
+	)
+
+# Flags we pass to the linker
+#
+list2string(CMAKE_SHARED_LINKER_FLAGS
+	-g
+	-mv5
+	-mG0lib
+	-G0
+	-shared
+	-Wl,-Bsymbolic
+	-Wl,--wrap=malloc
+	-Wl,--wrap=calloc
+	-Wl,--wrap=free
+	-Wl,--wrap=realloc
+	-Wl,--wrap=memalign
+	-Wl,--wrap=__stack_chk_fail
+	${DYNAMIC_LIBS}
 	-lc
 	${EXTRALDFLAGS}
 	)
