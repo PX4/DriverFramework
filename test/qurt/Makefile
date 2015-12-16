@@ -1,5 +1,4 @@
 ############################################################################
-#
 # Copyright (c) 2015 Mark Charlebois. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -12,7 +11,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name PX4 nor the names of its contributors may be
+# 3. Neither the name ATLFlight nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -28,66 +27,33 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
 ############################################################################
 
-include_directories(
-	./
-	)
+all: build_dsp/libdf_test.so build_dsp/libdf_test_skel.so build_arm/df_test
 
-if("${DF_TARGET}" STREQUAL "qurt")
+stubs: df_test_skel.c df_test_stub.c
 
-	#include(../${CMAKE_TOOLCHAIN_FILE})
-	if ("${HEXAGON_TOOLS_ROOT}" STREQUAL "")
-		message( FATAL_ERROR "HEXAGON_TOOLS_ROOT not set")
-	endif()
+.PHONY: ENV_VARS
+ENV_VARS:
+	@[ ! -z "${HEXAGON_SDK_ROOT}" ] || (echo "HEXAGON_SDK_ROOT not set" && false)
+	@[ ! -z "${HEXAGON_TOOLS_ROOT}" ] || (echo "HEXAGON_TOOLS_ROOT not set" && false)
 
-	if ("$ENV{HEXAGON_SDK_ROOT}" STREQUAL "")
-		message( FATAL_ERROR "HEXAGON_SDK_ROOT not set")
-	endif()
+df_test_skel.c df_test_stub.c: df_test.idl ENV_VARS
+	@${HEXAGON_SDK_ROOT}/tools/qaic/Ubuntu14/qaic -mdll -I ${HEXAGON_SDK_ROOT}/inc/stddef df_test.idl
 
-	set(HEXAGON_SDK_ROOT $ENV{HEXAGON_SDK_ROOT})
+build_dsp/libdf_test.so build_dsp/libdf_test_skel.so: stubs ENV_VARS
+	@mkdir -p build_dsp && cd build_dsp && cmake -Wno-dev ../dsp -DCMAKE_TOOLCHAIN_FILE=Toolchain-qurt.cmake
+	@cd build_dsp && make
+	
+build_arm/df_test: stubs ENV_VARS
+	@mkdir -p build_arm && cd build_arm && cmake -Wno-dev ../arm-linux -DCMAKE_TOOLCHAIN_FILE=Toolchain-arm-linux-gnueabihf.cmake
+	@cd build_arm && make
 
-	include_directories(
-		${CMAKE_CURRENT_BINARY_DIR}
-		${HEXAGON_SDK_ROOT}/inc/stddef
-		)
+load-test: build_dsp/libdf_test.so build_arm/df_test
+	@adb wait-for-devices
+	@adb push build_dsp/libdf_test_skel.so /usr/share/data/adsp/
+	@adb push build_dsp/libdf_test.so /usr/share/data/adsp/
+	@adb push build_arm/df_test /home/linaro/
 
-	add_custom_command(
-		OUTPUT df_testapp.h df_testapp_skel.c df_testapp_stub.c
-		DEPENDS qurt/df_testapp.idl
-		COMMAND "${HEXAGON_SDK_ROOT}/tools/qaic/Ubuntu14/qaic" "-mdll" "-I" "${HEXAGON_SDK_ROOT}/inc/stddef" "${CMAKE_SOURCE_DIR}/test/qurt/df_testapp.idl"
-		)
-
-	add_custom_target(generate_stubs
-		DEPENDS df_testapp.h df_testapp_skel.c df_testapp_stub.c
-		)
-
-	add_library(df_testapp SHARED
-		qurt/main.cpp
-		test.cpp
-		listtest.cpp
-		)
-
-	add_dependencies(df_testapp generate_stubs)
-
-	add_library(df_testapp_skel SHARED
-		df_testapp_skel.c
-		)
-
-	add_dependencies(df_testapp_skel generate_stubs)
-
-else()
-	add_executable(df_testapp
-		main.cpp
-		test.cpp
-		listtest.cpp
-		)
-endif()
-
-target_link_libraries(df_testapp
-	df_driver_framework
-	${df_driver_libs}
-	${df_link_libs}
-	)
-# vim: set noet fenc=utf-8 ff=unix ft=cmake :
+clean:
+	@rm -rf build* df_test_stub.c df_test_skel.c df_test.h

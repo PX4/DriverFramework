@@ -31,9 +31,9 @@
  ****************************************************************************/
 #include <stdio.h>
 
-extern int do_test();
+#include "df_testapp.h"
 
 int main()
 {
-	return do_test();
+	return df_testapp_do_test();
 }
