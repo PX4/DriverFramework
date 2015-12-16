@@ -51,4 +51,6 @@ else()
 		)
 endif()
 
+set_property(TARGET df_driver_framework PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
