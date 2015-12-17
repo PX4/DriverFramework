@@ -35,7 +35,7 @@
 #include "AEEStdDef.idl"
 
 interface df_unit_test{
-    uint32 do_test();
+    int32 do_test();
 };
 
 #endif /*DF_UNIT_TEST_IDL*/
