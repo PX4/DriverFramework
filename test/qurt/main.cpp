@@ -31,9 +31,9 @@
  ****************************************************************************/
 #include <stdio.h>
 
-#include "df_testapp.h"
+#include "df_unit_test.h"
 
 int main()
 {
-	return df_testapp_do_test();
+	return df_unit_test_do_test();
 }
