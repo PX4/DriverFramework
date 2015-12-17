@@ -36,7 +36,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 if ("$ENV{HEXAGON_TOOLS_ROOT}" STREQUAL "")
 	message(FATAL_ERROR
 		"The HexagonTools version 7.2.10 must be installed and the environment variable HEXAGON_TOOLS_ROOT must be set"
-		"(e.g. export HEXAGON_TOOLS_ROOT=/opt/HEXAGON_Tools/7.2.10)")
+		"(e.g. export HEXAGON_TOOLS_ROOT=/opt/HEXAGON_Tools/7.2.10/Tools)")
 else()
 	set(HEXAGON_TOOLS_ROOT $ENV{HEXAGON_TOOLS_ROOT})
 endif()
@@ -51,10 +51,9 @@ endmacro(list2string)
 
 set(V_ARCH "v5")
 set(CROSSDEV "hexagon-")
-set(HEXAGON_BIN	${HEXAGON_TOOLS_ROOT}/Tools/bin)
-set(HEXAGON_LIB_DIR ${HEXAGON_TOOLS_ROOT}/Tools/gnu/hexagon/lib)
-set(HEXAGON_ISS_DIR ${HEXAGON_TOOLS_ROOT}/Tools/lib/iss)
-set(TOOLSLIB ${HEXAGON_TOOLS_ROOT}/Tools/target/hexagon/lib/${V_ARCH}/G0/pic)
+set(HEXAGON_BIN	${HEXAGON_TOOLS_ROOT}/bin)
+set(HEXAGON_ISS_DIR ${HEXAGON_TOOLS_ROOT}/lib/iss)
+set(TOOLSLIB ${HEXAGON_TOOLS_ROOT}/target/hexagon/lib/${V_ARCH}/G0/pic)
 
 # Use the HexagonTools compiler (7.2.10)
 set(CMAKE_C_COMPILER	${HEXAGON_BIN}/${CROSSDEV}clang)
