@@ -35,56 +35,54 @@
 *************************************************************************/
 #pragma once
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include <stdint.h>
-#include <time.h>
-#include "HandleObj.hpp"
-
-#ifndef __DF_NUTTX
-#include "WorkMgr.hpp"
-#endif
-
-#ifdef __DF_LINUX
-// Show backtrace on error
-#define DF_ENABLE_BACKTRACE 1
-#endif
-
-#include "DFLog.hpp"
+#include <stdio.h>
 
 namespace DriverFramework {
 
-/**
- * Get the absolute time off the system realtime clock
- *
- * @param timespec the realtime time
- *
- * @return 0 if successful, nonzero else
- */
-int clockGetRealtime(struct timespec *ts);
+uint64_t offsetTime(void);
 
-// convert offset time to absolute time
-struct timespec absoluteTimeInFuture(uint64_t time_ms);
+}
 
-#ifdef DF_ENABLE_BACKTRACE
-// Used to show a backtrace while running
-void backtrace();
+#define DF_DEBUG 0
+
+#ifdef __DF_QURT
+
+#include <stdarg.h>
+
+// declaration to make the compiler happy.  This symbol is part of the DSP static image.
+void HAP_debug(const char *msg, int level, const char *filename, int line);
+
+static __inline void qurt_log(int level, const char *file, int line, const char *format, ...)
+{
+	char buf[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+	HAP_debug(buf, level, file, line);
+}
+
+#define DF_LOG_INFO(FMT, ...) qurt_log(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...)  qurt_log(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+
+#if DF_DEBUG
+#define DF_LOG_DEBUG(FMT, ...)  qurt_log(1, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#else
+#define DF_LOG_DEBUG(FMT, ...)  
 #endif
 
-class Framework
-{
-public:
-	// Initialize the driver framework
-	// This function must be called before any of the functions below
-	static int initialize(void);
+#else
 
-	// Terminate the driver framework
-	static void shutdown(void);
+// Substitute logging implemntation here
+#define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
-	// Block until shutdown requested
-	static void waitForShutdown();
-};
+#if DF_DEBUG
+#define DF_LOG_DEBUG(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
+#else
+#define DF_LOG_DEBUG(FMT, ...)  
+#endif
 
-};
+#endif
 
