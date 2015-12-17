@@ -33,3 +33,8 @@ add_definitions(
 	-D__DF_LINUX
 	)
 
+# See Toolchain-qurt.cmake for the rational behind this function.
+function (df_add_library df_library_name)
+	set(args "${ARGN}")
+	add_library (${df_library_name} ${args})
+endfunction ()

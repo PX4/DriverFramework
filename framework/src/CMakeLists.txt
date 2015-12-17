@@ -41,7 +41,7 @@ if("${DF_TARGET}" STREQUAL "nuttx")
 		)
 	add_dependencies(df_driver_framework platforms__nuttx)
 else()
-	add_library(df_driver_framework
+	df_add_library(df_driver_framework
 		DriverFramework.cpp
 		DevMgr.cpp
 		DevObj.cpp
@@ -50,7 +50,5 @@ else()
 		Time.cpp
 		)
 endif()
-
-set_property(TARGET df_driver_framework PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
