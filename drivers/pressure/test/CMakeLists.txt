@@ -36,7 +36,7 @@ include_directories(
 	)
 
 if("${DF_TARGET}" STREQUAL "qurt")
-add_library(df_pressure_test
+add_library(df_pressure_test SHARED
 	main.cpp
 	)
 else()
