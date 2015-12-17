@@ -37,7 +37,6 @@ include_directories(
 
 if("${DF_TARGET}" STREQUAL "qurt")
 
-	#include(../${CMAKE_TOOLCHAIN_FILE})
 	if ("${HEXAGON_TOOLS_ROOT}" STREQUAL "")
 		message( FATAL_ERROR "HEXAGON_TOOLS_ROOT not set")
 	endif()
@@ -51,6 +50,7 @@ if("${DF_TARGET}" STREQUAL "qurt")
 	include_directories(
 		${CMAKE_CURRENT_BINARY_DIR}
 		${HEXAGON_SDK_ROOT}/inc/stddef
+		${HEXAGON_SDK_ROOT}/lib/common/remote/ship/hexagon_Debug
 		)
 
 	add_custom_command(
