@@ -274,3 +274,16 @@ macro(__linux_compiler_gnu lang)
   set(CMAKE_SHARED_LIBRARY_LINK_${lang}_FLAGS "")
 endmacro()
 
+# This is the qurt version of the `df_add_library` CMake function. There are
+# also Linux and Darwin versions of this function in the corresponding
+# Toolchain-${target}.cmake files.
+
+# For qurt, the end target is a shared object so all intermediate static
+# libraries *must* be compiled with `-fPIC`. To achieve this, the qurt version
+# of `df_add_library` explicitly sets the `POSITION_INDEPENDENT_CODE` property.
+# whereas the Linux and Darwin versions don't need to.
+function (df_add_library df_library_name)
+	set(args "${ARGN}")
+	add_library (${df_library_name} ${args})
+	set_property(TARGET ${df_library_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
+endfunction ()
