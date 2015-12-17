@@ -33,6 +33,13 @@
 
 #include "df_unit_test.h"
 
+extern int do_test();
+
+int32 df_unit_test_do_test()
+{
+	return do_test();
+}
+
 int main()
 {
 	return df_unit_test_do_test();
