@@ -29,13 +29,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#ifndef DF_UNIT_TEST_IDL
-#define DF_UNIT_TEST_IDL
+#ifndef DF_TESTAPP_IDL
+#define DF_TESTAPP_IDL
 
 #include "AEEStdDef.idl"
 
-interface df_unit_test{
+interface df_testapp{
     int32 do_test();
 };
 
-#endif /*DF_UNIT_TEST_IDL*/
+#endif /*DF_TESTAPP_IDL*/

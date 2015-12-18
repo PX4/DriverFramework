@@ -36,13 +36,48 @@ include_directories(
 	)
 
 if("${DF_TARGET}" STREQUAL "qurt")
-add_library(df_pressure_test SHARED
-	main.cpp
-	)
+	if ("${HEXAGON_TOOLS_ROOT}" STREQUAL "")
+		message( FATAL_ERROR "HEXAGON_TOOLS_ROOT not set")
+	endif()
+
+	if ("$ENV{HEXAGON_SDK_ROOT}" STREQUAL "")
+		message( FATAL_ERROR "HEXAGON_SDK_ROOT not set")
+	endif()
+
+	set(HEXAGON_SDK_ROOT $ENV{HEXAGON_SDK_ROOT})
+
+	include_directories(
+		${CMAKE_CURRENT_BINARY_DIR}
+		${HEXAGON_SDK_ROOT}/inc/stddef
+		${HEXAGON_SDK_ROOT}/lib/common/remote/ship/hexagon_Debug
+		)
+
+	add_custom_command(
+		OUTPUT df_pressure_test.h df_pressure_test_skel.c df_pressure_test_stub.c
+		DEPENDS df_pressure_test.idl
+		COMMAND "${HEXAGON_SDK_ROOT}/tools/qaic/Ubuntu14/qaic" "-mdll" "-I" "${HEXAGON_SDK_ROOT}/inc/stddef" "${CMAKE_CURRENT_SOURCE_DIR}/df_pressure_test.idl"
+		)
+
+	add_custom_target(pressure_stubs
+		DEPENDS df_pressure_test.h df_pressure_test_skel.c df_pressure_test_stub.c
+		)
+
+	add_library(df_pressure_test SHARED
+		main.cpp
+		)
+
+	add_dependencies(df_pressure_test pressure_stubs)
+
+	add_library(df_pressure_test_skel SHARED
+		df_pressure_test_skel.c
+		)
+
+	add_dependencies(df_pressure_test_skel pressure_stubs)
+
 else()
-add_executable(df_pressure_test
-	main.cpp
-	)
+	add_executable(df_pressure_test
+		main.cpp
+		)
 endif()
 
 target_link_libraries(df_pressure_test

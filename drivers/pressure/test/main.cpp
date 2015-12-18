@@ -95,7 +95,7 @@ int PressureTester::run()
 	return m_pass;
 }
 
-int main()
+int do_test()
 {
 	int ret = Framework::initialize();
 	if (ret < 0) {
@@ -112,3 +112,20 @@ int main()
 	return ret;
 }
 
+#ifdef __DF_QURT
+
+#include "df_pressure_test.h"
+
+int32 df_unit_test_do_test()
+{
+	return do_test();
+}
+
+#else
+
+int main()
+{
+	return do_test();
+}
+
+#endif

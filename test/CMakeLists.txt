@@ -54,28 +54,28 @@ if("${DF_TARGET}" STREQUAL "qurt")
 		)
 
 	add_custom_command(
-		OUTPUT df_unit_test.h df_unit_test_skel.c df_unit_test_stub.c
-		DEPENDS ${CMAKE_SOURCE_DIR}/os/qurt/idl/df_unit_test.idl
-		COMMAND "${HEXAGON_SDK_ROOT}/tools/qaic/Ubuntu14/qaic" "-mdll" "-I" "${HEXAGON_SDK_ROOT}/inc/stddef" "${CMAKE_SOURCE_DIR}/os/qurt/idl/df_unit_test.idl"
+		OUTPUT df_testapp.h df_testapp_skel.c df_testapp_stub.c
+		DEPENDS df_testapp.idl
+		COMMAND "${HEXAGON_SDK_ROOT}/tools/qaic/Ubuntu14/qaic" "-mdll" "-I" "${HEXAGON_SDK_ROOT}/inc/stddef" "${CMAKE_CURRENT_SOURCE_DIR}/df_testapp.idl"
 		)
 
 	add_custom_target(generate_stubs
-		DEPENDS df_unit_test.h df_unit_test_skel.c df_unit_test_stub.c
+		DEPENDS df_testapp.h df_testapp_skel.c df_testapp_stub.c
 		)
 
 	add_library(df_testapp SHARED
-		qurt/main.cpp
+		main.cpp
 		test.cpp
 		listtest.cpp
 		)
 
 	add_dependencies(df_testapp generate_stubs)
 
-	add_library(df_unit_test_skel SHARED
-		df_unit_test_skel.c
+	add_library(df_testapp_skel SHARED
+		df_testapp_skel.c
 		)
 
-	add_dependencies(df_unit_test_skel generate_stubs)
+	add_dependencies(df_testapp_skel generate_stubs)
 
 else()
 	add_executable(df_testapp
