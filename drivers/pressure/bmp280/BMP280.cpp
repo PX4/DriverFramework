@@ -33,13 +33,13 @@
 
 #include <string.h>
 #include "DriverFramework.hpp"
-#include "PressureSensor.hpp"
+#include "BMP280.hpp"
 
 using namespace DriverFramework;
 
 // convertPressure must be called after convertTemperature
 // as convertTemperature sets m_sensor_data.t_fine
-int64_t PressureSensor::convertPressure(int64_t adc_P)
+int64_t BMP280::convertPressure(int64_t adc_P)
 {
 	int64_t var1, var2, p;
 	var1 = ((int64_t) m_sensor_data.t_fine) - 128000;
@@ -67,7 +67,7 @@ int64_t PressureSensor::convertPressure(int64_t adc_P)
 	return p;
 }
 
-int32_t PressureSensor::convertTemperature(int32_t adc_T)
+int32_t BMP280::convertTemperature(int32_t adc_T)
 {
 	int32_t var1, var2, T;
 	var1 = ((((adc_T >> 3)
@@ -82,7 +82,7 @@ int32_t PressureSensor::convertTemperature(int32_t adc_T)
 	return T;
 }
 
-int PressureSensor::loadCalibration()
+int BMP280::loadCalibration()
 {
 	int result;
 	uint8_t calib_values[BMP280_MAX_LEN_CALIB_VALUES];
@@ -111,7 +111,7 @@ int PressureSensor::loadCalibration()
 	return 0;
 }
 
-int PressureSensor::bmp280_init() {
+int BMP280::bmp280_init() {
 	int result;
 	uint8_t sensor_id;
 
@@ -135,7 +135,6 @@ int PressureSensor::bmp280_init() {
 	result = _writeReg(0xF4, &ctrl_meas, 1);
 	if (result != 0) {
 		DF_LOG_ERR("error: sensor configuration failed");
-		m_last_error = -EIO;
 		return -EIO;
 	}
 	DF_LOG_ERR("sensor configuration succeeded");
@@ -152,7 +151,7 @@ int PressureSensor::bmp280_init() {
 	return 0;
 }
 
-int PressureSensor::start()
+int BMP280::start()
 {
 	int result = 0;
 
@@ -192,29 +191,7 @@ exit:
 	return result;
 }
 
-void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
-{
-	m_altimeter_mbars = altimeter_setting_in_mbars;
-}
-
-int PressureSensor::getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required)
-{
-	PressureSensor *me = DevMgr::getDevObjByHandle<PressureSensor>(h);
-	int ret = -1;
-	if (me != nullptr) {
-		me->m_synchronize.lock();
-		if (is_new_data_required) {
-			me->m_synchronize.waitOnSignal(0);
-		}
-		out_data = me->m_sensor_data;
-		me->m_synchronize.unlock();
-		ret = 0;
-	}
-
-	return ret;
-}
-
-void PressureSensor::_measure(void)
+void BMP280::_measure(void)
 {
 	int bmp_ret_code;
 	uint32_t pressure_from_sensor;

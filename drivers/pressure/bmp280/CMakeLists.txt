@@ -31,12 +31,8 @@
 #
 ############################################################################
 
-include_directories(.)
-
-add_subdirectory(bmp280)
-
-if("${DF_ENABLE_TESTS}" STREQUAL "1")
-	add_subdirectory(test)
-endif()
+df_add_library(df_bmp280
+	BMP280.cpp
+	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
