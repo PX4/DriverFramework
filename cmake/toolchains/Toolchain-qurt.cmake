@@ -36,7 +36,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 if ("$ENV{HEXAGON_TOOLS_ROOT}" STREQUAL "")
 	message(FATAL_ERROR
 		"The HexagonTools version 7.2.10 must be installed and the environment variable HEXAGON_TOOLS_ROOT must be set"
-		"(e.g. export HEXAGON_TOOLS_ROOT=/opt/HEXAGON_Tools/7.2.10/Tools)")
+		"(e.g. export HEXAGON_TOOLS_ROOT=${HOME}/Qualcomm/HEXAGON_Tools/7.2.10/Tools)")
 else()
 	set(HEXAGON_TOOLS_ROOT $ENV{HEXAGON_TOOLS_ROOT})
 endif()
