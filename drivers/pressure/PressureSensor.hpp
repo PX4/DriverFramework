@@ -56,71 +56,44 @@ struct pressure_sensor_data
 	uint64_t error_count; 			/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
-struct bmp280_sensor_calibration
-{
-	uint16_t dig_T1;
-	uint16_t dig_P1;
-	int16_t dig_T2;
-	int16_t dig_T3;
-	int16_t dig_P2;
-	int16_t dig_P3;
-	int16_t dig_P4;
-	int16_t dig_P5;
-	int16_t dig_P6;
-	int16_t dig_P7;
-	int16_t dig_P8;
-	int16_t dig_P9;
-};
-
-#define BMP280_SLAVE_ADDRESS 0b1110110       /* 7-bit slave address */
-#define BMP280_BUS_FREQUENCY_IN_KHZ 400
-#define BMP280_TRANSFER_TIMEOUT_IN_USECS 9000
-
-#define BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES 6
-#define BMP280_MAX_LEN_CALIB_VALUES 26
-
-typedef int32_t  BMP280_S32_t;
-typedef int64_t  BMP280_S64_t;
-typedef uint32_t BMP280_U32_t;
-
 class PressureSensor : public I2CDevObj
 {
 public:
-	PressureSensor(const char *device_path) :
-		I2CDevObj("PressureSensor", device_path, PRESSURE_CLASS_PATH, 1000)
+	PressureSensor(const char *device_path, unsigned int sample_interval_usec) :
+		I2CDevObj("PressureSensor", device_path, PRESSURE_CLASS_PATH, sample_interval_usec)
 	{}
 
-	void setAltimeter(float altimeter_setting_in_mbars);
+	~PressureSensor() {}
 
-	static int getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required);
+	void setAltimeter(float altimeter_setting_in_mbars)
+	{
+		m_altimeter_mbars = altimeter_setting_in_mbars;
+	}
 
-	virtual int start();
+	static int getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required)
+	{
+		PressureSensor *me = DevMgr::getDevObjByHandle<PressureSensor>(h);
+		int ret = -1;
+		if (me != nullptr) {
+			me->m_synchronize.lock();
+			if (is_new_data_required) {
+				me->m_synchronize.waitOnSignal(0);
+			}
+			out_data = me->m_sensor_data;
+			me->m_synchronize.unlock();
+			ret = 0;
+		}
+
+		return ret;
+	}
 
 protected:
-	virtual void _measure();
-
-private:
-	// Returns pressure in Pa as unsigned 32 bit integer in
-	// Q24.8 format (24 integer bits and 8 fractional bits)
-	// Output value of “24674867” represents
-	// 24674867/256 = 96386.2 Pa = 963.862 hPa
-	int64_t convertPressure(int64_t adc_pressure);
-
-	// Returns temperature in DegC, resolution is 0.01 DegC
-	// Output value of “5123” equals 51.23 DegC
-	int32_t convertTemperature(int32_t adc_temperature);
-
-	int loadCalibration();
-
-	// returns 0 on success, -errno on failure
-	int bmp280_init();
+	virtual void _measure() = 0;
 
 	struct dspal_i2c_ioctl_slave_config 	m_slave_config;
 	struct pressure_sensor_data 		m_sensor_data;
-	struct bmp280_sensor_calibration 	m_sensor_calibration;
 	float 					m_altimeter_mbars = 0.0;
 	SyncObj 				m_synchronize;
-	int					m_last_error;
 };
 
 }; // namespace DriverFramework

@@ -32,7 +32,7 @@
 ############################################################################
 
 include_directories(
-	../
+	../bmp280
 	)
 
 if("${DF_TARGET}" STREQUAL "qurt")
@@ -82,7 +82,7 @@ endif()
 
 target_link_libraries(df_pressure_test
 	df_driver_framework
-	df_pressure
+	df_bmp280
 	df_i2c
 	${df_link_libs}
 	)
