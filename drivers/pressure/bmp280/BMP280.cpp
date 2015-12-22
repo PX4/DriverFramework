@@ -44,14 +44,11 @@ int64_t BMP280::convertPressure(int64_t adc_P)
 	int64_t var1, var2, p;
 	var1 = ((int64_t) m_sensor_data.t_fine) - 128000;
 	var2 = var1 * var1 * (int64_t) m_sensor_calibration.dig_P6;
-	var2 = var2
-			+ ((var1 * (int64_t) m_sensor_calibration.dig_P5) << 17);
+	var2 = var2 + ((var1 * (int64_t) m_sensor_calibration.dig_P5) << 17);
 	var2 = var2 + (((int64_t) m_sensor_calibration.dig_P4) << 35);
-	var1 =
-			((var1 * var1 * (int64_t) m_sensor_calibration.dig_P3) >> 8)
+	var1 = ((var1 * var1 * (int64_t) m_sensor_calibration.dig_P3) >> 8)
 					+ ((var1 * (int64_t) m_sensor_calibration.dig_P2) << 12);
-	var1 = (((((int64_t) 1) << 47) + var1))
-			* ((int64_t) m_sensor_calibration.dig_P1) >> 33;
+	var1 = (((((int64_t) 1) << 47) + var1) * ((int64_t) m_sensor_calibration.dig_P1)) >> 33;
 	if (var1 == 0) {
 		return 0; // avoid exception caused by division by zero
 	}
