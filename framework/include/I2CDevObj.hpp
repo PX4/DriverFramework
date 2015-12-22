@@ -65,10 +65,10 @@ public:
 	virtual int stop();
 
 	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-	static int writeReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+	static int writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length);
 
 protected:
-	int dev_open(int flags)
+	int devOpen(int flags)
 	{
 		int fd = ::open(m_dev_instance_path, flags);
 		if (fd >= 0) {
@@ -77,12 +77,11 @@ protected:
 		return (fd >= 0) ? 0 : -errno;
 	}
 
-	int dev_close()
+	int devClose()
 	{
 		return ::close(m_fd);
 	}
 
-private:
 	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
 	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
 
