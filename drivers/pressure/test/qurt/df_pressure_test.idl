@@ -29,13 +29,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#ifndef DF_PRESSURE_TEST_IDL
-#define DF_PRESSURE_TEST_IDL
+
+#pragma once
 
 #include "AEEStdDef.idl"
 
 interface df_pressure_test{
     int32 do_test();
 };
-
-#endif /*DF_PRESSURE_TEST_IDL*/
