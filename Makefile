@@ -4,13 +4,9 @@ define df_cmake_generate
 mkdir -p build_$(1) && cd build_$(1) && cmake -Wno-dev .. -DDF_TARGET=$(1) -DCMAKE_TOOLCHAIN_FILE=$(2) -DDF_ENABLE_TESTS=1
 endef
 
-define df_build
-	$(call df_cmake_generate,$(1),cmake/toolchains/Toolchain-$(1).cmake)
-	cd build_$(1) && make
-endef
-
 linux nuttx:
-	$(call df_build,$@)
+	$(call df_cmake_generate,$@,cmake/toolchains/Toolchain-$@.cmake)
+	cd build_$@ && make
 
 external/dspal:
 	cd external && git clone https://github.com/ATLFlight/dspal
@@ -19,7 +15,8 @@ dspal_sync: external/dspal
 	cd external/dspal && git pull
 
 qurt: dspal_sync
-	$(call df_build,$@)
+	$(call df_cmake_generate,qurt,cmake_hexagon/toolchain/Toolchain-qurt.cmake)
+	cd build_qurt && make
 
 run: linux
 	build_linux/test/df_testapp
