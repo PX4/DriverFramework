@@ -50,8 +50,12 @@ uint64_t offsetTime(void);
 
 #include <stdarg.h>
 
+extern "C" {
+
 // declaration to make the compiler happy.  This symbol is part of the DSP static image.
 void HAP_debug(const char *msg, int level, const char *filename, int line);
+
+};
 
 static __inline void qurt_log(int level, const char *file, int line, const char *format, ...)
 {
