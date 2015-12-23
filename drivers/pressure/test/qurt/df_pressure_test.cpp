@@ -31,9 +31,9 @@
  *
  ****************************************************************************/
 
-extern int do_test();
+#include "df_pressure_test.h"
 
 int main()
 {
-	return do_test();
+	return df_pressure_test_do_test();
 }

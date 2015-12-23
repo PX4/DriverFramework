@@ -31,23 +31,16 @@
 #
 ############################################################################
 
-include_directories(
-	../bmp280
+include(../../../../cmake_hexagon/qurt_app.cmake)
+
+QURT_BUNDLE(APP_NAME df_pressure_test
+	APPS_SOURCES df_pressure_test.cpp
+	DSP_SOURCES df_pressure_test_dsp.cpp
+	../test.cpp
+	DSP_LINK_LIBS df_driver_framework
+	df_bmp280 df_i2c
+	${df_link_libs}
+	APPS_COMPILER arm-linux-gnueabihf-gcc
 	)
 
-if("${DF_TARGET}" STREQUAL "qurt")
-	add_subdirectory(qurt)
-else()
-	add_executable(df_pressure_test
-		main.cpp
-		test.cpp
-		)
-
-	target_link_libraries(df_pressure_test
-		df_driver_framework
-		df_bmp280
-		df_i2c
-		${df_link_libs}
-		)
-endif()
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
