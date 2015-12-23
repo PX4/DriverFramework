@@ -34,7 +34,7 @@
 
 extern int do_test();
 
-int32 df_unit_test_do_test()
+int32 df_pressure_test_do_test()
 {
 	return do_test();
 }
