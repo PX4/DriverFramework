@@ -1,5 +1,10 @@
 all: linux qurt
 
+.PHONY submodule:
+submodule:
+	git submodule init
+	git submodule update
+
 define df_cmake_generate
 mkdir -p build_$(1) && cd build_$(1) && cmake -Wno-dev .. -DDF_TARGET=$(1) -DCMAKE_TOOLCHAIN_FILE=$(2) -DDF_ENABLE_TESTS=1
 endef
@@ -11,7 +16,7 @@ linux nuttx:
 external/dspal:
 	cd external && git clone https://github.com/ATLFlight/dspal
 
-dspal_sync: external/dspal
+dspal_sync: external/dspal submodule
 	cd external/dspal && git pull
 
 qurt: dspal_sync
