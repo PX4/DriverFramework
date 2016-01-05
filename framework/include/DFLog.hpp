@@ -73,7 +73,7 @@ static __inline void qurt_log(int level, const char *file, int line, const char 
 #if DF_DEBUG
 #define DF_LOG_DEBUG(FMT, ...)  qurt_log(1, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
 #else
-#define DF_LOG_DEBUG(FMT, ...)  
+#define DF_LOG_DEBUG(FMT, ...)
 #endif
 
 #else

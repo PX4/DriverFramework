@@ -270,14 +270,17 @@ void Framework::shutdown()
 
 int Framework::initialize()
 {
+	DF_LOG_INFO("Framework::initialize");
 	int ret = HRTWorkQueue::initialize();
 	if (ret < 0) {
 		return ret-10;
 	}
+	DF_LOG_INFO("Calling DevMgr::initialize");
 	ret = DevMgr::initialize();
 	if (ret < 0) {
 		return ret-20;
 	}
+	DF_LOG_INFO("Calling WorkMgr::initialize");
 	ret = WorkMgr::initialize();
 	if (ret < 0) {
 		return ret-30;
@@ -340,6 +343,7 @@ HRTWorkQueue *HRTWorkQueue::m_instance = NULL;
 
 void *HRTWorkQueue::process_trampoline(void *arg)
 {
+	DF_LOG_INFO("HRTWorkQueue::process_trampoline");
 	if (m_instance) {
 		m_instance->process();
 	}
@@ -369,27 +373,33 @@ static int setRealtimeSched(pthread_attr_t &attr)
 
 int HRTWorkQueue::initialize(void)
 {
-	DF_LOG_DEBUG("HRTWorkQueue::initialize");
+	DF_LOG_INFO("HRTWorkQueue::initialize");
 	m_instance = new HRTWorkQueue();
+	DF_LOG_INFO("Created HRTWorkQueue");
 
 	if (m_instance == nullptr) {
 		return -1;
 	}
+	DF_LOG_INFO("m_instance = %p", m_instance);
+	DF_LOG_INFO("Calling pthread_mutex_init");
 
 	// Create a lock for handling the work queue
 	if (pthread_mutex_init(&g_hrt_lock, NULL) != 0) {
 		return -2;
 	}
+	DF_LOG_INFO("pthread_mutex_init success");
 
 	pthread_attr_t attr;
 	if(setRealtimeSched(attr)) {
 		return -3;
 	}
+	DF_LOG_INFO("setRealtimeSched success");
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
 		return -4;
 	}
+	DF_LOG_INFO("pthread_create success");
 	return 0;
 }
 
@@ -481,7 +491,7 @@ void HRTWorkQueue::shutdown(void)
 
 void HRTWorkQueue::process(void)
 {
-	DF_LOG_DEBUG("HRTWorkQueue::process");
+	DF_LOG_INFO("HRTWorkQueue::process");
 	uint64_t next;
 	uint64_t elapsed;
 	uint64_t remaining;
@@ -489,7 +499,7 @@ void HRTWorkQueue::process(void)
 	uint64_t now;
 
 	while(!m_exit_requested) {
-		DF_LOG_DEBUG("HRTWorkQueue::process In while");
+		DF_LOG_INFO("HRTWorkQueue::process In while");
 		hrtLock();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -499,7 +509,7 @@ void HRTWorkQueue::process(void)
 		idx = m_work_list.next(idx);
 		now = offsetTime();
 		while ((!m_exit_requested) && (idx != nullptr)) {
-			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
+			DF_LOG_INFO("HRTWorkQueue::process work exists");
 			now = offsetTime();
 			unsigned int index; 
 			m_work_list.get(idx, index);
@@ -511,7 +521,7 @@ void HRTWorkQueue::process(void)
 
 				if (elapsed >= item->m_delay) {
 
-					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item->m_callback);
+					DF_LOG_INFO("HRTWorkQueue::process do work (%p)", item->m_callback);
 					item->updateStats(now);
 
 					// reschedule work
@@ -541,7 +551,7 @@ void HRTWorkQueue::process(void)
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now+next);
 		
-		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
+		DF_LOG_INFO("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
 		// Wait until next expiry or until a new item is rescheduled
 		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();

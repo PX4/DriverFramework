@@ -34,9 +34,12 @@
 include(../../cmake_hexagon/qurt_app.cmake)
 
 QURT_BUNDLE(APP_NAME df_testapp
-	APPS_SOURCES df_testapp.cpp
+	APPS_SOURCES df_testapp.cpp 
 	DSP_SOURCES df_testapp_dsp.cpp
+	../test.cpp
+	../listtest.cpp
 	DSP_LINK_LIBS df_driver_framework ${df_driver_libs} ${df_link_libs}
+	DSP_INCS ${CMAKE_SOURCE_DIR}/framework/include
 	APPS_COMPILER arm-linux-gnueabihf-gcc
 	)
 
