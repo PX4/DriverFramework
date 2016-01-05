@@ -31,22 +31,8 @@
  ****************************************************************************/
 extern int do_test();
 
-#ifdef __DF_QURT
-
-#include "df_testapp.h"
-
-extern int do_test();
-
-int32 df_testapp_do_test()
-{
-	return do_test();
-}
-
-#else
-
 int main()
 {
 	return do_test();
 }
 
-#endif

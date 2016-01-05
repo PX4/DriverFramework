@@ -31,77 +31,10 @@
 #
 ############################################################################
 
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+include_directories(../../framework/include)
 
-set(version_major 0)
-set(version_minor 1)
-set(version_patch 0)
-set(version "${version_major}.${version_minor}.${version_patch}")
-set(package-contact "charlebm@gmail.com")
-
-message("DF_TARGET = ${DF_TARGET}")
-
-if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
-message("Enabling Thread Sanitizer")
-
-# Used for unit testing
-set(CMAKE_C_COMPILER /usr/bin/clang)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++)
-
-set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
-
-elseif ("$ENV{ENABLE_ASAN}" STREQUAL "1")
-message("Enabling Address Sanitizer")
-
-# Used for unit testing, works with gcc 4.8 or clang
-set(DF_CXX_FLAGS "-O1 -g -fsanitize=address -fno-omit-frame-pointer -std=c++11 -Wall" CACHE STRING "DF_CXX_FLAGS")
-
-else()
-
-set(DF_CXX_FLAGS "-std=c++11 -Wall -g" CACHE STRING "DF_CXX_FLAGS")
-
-endif()
-
-# Enable this directory's flags:
-set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
-
-set(df_link_libs CACHE STRING
-	"DF_LINK_LIBS")
-
-if (NOT "${DF_TARGET}" STREQUAL "qurt")
-
-	list(APPEND df_link_libs pthread)
-
-	if (NOT APPLE)
-		list(APPEND df_link_libs rt)
-	endif()
-else()
-	add_subdirectory(os/qurt)
-	list(APPEND df_link_libs df_qurt_stubs)
-
-endif()
-
-include_directories(
-	framework/include
-	os/qurt/include
+df_add_library(df_qurt_stubs
+	src/qurt_stubs.cpp
 	)
-
-set(DF_TARGET "linux" CACHE STRING "desired target")
-
-# Add framework library
-add_subdirectory(framework/src)
-
-if(NOT "${DF_TARGET}" STREQUAL "nuttx")
-	# Add driver libraries
-	add_subdirectory(drivers)
-
-if("${DF_ENABLE_TESTS}" STREQUAL "1")
-	# Add unit test
-	add_subdirectory(test)
-endif()
-endif()
-
-message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
-message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
