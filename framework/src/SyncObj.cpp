@@ -46,6 +46,9 @@ using namespace DriverFramework;
 SyncObj::SyncObj()
 {
 	m_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+
+	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
+	initNormalMutex(m_lock);
 	pthread_cond_init(&m_new_data_cond, NULL);
 }
 
@@ -86,3 +89,15 @@ void SyncObj::signal(void)
 	pthread_cond_signal(&m_new_data_cond);
 }
 
+namespace DriverFramework {
+
+int initNormalMutex(pthread_mutex_t &mutex)
+{
+	pthread_mutexattr_t attr;
+
+	return (pthread_mutexattr_init(&attr) != 0 ||
+		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL) != 0 ||
+		pthread_mutex_init(&mutex, &attr) != 0) ? -1 : 0;
+}
+
+};
