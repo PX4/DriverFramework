@@ -271,6 +271,7 @@ void Framework::shutdown()
 int Framework::initialize()
 {
 	DF_LOG_INFO("Framework::initialize");
+
 	int ret = HRTWorkQueue::initialize();
 	if (ret < 0) {
 		return ret-10;
@@ -384,7 +385,8 @@ int HRTWorkQueue::initialize(void)
 	DF_LOG_INFO("Calling pthread_mutex_init");
 
 	// Create a lock for handling the work queue
-	if (pthread_mutex_init(&g_hrt_lock, NULL) != 0) {
+	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
+	if (initNormalMutex(g_hrt_lock) < 0) {
 		return -2;
 	}
 	DF_LOG_INFO("pthread_mutex_init success");
