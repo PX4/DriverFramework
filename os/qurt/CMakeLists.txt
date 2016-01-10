@@ -31,6 +31,7 @@
 #
 ############################################################################
 
+include(../../cmake/df_add_library.cmake)
 include_directories(../../framework/include)
 
 df_add_library(df_qurt_stubs

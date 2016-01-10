@@ -1,20 +1,19 @@
-############################################################################
 #
-# Copyright (c) 2015 Mark Charlebois. All rights reserved.
+# Copyright (C) 2015 Mark Charlebois. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
+#	notice, this list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
+#	notice, this list of conditions and the following disclaimer in
+#	the documentation and/or other materials provided with the
+#	distribution.
 # 3. Neither the name PX4 nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
+#	used to endorse or promote products derived from this software
+#	without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -29,28 +28,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-############################################################################
 
-include(../../cmake/df_add_library.cmake)
 
-if("${DF_TARGET}" STREQUAL "nuttx")
-	add_library(df_driver_framework
-		DriverFramework_NuttX.cpp
-		DevMgr_Nuttx.cpp
-		DFList.cpp
-		SyncObj.cpp
-		Time.cpp
-		)
-	add_dependencies(df_driver_framework platforms__nuttx)
-else()
-	df_add_library(df_driver_framework
-		DriverFramework.cpp
-		DevMgr.cpp
-		DevObj.cpp
-		SyncObj.cpp
-		DFList.cpp
-		Time.cpp
-		)
-endif()
+function (df_add_library df_library_name)
+	set(args "${ARGN}")
+	add_library (${df_library_name} ${args})
 
-# vim: set noet fenc=utf-8 ff=unix ft=cmake :
+	if ("${DF_TARGET}" STREQUAL "qurt")
+		set_property(TARGET ${df_library_name} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+	endif()
+endfunction ()
