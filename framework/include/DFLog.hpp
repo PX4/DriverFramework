@@ -45,6 +45,7 @@ uint64_t offsetTime(void);
 }
 
 #define DF_DEBUG 0
+#define DF_INFO 0
 
 #ifdef __QURT
 
@@ -79,7 +80,11 @@ static __inline void qurt_log(int level, const char *file, int line, const char 
 #else
 
 // Substitute logging implemntation here
+#if DF_INFO
 #define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#else
+#define DF_LOG_INFO(FMT, ...)
+#endif
 #define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
 #if DF_DEBUG
