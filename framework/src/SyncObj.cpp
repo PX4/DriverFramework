@@ -95,9 +95,17 @@ int initNormalMutex(pthread_mutex_t &mutex)
 {
 	pthread_mutexattr_t attr;
 
+#ifdef PTHREAD_MUTEX_NORMAL
 	return (pthread_mutexattr_init(&attr) != 0 ||
 		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL) != 0 ||
 		pthread_mutex_init(&mutex, &attr) != 0) ? -1 : 0;
+#else
+	#ifndef __PX4_NUTTX
+	#error PTHREAD_MUTEX_NORMAL MUST BE DEFINED FOR NORMAL OS ENVIRONMENTS
+	#endif
+	return (pthread_mutexattr_init(&attr) != 0 ||
+		pthread_mutex_init(&mutex, &attr) != 0) ? -1 : 0;
+#endif
 }
 
 };
