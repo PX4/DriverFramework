@@ -34,7 +34,7 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include "DriverFramework.hpp"
-#ifdef __DF_QURT
+#ifdef __QURT
 #include "dspal_time.h"
 #endif
 #include <time.h>

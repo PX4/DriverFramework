@@ -46,7 +46,7 @@ uint64_t offsetTime(void);
 
 #define DF_DEBUG 0
 
-#ifdef __DF_QURT
+#ifdef __QURT
 
 #include <stdarg.h>
 
