@@ -33,12 +33,15 @@
 
 #pragma once
 
-#include <pthread.h>
+#include <stdint.h>
 #include "SyncObj.hpp"
 #include "I2CDevObj.hpp"
+#include "dev_fs_lib_i2c.h"
 
 #define PRESSURE_DEVICE_PATH "/dev/i2c-2"
 #define PRESSURE_CLASS_PATH  "/dev/pressure"
+
+namespace DriverFramework {
 
 /**
  * The sensor independent data structure containing pressure values.
@@ -46,41 +49,51 @@
 struct pressure_sensor_data
 {
 	int32_t  t_fine; 			/*! used internally to calculate a temperature compensated pressure value. */
-	uint32_t pressure_in_pa; 		/*! current pressure in Pascals */
+	float    pressure_in_pa; 		/*! current pressure in Pascals */
 	float    temperature_in_c; 		/*! current temperature in C at which the pressure was read */
 	uint32_t sensor_read_counter;		/*! the total number of pressure sensor readings since the system was started */
 	uint64_t last_read_time_in_usecs; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
 	uint64_t error_count; 			/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
-using namespace DriverFramework;
-
 class PressureSensor : public I2CDevObj
 {
 public:
-	PressureSensor(const char *device_path) :
-		I2CDevObj("PressureSensor", device_path, PRESSURE_CLASS_PATH, 1000)
+	PressureSensor(const char *device_path, unsigned int sample_interval_usec) :
+		I2CDevObj("PressureSensor", device_path, PRESSURE_CLASS_PATH, sample_interval_usec)
 	{}
 
-	void setAltimeter(float altimeter_setting_in_mbars);
+	~PressureSensor() {}
 
-	static int getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required);
+	void setAltimeter(float altimeter_setting_in_mbars)
+	{
+		m_altimeter_mbars = altimeter_setting_in_mbars;
+	}
+
+	static int getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required)
+	{
+		PressureSensor *me = DevMgr::getDevObjByHandle<PressureSensor>(h);
+		int ret = -1;
+		if (me != nullptr) {
+			me->m_synchronize.lock();
+			if (is_new_data_required) {
+				me->m_synchronize.waitOnSignal(0);
+			}
+			out_data = me->m_sensor_data;
+			me->m_synchronize.unlock();
+			ret = 0;
+		}
+
+		return ret;
+	}
 
 protected:
-	virtual void _measure();
+	virtual void _measure() = 0;
 
-private:
-
-	// Return pressure in pascals
-	uint32_t getPressure();
-
-	// Get temperature in degrees C
-	float getTemperature();
-
-	struct pressure_sensor_data 	m_sensor_data;
-
-	float 				m_altimeter_mbars = 0.0;
-
-	SyncObj 			m_synchronize;
+	struct dspal_i2c_ioctl_slave_config 	m_slave_config;
+	struct pressure_sensor_data 		m_sensor_data;
+	float 					m_altimeter_mbars = 0.0;
+	SyncObj 				m_synchronize;
 };
 
+}; // namespace DriverFramework

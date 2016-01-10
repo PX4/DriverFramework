@@ -33,59 +33,60 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include "DevObj.hpp"
-
 #pragma once
+
+#include <stdint.h>
+#include <stdio.h>
 
 namespace DriverFramework {
 
-class I2CDevHandle : public DevHandle
+uint64_t offsetTime(void);
+
+}
+
+#define DF_DEBUG 0
+
+#ifdef __QURT
+
+#include <stdarg.h>
+
+extern "C" {
+
+// declaration to make the compiler happy.  This symbol is part of the DSP static image.
+void HAP_debug(const char *msg, int level, const char *filename, int line);
+
+};
+
+static __inline void qurt_log(int level, const char *file, int line, const char *format, ...)
 {
-public:
-	I2CDevHandle() :
-		DevHandle()
-	{}
-	virtual ~I2CDevHandle();
-};
+	char buf[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+	HAP_debug(buf, level, file, line);
+}
 
-class I2CDevObj : public DevObj
-{
-public:
-	I2CDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
-		DevObj(name, dev_path, dev_class_path, DeviceBusType_I2C, sample_interval_usec)
-	{}
+#define DF_LOG_INFO(FMT, ...) qurt_log(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...)  qurt_log(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
 
-	virtual ~I2CDevObj() {}
+#if DF_DEBUG
+#define DF_LOG_DEBUG(FMT, ...)  qurt_log(1, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#else
+#define DF_LOG_DEBUG(FMT, ...)
+#endif
 
-	virtual int start();
-	virtual int stop();
+#else
 
-	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-	static int writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length);
+// Substitute logging implemntation here
+#define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
-protected:
-	int devOpen(int flags)
-	{
-		int fd = ::open(m_dev_instance_path, flags);
-		if (fd >= 0) {
-			m_fd = fd;
-		}
-		return (fd >= 0) ? 0 : -errno;
-	}
+#if DF_DEBUG
+#define DF_LOG_DEBUG(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
+#else
+#define DF_LOG_DEBUG(FMT, ...)  
+#endif
 
-	int devClose()
-	{
-		return ::close(m_fd);
-	}
+#endif
 
-	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
-
-	int m_fd = 0;
-};
-
-};

@@ -31,9 +31,9 @@
 #
 ############################################################################
 
-add_library(df_pressure
-	PressureSensor.cpp
-	)
+include_directories(.)
+
+add_subdirectory(bmp280)
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
 	add_subdirectory(test)

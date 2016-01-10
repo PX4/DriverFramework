@@ -29,10 +29,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-extern int do_test();
+
+#include <stdio.h>
+#include "df_testapp.h"
 
 int main()
 {
-	return do_test();
+	printf("Running DF unit test on DSP\n");
+	return df_testapp_do_test();
 }
-

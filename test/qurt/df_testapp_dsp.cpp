@@ -29,10 +29,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-extern int do_test();
+#include <stdio.h>
+#include "df_testapp.h"
 
-int main()
+extern int do_test(void);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define LOG_MSG(...) qurt_log(0, __FILE__, __LINE__, __VA_ARGS__)
+
+// declaration to make the compiler happy.  This symbol is part of the DSP static image.
+void HAP_debug(const char *msg, int level, const char *filename, int line);
+
+static __inline void qurt_log(int level, const char *file, int line, const char *format, ...)
 {
-	return do_test();
+	char buf[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+	HAP_debug(buf, level, file, line);
 }
 
+#ifdef __cplusplus
+}
+#endif
+
+int32 df_testapp_do_test()
+{
+	LOG_MSG("Starting df_testapp");
+
+	return do_test();
+}

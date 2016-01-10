@@ -31,24 +31,10 @@
 #
 ############################################################################
 
-if("${DF_TARGET}" STREQUAL "nuttx")
-	add_library(df_driver_framework
-		DriverFramework_NuttX.cpp
-		DevMgr_Nuttx.cpp
-		DFList.cpp
-		SyncObj.cpp
-		Time.cpp
-		)
-	add_dependencies(df_driver_framework platforms__nuttx)
-else()
-	df_add_library(df_driver_framework
-		DriverFramework.cpp
-		DevMgr.cpp
-		DevObj.cpp
-		SyncObj.cpp
-		DFList.cpp
-		Time.cpp
-		)
-endif()
+include_directories(../../framework/include)
+
+df_add_library(df_qurt_stubs
+	src/qurt_stubs.cpp
+	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

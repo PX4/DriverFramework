@@ -31,24 +31,16 @@
 #
 ############################################################################
 
-if("${DF_TARGET}" STREQUAL "nuttx")
-	add_library(df_driver_framework
-		DriverFramework_NuttX.cpp
-		DevMgr_Nuttx.cpp
-		DFList.cpp
-		SyncObj.cpp
-		Time.cpp
-		)
-	add_dependencies(df_driver_framework platforms__nuttx)
-else()
-	df_add_library(df_driver_framework
-		DriverFramework.cpp
-		DevMgr.cpp
-		DevObj.cpp
-		SyncObj.cpp
-		DFList.cpp
-		Time.cpp
-		)
-endif()
+include(../../../../cmake_hexagon/qurt_app.cmake)
+
+QURT_BUNDLE(APP_NAME df_pressure_test
+	APPS_SOURCES df_pressure_test.cpp
+	DSP_SOURCES df_pressure_test_dsp.cpp
+	../test.cpp
+	DSP_LINK_LIBS df_driver_framework
+	df_bmp280 df_i2c
+	${df_link_libs}
+	APPS_COMPILER arm-linux-gnueabihf-gcc
+	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

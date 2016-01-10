@@ -31,55 +31,9 @@
  *
  ****************************************************************************/
 
-#include <pthread.h>
-#include "DriverFramework.hpp"
-#include "PressureSensor.hpp"
+#include "df_pressure_test.h"
 
-using namespace DriverFramework;
-
-void PressureSensor::setAltimeter(float altimeter_setting_in_mbars)
+int main()
 {
-	m_altimeter_mbars = altimeter_setting_in_mbars;
-}
-
-int PressureSensor::getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required)
-{
-	PressureSensor *me = DevMgr::getDevObjByHandle<PressureSensor>(h);
-	int ret = -1;
-	if (me != nullptr) {
-		me->m_synchronize.lock();
-		if (is_new_data_required) {
-			me->m_synchronize.waitOnSignal(0);
-		}
-		out_data = me->m_sensor_data;
-		me->m_synchronize.unlock();
-		ret = 0;
-	}
-
-	return ret;
-}
-
-uint32_t PressureSensor::getPressure()
-{
-	// TBD
-	return 0;
-}
-
-float PressureSensor::getTemperature()
-{
-	// TBD
-	return 0.0;
-}
-
-void PressureSensor::_measure(void)
-{
-	m_synchronize.lock();
-
-	m_sensor_data.pressure_in_pa = getPressure();
-	m_sensor_data.temperature_in_c = getTemperature();
-	m_sensor_data.last_read_time_in_usecs = DriverFramework::offsetTime();
-	m_sensor_data.sensor_read_counter++;
-
-	m_synchronize.signal();
-	m_synchronize.unlock();
+	return df_pressure_test_do_test();
 }

@@ -75,6 +75,9 @@ if (NOT "${DF_TARGET}" STREQUAL "qurt")
 	if (NOT APPLE)
 		list(APPEND df_link_libs rt)
 	endif()
+else()
+	add_subdirectory(os/qurt)
+	list(APPEND df_link_libs df_qurt_stubs)
 
 endif()
 

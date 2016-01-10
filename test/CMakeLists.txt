@@ -36,20 +36,19 @@ include_directories(
 	)
 
 if("${DF_TARGET}" STREQUAL "qurt")
-	add_library(df_testapp
-		main.cpp
-		listtest.cpp
-		)
+
+	add_subdirectory(qurt)
 else()
 	add_executable(df_testapp
 		main.cpp
+		test.cpp
 		listtest.cpp
 		)
-endif()
 
-target_link_libraries(df_testapp
-	df_driver_framework
-	${df_driver_libs}
-	${df_link_libs}
-	)
+	target_link_libraries(df_testapp
+		df_driver_framework
+		${df_driver_libs}
+		${df_link_libs}
+		)
+endif()
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
