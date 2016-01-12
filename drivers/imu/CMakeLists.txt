@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (c) 2015 Mark Charlebois. All rights reserved.
+# Copyright (c) 2015 Julian Oes. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,16 +31,12 @@
 #
 ############################################################################
 
-set(drivers i2c spi pressure imu)
+include_directories(.)
 
-set(df_driver_libs)
+add_subdirectory(mpu9050)
 
-# Add driver libraries
-foreach(driver ${drivers})
-	add_subdirectory(${driver})
-	list(APPEND df_driver_libs
-		df_${driver}
-		)
-endforeach()
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
+	add_subdirectory(test)
+endif()
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
