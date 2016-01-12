@@ -31,8 +31,8 @@
 #
 ############################################################################
 
-df_add_library(df_mpu9050
-	MPU9050.cpp
+df_add_library(df_mpu9250
+	MPU9250.cpp
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

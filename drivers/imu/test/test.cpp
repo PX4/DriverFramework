@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <unistd.h>
 #include "DriverFramework.hpp"
-#include "MPU9050.hpp"
+#include "MPU9250.hpp"
 
 using namespace DriverFramework;
 
@@ -58,7 +58,7 @@ private:
 	void readSensor();
 	void wait();
 
-	MPU9050		m_sensor;
+	MPU9250		m_sensor;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
 
@@ -68,7 +68,7 @@ private:
 
 static void printImuValues()
 {
-	DF_LOG_INFO("Hello MPU9050");
+	DF_LOG_INFO("Hello MPU9250");
 }
 
 int ImuTester::run()

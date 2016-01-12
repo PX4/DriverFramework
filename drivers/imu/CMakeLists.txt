@@ -33,7 +33,7 @@
 
 include_directories(.)
 
-add_subdirectory(mpu9050)
+add_subdirectory(mpu9250)
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
 	add_subdirectory(test)

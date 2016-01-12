@@ -32,7 +32,7 @@
 ############################################################################
 
 include_directories(
-	../mpu9050
+	../mpu9250
 	)
 
 if("${DF_TARGET}" STREQUAL "qurt")
@@ -45,7 +45,7 @@ else()
 
 	target_link_libraries(df_imu_test
 		df_driver_framework
-		df_mpu9050
+		df_mpu9250
 		df_spi
 		${df_link_libs}
 		)

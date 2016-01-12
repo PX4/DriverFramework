@@ -31,59 +31,29 @@
  *
  ****************************************************************************/
 
-#include <string.h>
-#include "DriverFramework.hpp"
-#include "MPU9050.hpp"
+#pragma once
 
-#define MPU9050_REG_WHOAMI 0x75
-#define MPU9050_WHOAMI 0x71
+#include "ImuSensor.hpp"
 
-using namespace DriverFramework;
+namespace DriverFramework {
 
 
-int MPU9050::mpu9050_init() {
-
-	uint8_t sensor_id;
-	int result = _readReg(MPU9050_REG_WHOAMI, &sensor_id, sizeof(sensor_id));
-	if (result != 0) {
-		DF_LOG_ERR("error: unable to communicate with the MPU9050 sensor");
-		return -EIO;
-	}
-	DF_LOG_ERR("MPU9050 sensor whoami: 0x%X, should be: 0x%X", sensor_id, MPU9050_WHOAMI);
-
-	usleep(10000);
-	return 0;
-}
-
-int MPU9050::start()
+class MPU9250 : public ImuSensor
 {
-	int result = devOpen(0);
-	/* Open the device path specified in the class initialization */
-	if (result < 0) {
-		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
-		result = -1;
-		goto exit;
-	}
+public:
+	MPU9250(const char *device_path) :
+		ImuSensor(device_path, 1000)
+	{}
 
-    SPIDevObj::start();
+	virtual int start();
 
-	result = mpu9050_init();
-	if (result != 0) {
-		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
-		goto exit;
-	}
+protected:
+	virtual void _measure();
 
-exit:
-	if (result != 0) {
-		devClose();
-	}
-	else {
-		result = SPIDevObj::start();
-	}
+private:
 
-	return result;
-}
+	// returns 0 on success, -errno on failure
+	int mpu9250_init();
+};
 
-void MPU9050::_measure(void)
-{
-}
+}; // namespace DriverFramework

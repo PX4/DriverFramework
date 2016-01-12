@@ -38,7 +38,7 @@ QURT_BUNDLE(APP_NAME df_imu_test
 	DSP_SOURCES df_imu_test_dsp.cpp
 	../test.cpp
 	DSP_LINK_LIBS df_driver_framework
-	df_mpu9050 df_spi
+	df_mpu9250 df_spi
 	${df_link_libs}
 	APPS_COMPILER arm-linux-gnueabihf-gcc
 	)

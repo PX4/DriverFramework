@@ -55,7 +55,7 @@ int SPIDevObj::start()
 	} else {
         DF_LOG_ERR("Error: SPIDevObj::start failed on ::start()");
     }
-    DF_LOG_INFO("SPI open done");
+    DF_LOG_INFO("SPI open done, m_fd: %d", m_fd);
 	return (m_fd < 0) ? m_fd : 0;
 }
 
@@ -102,6 +102,8 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 		return -1;
 	}
 
+    DF_LOG_ERR(
+        "error: SPI fd: %d", m_fd);
 
 	/* Save the address of the register to read from in the write buffer for the combined write. */
 	struct dspal_spi_ioctl_read_write ioctl_write_read;
