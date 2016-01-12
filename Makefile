@@ -13,13 +13,7 @@ linux nuttx:
 	$(call df_cmake_generate,$@,cmake/toolchains/Toolchain-$@.cmake)
 	cd build_$@ && make
 
-external/dspal:
-	cd external && git clone https://github.com/ATLFlight/dspal
-
-dspal_sync: external/dspal submodule
-	cd external/dspal && git pull
-
-qurt: dspal_sync
+qurt:
 	$(call df_cmake_generate,qurt,cmake_hexagon/toolchain/Toolchain-qurt.cmake)
 	cd build_qurt && make
 

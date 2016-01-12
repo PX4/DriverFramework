@@ -76,6 +76,7 @@ if (NOT "${DF_TARGET}" STREQUAL "qurt")
 		list(APPEND df_link_libs rt)
 	endif()
 else()
+	include_directories(dspal/include)
 	add_subdirectory(os/qurt)
 	list(APPEND df_link_libs df_qurt_stubs)
 
