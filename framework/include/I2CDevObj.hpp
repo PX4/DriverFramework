@@ -59,10 +59,9 @@ public:
 		DevObj(name, dev_path, dev_class_path, DeviceBusType_I2C, sample_interval_usec)
 	{}
 
-	virtual ~I2CDevObj() {}
+	virtual ~I2CDevObj();
 
-	virtual int start();
-	virtual int stop();
+	virtual int init();
 
 	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
 	static int writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length);

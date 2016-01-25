@@ -223,10 +223,18 @@ int DevObj::addHandle(DevHandle &h)
 	DF_LOG_DEBUG("DevObj::addHandle (%p)", &h);
 	int ret = 0;
 	m_handle_lock.lock();
-	if (m_handles.size() == 0) {
 
+	if (!isRegistered()) {
+		ret = init();
+		if (ret < 0) {
+			DF_LOG_DEBUG("DevObj::addHandle init failed (%p)", &h);
+			goto exit;
+		}
+	}
+
+	if (m_handles.size() == 0) {
 		// Start the driver if its not running
-		if (!m_work_handle.isValid()) {
+		if (!m_work_handle.isValid() && m_sample_interval_usecs > 0) {
 			ret = start();
 			if (ret < 0) {
 				DF_LOG_DEBUG("DevObj::addHandle start failed (%p)", &h);
@@ -237,6 +245,8 @@ int DevObj::addHandle(DevHandle &h)
 		DF_LOG_INFO("DevObj::addHandle failed memory allocation");
 		ret = -1;
 	}
+
+exit:
 	m_handle_lock.unlock();
 	DF_LOG_DEBUG("DevObj::addHandle end (%p)", &h);
 	return (ret < 0) ? -1 : 0;

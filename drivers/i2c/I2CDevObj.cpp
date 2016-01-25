@@ -44,26 +44,37 @@
 
 using namespace DriverFramework;
 
-int I2CDevObj::start()
-{
-	m_fd = ::open(m_dev_path, O_RDWR);
-	if (m_fd >=0) {
-		DevObj::start();
-	}
-	return (m_fd < 0) ? m_fd : 0;
-}
-
-int I2CDevObj::stop()
+I2CDevObj::~I2CDevObj()
 {
 	int ret;
+
+	// first stop the driver
+	ret = stop();
+	if (ret < 0) {
+		DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::stop()");
+	}
+
+	// close the device
 	if (m_fd >=0) {
 		ret = ::close(m_fd);
 		if (ret < 0) {
-			DF_LOG_ERR("Error: I2CDevObj::stop failed on ::close()");
+			DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::close()");
 		}
 	}
-	ret = DevObj::stop();
-	return ret;
+}
+
+int I2CDevObj::init()
+{
+	m_fd = ::open(m_dev_path, O_RDWR);
+
+	if (m_fd >=0) {
+		return DevObj::init();
+	}
+	else {
+		DF_LOG_ERR("Error: I2CDevObj::init failed on ::open() %s", m_dev_path);
+	}
+
+	return m_fd;
 }
 
 int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
