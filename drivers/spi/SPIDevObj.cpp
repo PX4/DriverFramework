@@ -114,6 +114,36 @@ int SPIDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t val)
 	return -1;
 }
 
+int SPIDevObj::writeRegVerified(DevHandle &h, uint8_t address, uint8_t val)
+{
+	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+	if (obj) {
+		int result;
+		uint8_t read_val = ~val;
+		int retries = 5;
+		while(retries) {
+			result =  obj->_writeReg(address, val);
+			if (result < 0) {
+				--retries;
+				continue;
+			}
+			result = obj->_readReg(address, read_val);
+			if (result < 0 || read_val != val) {
+                                --retries;
+                                continue;
+			}
+		}
+		if (val == read_val) {
+			return 0;
+		}
+		else {
+			DF_LOG_ERR("error: SPI write verify failed: %d", errno);
+		}
+	}
+	return -1;
+}
+
+
 int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 {
 	uint8_t write_buffer[2];

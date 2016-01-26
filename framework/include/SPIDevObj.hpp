@@ -67,6 +67,7 @@ public:
 
 	static int readReg(DevHandle &h, uint8_t address, uint8_t &val);
 	static int writeReg(DevHandle &h, uint8_t address, uint8_t val);
+	static int writeRegVerified(DevHandle &h, uint8_t address, uint8_t val);
 	static int bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
 	static int setLoopbackMode(DevHandle &h, bool enable);
 	static int setBusFrequency(DevHandle &h, uint16_t freq_hz);
