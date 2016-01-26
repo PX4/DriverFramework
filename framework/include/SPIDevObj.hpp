@@ -65,10 +65,16 @@ public:
 	virtual int start();
 	virtual int stop();
 
-	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-	static int writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length);
+	static int readReg(DevHandle &h, uint8_t address, uint8_t &val);
+	static int writeReg(DevHandle &h, uint8_t address, uint8_t val);
+	static int bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+	static int setLoopbackMode(DevHandle &h, bool enable);
+	static int setBusFrequency(DevHandle &h, uint16_t freq_hz);
 
 protected:
+	int _readReg(uint8_t address, uint8_t &val);
+	int _writeReg(uint8_t address, uint8_t val);
+
 	int devOpen(int flags)
 	{
 		int fd = ::open(m_dev_instance_path, flags);
@@ -82,9 +88,6 @@ protected:
 	{
 		return ::close(m_fd);
 	}
-
-	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
-	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
 
 	int m_fd = 0;
 };

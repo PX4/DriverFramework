@@ -165,8 +165,8 @@ using namespace DriverFramework;
 static uint64_t g_timestart = 0;
 static pthread_t g_tid;
 
-static pthread_mutex_t g_framework_exit = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_framework_exit;
+static pthread_mutex_t g_hrt_lock;
 static pthread_mutex_t g_timestart_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
@@ -386,20 +386,23 @@ int HRTWorkQueue::initialize(void)
 
 	// Create a lock for handling the work queue
 	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
-	if (initNormalMutex(g_hrt_lock) < 0) {
+	if (initMutex(g_hrt_lock) < 0) {
 		return -2;
+	}
+	if (initMutex(g_framework_exit) < 0) {
+		return -3;
 	}
 	DF_LOG_INFO("pthread_mutex_init success");
 
 	pthread_attr_t attr;
 	if(setRealtimeSched(attr)) {
-		return -3;
+		return -4;
 	}
 	DF_LOG_INFO("setRealtimeSched success");
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
-		return -4;
+		return -5;
 	}
 	DF_LOG_INFO("pthread_create success");
 	return 0;

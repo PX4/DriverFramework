@@ -62,16 +62,16 @@ int MPU9250::start()
 		goto exit;
 	}
 
-    result = SPIDevObj::start();
+	result = SPIDevObj::start();
 
-    if (result != 0) {
-        DF_LOG_ERR("SPI Dev start failed with: %d", result);
-    } else {
-        DF_LOG_ERR("SPI Dev start success with: %d", result);
-    }
+	if (result != 0) {
+		DF_LOG_ERR("SPI Dev start failed with: %d", result);
+	} else {
+		DF_LOG_ERR("SPI Dev start success with: %d", result);
+	}
 
 
-	result = _readReg(MPU9250_REG_WHOAMI, &sensor_id, sizeof(sensor_id));
+	result = _readReg(MPU9250_REG_WHOAMI, sensor_id);
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to communicate with the MPU9250 sensor");
 		return -EIO;
