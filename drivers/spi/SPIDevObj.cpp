@@ -195,7 +195,7 @@ int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 	return h.ioctl(SPI_IOCTL_LOOPBACK_TEST, (unsigned long)&loopback);
 }
 
-int SPIDevObj::setBusFrequency(DevHandle &h, uint16_t freq_hz)
+int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 {
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
 	bus_freq.bus_frequency_in_hz = freq_hz;

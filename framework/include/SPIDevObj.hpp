@@ -56,6 +56,15 @@ public:
 class SPIDevObj : public DevObj
 {
 public:
+	enum SPI_FREQUENCY
+	{
+	   SPI_FREQUENCY_1MHZ = 1000000UL,
+	   SPI_FREQUENCY_5MHZ = 5000000UL,
+	   SPI_FREQUENCY_10MHZ = 10000000UL,
+	   SPI_FREQUENCY_15MHZ = 15000000UL,
+	   SPI_FREQUENCY_20MHZ = 20000000UL,
+	};
+
 	SPIDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
 		DevObj(name, dev_path, dev_class_path, DeviceBusType_SPI, sample_interval_usec)
 	{}
@@ -70,7 +79,7 @@ public:
 	static int writeRegVerified(DevHandle &h, uint8_t address, uint8_t val);
 	static int bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
 	static int setLoopbackMode(DevHandle &h, bool enable);
-	static int setBusFrequency(DevHandle &h, uint16_t freq_hz);
+	static int setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz);
 
 protected:
 	int _readReg(uint8_t address, uint8_t &val);
