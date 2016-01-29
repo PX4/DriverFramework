@@ -33,61 +33,62 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
+
 #pragma once
 
-#include <stdint.h>
-#include <stdio.h>
+#include "DFLog.hpp"
 
 namespace DriverFramework {
 
-uint64_t offsetTime(void);
-
-}
-
-#define DF_DEBUG 0
-#define DF_INFO 0
-
-#ifdef __QURT
-
-#include <stdarg.h>
-
-extern "C" {
-
-// declaration to make the compiler happy.  This symbol is part of the DSP static image.
-void HAP_debug(const char *msg, int level, const char *filename, int line);
-
-};
-
-static __inline void qurt_log(int level, const char *file, int line, const char *format, ...)
+class DFTestObj
 {
-	char buf[256];
-	va_list args;
-	va_start(args, format);
-	vsnprintf(buf, sizeof(buf), format, args);
-	va_end(args);
-	HAP_debug(buf, level, file, line);
-}
+public:
+	DFTestObj(const char *name) : m_name(name) {}
 
-#define DF_LOG_INFO(FMT, ...) qurt_log(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
-#define DF_LOG_ERR(FMT, ...)  qurt_log(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
+	virtual ~DFTestObj() {}
 
-#if DF_DEBUG
-#define DF_LOG_DEBUG(FMT, ...)  qurt_log(1, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
-#else
-#define DF_LOG_DEBUG(FMT, ...)
-#endif
+	bool doTests()
+	{
+		testStart();
+		_doTests();
+		testEnd();
+		return (m_failed_count == 0);
+	}
 
-#else
+protected:
+	virtual void _doTests() = 0;
 
-// Substitute logging implemntation here
-#define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
-#define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
+	void reportResult(const char *name, bool passed)
+	{
+		DF_LOG_INFO("TEST %s: %s", name, passed ? "PASSED" : "FAILED");
+		if (passed) {
+			++m_passed_count;
+		} else {
+			++m_failed_count;
+		}
+	}
 
-#if DF_DEBUG
-#define DF_LOG_DEBUG(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
-#else
-#define DF_LOG_DEBUG(FMT, ...)  
-#endif
+	void startFeatureTest(const char *name)
+	{
+		DF_LOG_INFO("------- BEGIN FEATURE TEST FOR %s", name);
+	}
 
-#endif
+private:
+	void testStart()
+	{
+		DF_LOG_INFO("======= BEGIN TESTS FOR %s", m_name);
+		m_passed_count = 0;
+		m_failed_count = 0;
+	}
 
+	void testEnd()
+	{
+		DF_LOG_INFO("======= END OF TESTS FOR %s. %u of %u tests passed", m_name, m_passed_count, m_passed_count+m_failed_count);
+	}
+
+	const char *m_name;
+
+	unsigned int 	m_passed_count = 0;
+	unsigned int 	m_failed_count = 0;
+};
+};

@@ -33,42 +33,27 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include "DriverFramework.hpp"
-#include "DFList.hpp"
+#include "DFListTest.hpp"
 
-using namespace DriverFramework;
-
-struct testStr {
-	testStr(int x) {
-		msg[0] = '0' + x;
-		msg[1] = '\0';
-	}
-	~testStr() {
-		DF_LOG_INFO("Deleting testStr %s", msg);
-	}
-	char msg[2];
-};
-
-static void verifyStructList(DFManagedList<testStr> &pl, const char *expectedOrder)
+bool DFListTest::verifyStructList(DFManagedList<testStr> &pl, const char *expectedOrder)
 {
 	bool passed = true;
-	DF_LOG_INFO("Expecting %s", expectedOrder);
 	DFPointerList::Index idx = nullptr;
 	idx = pl.next(idx);
 	unsigned int i = 0;
 	while(idx != nullptr) {
 		testStr *val = pl.get(idx);
-		DF_LOG_INFO("Expected %c got %c", expectedOrder[i], val->msg[0]);
 		if (val->msg[0] != expectedOrder[i]) {
+			DF_LOG_INFO("Expected %c got %c", expectedOrder[i], val->msg[0]);
 			passed = false;
 		}
 		idx = pl.next(idx);
 		++i;
 	}
-	DF_LOG_INFO("TEST expecting %s : %s", expectedOrder, passed ? "PASSED" : "FAILED");
+	return passed;
 }
 
-static void verifyList(DFPointerList &pl, const char *expectedOrder)
+bool DFListTest::verifyList(DFPointerList &pl, const char *expectedOrder)
 {
 	bool passed = true;
 	DFPointerList::Index idx = nullptr;
@@ -76,19 +61,42 @@ static void verifyList(DFPointerList &pl, const char *expectedOrder)
 	unsigned int i = 0;
 	while(idx != nullptr) {
 		const char *val = static_cast<const char *>(pl.get(idx));
-		DF_LOG_INFO("Expected %c got %c", expectedOrder[i], val[0]);
 		if (val[0] != expectedOrder[i]) {
+			DF_LOG_INFO("Expected %c got %c", expectedOrder[i], val[0]);
 			passed = false;
 		}
 		idx = pl.next(idx);
 		++i;
 	}
-	DF_LOG_INFO("TEST expecting %s : %s", expectedOrder, passed ? "PASSED" : "FAILED");
+	return passed;
 }
 
-void ManagedListTest()
+bool DFListTest::verifyUIntList(DFUIntList &pl, unsigned int check_list[4])
 {
-	DF_LOG_INFO("Managed list tests:");
+	bool passed = true;
+	DFUIntList::Index idx = nullptr;
+	idx = pl.next(idx);
+	unsigned int i = 0;
+	while(idx != nullptr) {
+		unsigned int val;
+		bool ret = pl.get(idx, val);
+		if (ret == false) {
+			DF_LOG_INFO("get() failed");
+			passed = false;
+		}
+		if (val != check_list[i]) {
+			DF_LOG_INFO("Expected %c got %c", check_list[i], val);
+			passed = false;
+		}
+		idx = pl.next(idx);
+		++i;
+	}
+	return passed;
+}
+
+void DFListTest::managedListTest()
+{
+	startFeatureTest("Managed list tests");
 	DFManagedList<testStr> pl;
 	testStr *msg1 = new testStr(1);
 	testStr *msg2 = new testStr(2);
@@ -96,16 +104,14 @@ void ManagedListTest()
 	testStr *msg4 = new testStr(4);
 	testStr *msg0 = new testStr(0);
 
-	
-	if (!pl.empty()) {
-	}
-	DF_LOG_ERR("TEST 1: %s", pl.empty() ? "PASSED" : "FAILED");
+	reportResult("Verify empty() true on list creation", pl.empty());
+
 	pl.pushBack(msg1);
 	pl.pushBack(msg2);
 	pl.pushBack(msg3);
 	pl.pushBack(msg4);
 
-	verifyStructList(pl, "1234");
+	reportResult("Verify pushBack()", verifyStructList(pl, "1234"));
 
 	DFPointerList::Index idx = nullptr;
 
@@ -118,12 +124,15 @@ void ManagedListTest()
 	
 	pl.pushFront(msg0);
 	
-	verifyStructList(pl, "0124");
+	reportResult("Verify next() pushFront() and erase()", verifyStructList(pl, "0124"));
+
+	pl.clear();
+	reportResult("Verify clear()", pl.empty());
 }
 
-void UnmanagedListTest()
+void DFListTest::unmanagedListTest()
 {
-	DF_LOG_INFO("Unmanaged list tests:");
+	startFeatureTest("Unmanaged list tests");
 	DFPointerList pl;
 	const char *msg1 = "1";
 	const char *msg2 = "2";
@@ -131,16 +140,14 @@ void UnmanagedListTest()
 	const char *msg4 = "4";
 	const char *msg0 = "0";
 
-	
-	if (!pl.empty()) {
-	}
-	DF_LOG_ERR("TEST 1: %s", pl.empty() ? "PASSED" : "FAILED");
+	reportResult("Verify empty() true on list creation", pl.empty());
+
 	pl.pushBack((void *)msg1);
 	pl.pushBack((void *)msg2);
 	pl.pushBack((void *)msg3);
 	pl.pushBack((void *)msg4);
 
-	verifyList(pl, "1234");
+	reportResult("Verify pushBack()", verifyList(pl, "1234"));
 
 	DFPointerList::Index idx = nullptr;
 
@@ -153,13 +160,54 @@ void UnmanagedListTest()
 	
 	pl.pushFront((void *)msg0);
 	
-	verifyList(pl, "0124");
+	reportResult("Verify next() pushFront() and erase()", verifyList(pl, "0124"));
+
+	pl.clear();
+	reportResult("Verify clear()", pl.empty());
 }
 
-void ListTests()
+void DFListTest::uintListTest()
 {
-	UnmanagedListTest();
-	ManagedListTest();
-	//UIntListTest();
-	DF_LOG_INFO("list tests done");
+	startFeatureTest("UInt list tests");
+	DFUIntList pl;
+	unsigned int val1 = 1;
+	unsigned int val2 = 2;
+	unsigned int val3 = 3;
+	unsigned int val4 = 4;
+	unsigned int val0 = 0;
+
+	reportResult("Verify empty() true on list creation", pl.empty());
+
+	unsigned int check_list1[] = { 1, 2, 3, 4 };
+	pl.pushBack(val1);
+	pl.pushBack(val2);
+	pl.pushBack(val3);
+	pl.pushBack(val4);
+
+	reportResult("Verify pushBack()", verifyUIntList(pl, check_list1));
+
+	DFUIntList::Index idx = nullptr;
+
+	idx = pl.next(idx);
+	idx = pl.next(idx);
+	idx = pl.next(idx);
+
+	// idx points to node containing msg3
+	idx = pl.erase(idx);
+	
+	pl.pushFront(val0);
+	
+	unsigned int check_list2[] = { 0, 1, 2, 4 };
+	reportResult("Verify next() pushFront() and erase()", verifyUIntList(pl, check_list2));
+
+	pl.clear();
+	reportResult("Verify clear()", pl.empty());
 }
+
+void DFListTest::_doTests()
+{
+	unmanagedListTest();
+	managedListTest();
+	uintListTest();
+}
+

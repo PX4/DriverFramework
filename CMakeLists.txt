@@ -98,6 +98,8 @@ if(NOT "${DF_TARGET}" STREQUAL "nuttx")
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
 	# Add unit test
+	add_subdirectory(framework/test)
+	list(APPEND df_link_libs df_framework_test)
 	add_subdirectory(test)
 endif()
 endif()

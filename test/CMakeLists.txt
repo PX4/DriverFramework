@@ -33,6 +33,8 @@
 
 include_directories(
 	./
+	../framework/test
+	../drivers/test
 	)
 
 if("${DF_TARGET}" STREQUAL "qurt")
@@ -42,7 +44,6 @@ else()
 	add_executable(df_testapp
 		main.cpp
 		test.cpp
-		listtest.cpp
 		)
 
 	target_link_libraries(df_testapp
