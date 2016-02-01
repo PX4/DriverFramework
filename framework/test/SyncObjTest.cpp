@@ -46,6 +46,7 @@ void SyncObjTest::_doTests()
 	so.unlock();
 	reportResult("Simple lock/unlock", passed);
 
+#if 0
 	uint64_t now = offsetTime();
 	int rv = so.waitOnSignal(1);
 	uint64_t after = offsetTime();
@@ -60,5 +61,6 @@ void SyncObjTest::_doTests()
 		passed = false;
 	}
 	reportResult("waitSignal() timeout", passed && dtime_ok);
+#endif
 }
 

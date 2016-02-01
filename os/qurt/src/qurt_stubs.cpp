@@ -30,6 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+#include <unistd.h>
 #include "DriverFramework.hpp"
 
 using namespace DriverFramework;
@@ -43,6 +44,11 @@ void block_indefinite( void )
       volatile int x = 0;
       ++x;
    }
+}
+
+unsigned int sleep(unsigned int seconds)
+{
+	return usleep(seconds*1000000);
 }
 
 void _Read_uleb( void )
