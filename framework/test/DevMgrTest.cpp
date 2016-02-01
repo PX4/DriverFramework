@@ -66,17 +66,18 @@ bool DevMgrTest::verifyRegisterDriver()
 {
 	unsigned int index = 0;
 	const char *name = nullptr;
+	const char *instname = nullptr;
 	bool found = false;
 
 	char devname[strlen(TEST_DRIVER_CLASS_PATH)+3];
 	snprintf(devname, sizeof(devname), "%s%d", TEST_DRIVER_CLASS_PATH, 0);
 
-	while(DevMgr::getNextDeviceName(index, &name) == 0) {
-		if (name && (strcmp(name, devname) == 0)) {
+	while(DevMgr::getNextDeviceName(index, &name, &instname) == 0) {
+		if (name && (strcmp(instname, devname) == 0)) {
 			found = true;
 		}
 		else {
-			DF_LOG_INFO("Found device '%s'", name);
+			DF_LOG_INFO("Found device '%s' '%s'", name, instname == nullptr ? "undefined" : instname);
 		}
 	}
 
@@ -118,6 +119,20 @@ bool DevMgrTest::verifyUpdateNotify()
 
 	// Blocking read
 	int ret = DevMgr::waitForUpdate(in_set, out_set, 0);
+
+	if (ret != 0 && out_set.size() != 1) {
+		DF_LOG_INFO("Failed to set handle error");
+	}
+
+	UpdateList::Index index = nullptr;
+	index = out_set.next(index);
+	DevHandle *ph = reinterpret_cast<DevHandle *>(out_set.get(index));
+
+	// Verify that the handle returned was the handle passed in
+	if (ph != &h) {
+		DF_LOG_INFO("handle address incorrect");
+		return false;
+	}
 
 	DevMgr::releaseHandle(h);
 
