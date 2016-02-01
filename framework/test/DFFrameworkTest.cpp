@@ -37,6 +37,7 @@
 #include "DFListTest.hpp" 
 #include "SyncObjTest.hpp" 
 #include "TimeTest.hpp" 
+#include "DevMgrTest.hpp" 
 // Add additional framework test includes here
 
 void DFFrameworkTest::_doTests()
@@ -44,10 +45,12 @@ void DFFrameworkTest::_doTests()
 	DFListTest list_test;
 	SyncObjTest sync_test;
 	TimeTest time_test;
+	DevMgrTest devmgr_test;
 	// Add additional framework tests here
 
 	reportResult("List tests", list_test.doTests());
 	reportResult("Sync tests", sync_test.doTests());
 	reportResult("Time tests", time_test.doTests());
+	reportResult("DevMgr tests", devmgr_test.doTests());
 	// Add additional framework test do_test() calls here
 }

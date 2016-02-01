@@ -36,6 +36,7 @@ df_add_library(df_framework_test
 	DFListTest.cpp
 	SyncObjTest.cpp
 	TimeTest.cpp
+	DevMgrTest.cpp
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
