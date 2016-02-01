@@ -116,9 +116,11 @@ public:
 
 	void updateNotify();
 
-	// _measure() is the periodic callback that is called every 
+	// _measure() is the periodic callback that is called every
 	// m_sample_interval_usecs
-	virtual void _measure() = 0; // periodic callback 
+	virtual void _measure() = 0; // periodic callback
+
+	static uint16_t swap16(uint16_t val) { return (val >> 8) | (val << 8); }
 
 	const char *	 	m_name;
 	const char *	 	m_dev_path;

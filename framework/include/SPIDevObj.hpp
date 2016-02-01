@@ -69,7 +69,7 @@ public:
 		DevObj(name, dev_path, dev_class_path, DeviceBusType_SPI, sample_interval_usec)
 	{}
 
-	virtual ~SPIDevObj() {}
+	virtual ~SPIDevObj();
 
 	virtual int start();
 	virtual int stop();
@@ -84,6 +84,9 @@ public:
 protected:
 	int _readReg(uint8_t address, uint8_t &val);
 	int _writeReg(uint8_t address, uint8_t val);
+
+	int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
+	int _setBusFrequency(SPI_FREQUENCY freq_hz);
 
 	int devOpen(int flags)
 	{

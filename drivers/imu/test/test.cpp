@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2015 Julian Oes. All rights reserved.
+ *   Copyright (C) 2016 Julian Oes. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,8 +59,8 @@ private:
 	void wait();
 
 	MPU9250		m_sensor;
-	uint32_t 	m_read_attempts = 0;
-	uint32_t 	m_read_counter = 0;
+	uint32_t	m_read_attempts = 0;
+	uint32_t	m_read_counter = 0;
 
 	int		m_pass;
 	bool		m_done = false;
@@ -73,7 +73,6 @@ static void printImuValues()
 
 int ImuTester::run()
 {
-	DF_LOG_INFO("Entering: run");
 	// Default is fail unless pass critera met
 	m_pass = TEST_FAIL;
 
@@ -117,6 +116,7 @@ int ImuTester::run()
 		//	m_done = true;
 		//}
 	//}
+	usleep(1000000);
 
 	DF_LOG_INFO("Closing IMU sensor\n");
 	m_sensor.stop();
