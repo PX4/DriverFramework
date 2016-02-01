@@ -47,9 +47,9 @@ else()
 		)
 
 	target_link_libraries(df_testapp
-		df_driver_framework
 		${df_driver_libs}
 		${df_link_libs}
+		df_driver_framework
 		)
 endif()
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

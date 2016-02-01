@@ -107,7 +107,7 @@ public:
 
 	static void setDevHandleError(DevHandle &h, int error);
 
-	static int getNextDeviceName(unsigned int &index, const char **devname, const char **instancename);
+	static int getNextDeviceName(unsigned int &index, const char **instancename);
 private:
 	friend class Framework;
 

@@ -1,24 +1,24 @@
 /**********************************************************************
-* Copyright (c) 2015 Mark Charlebois
-*
+* Copyright (c) 2016 Mark Charlebois
+* 
 * All rights reserved.
-*
+* 
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-*
+* 
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-*
+* 
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-*
+* 
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-*
+* 
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -33,27 +33,20 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
-#include "DFFrameworkTest.hpp"
-#include "DFListTest.hpp" 
-#include "SyncObjTest.hpp" 
-#include "TimeTest.hpp" 
-#include "DevMgrTest.hpp" 
-#include "DFDiag.hpp" 
-// Add additional framework test includes here
 
-void DFFrameworkTest::_doTests()
+#pragma once
+
+#include "DFLog.hpp"
+
+namespace DriverFramework {
+
+class DFDiag
 {
-	DFListTest list_test;
-	SyncObjTest sync_test;
-	TimeTest time_test;
-	DevMgrTest devmgr_test;
-	// Add additional framework tests here
-
-	DFDiag::listRawDevices();
-
-	reportResult("List tests", list_test.doTests());
-	reportResult("Sync tests", sync_test.doTests());
-	reportResult("Time tests", time_test.doTests());
-	reportResult("DevMgr tests", devmgr_test.doTests());
-	// Add additional framework test do_test() calls here
-}
+public:
+	static void listRawDevices();
+	static void listRegisteredDevices();
+private:
+	DFDiag() {}
+	~DFDiag() {}
+};
+};

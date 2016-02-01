@@ -35,8 +35,9 @@
 *************************************************************************/
 #pragma once
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdint.h>
-#include <stdio.h>
 
 namespace DriverFramework {
 
@@ -50,6 +51,7 @@ uint64_t offsetTime(void);
 #ifdef __QURT
 
 #include <stdarg.h>
+#include <stdio.h>
 
 extern "C" {
 
@@ -78,6 +80,8 @@ static __inline void qurt_log(int level, const char *file, int line, const char 
 #endif
 
 #else
+
+#include <stdio.h>
 
 // Substitute logging implemntation here
 #define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)

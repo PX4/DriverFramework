@@ -252,7 +252,7 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
-int DevMgr::getNextDeviceName(unsigned int &index, const char **devname, const char **instancename)
+int DevMgr::getNextDeviceName(unsigned int &index, const char **instancename)
 {
 	unsigned int i = 0;
 	int ret = -1;
@@ -264,10 +264,7 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **devname, const c
 	while (idx != nullptr) {
 		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 		if (i == index) {
-			if (list_obj->m_dev_instance_path) {
-				*instancename = list_obj->m_dev_instance_path;
-			}
-			*devname = list_obj->m_dev_path;
+			*instancename = list_obj->m_dev_instance_path;
 			index+=1;
 			ret = 0;
 			break;

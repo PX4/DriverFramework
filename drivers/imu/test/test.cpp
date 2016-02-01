@@ -30,10 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <unistd.h>
 #include "DriverFramework.hpp"
 #include "MPU9250.hpp"

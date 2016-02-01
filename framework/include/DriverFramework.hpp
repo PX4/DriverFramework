@@ -35,8 +35,7 @@
 *************************************************************************/
 #pragma once
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
+#include "DFLog.hpp"
 
 #include <stdint.h>
 #include <time.h>
@@ -50,8 +49,6 @@
 // Show backtrace on error
 #define DF_ENABLE_BACKTRACE 1
 #endif
-
-#include "DFLog.hpp"
 
 namespace DriverFramework {
 

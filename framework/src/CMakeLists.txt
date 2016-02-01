@@ -50,6 +50,7 @@ else()
 		SyncObj.cpp
 		DFList.cpp
 		Time.cpp
+		DFDiag.cpp
 		)
 endif()
 

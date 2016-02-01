@@ -65,19 +65,18 @@ bool DevMgrTest::verifyStart(TestDriver &test)
 bool DevMgrTest::verifyRegisterDriver()
 {
 	unsigned int index = 0;
-	const char *name = nullptr;
 	const char *instname = nullptr;
 	bool found = false;
 
 	char devname[strlen(TEST_DRIVER_CLASS_PATH)+3];
 	snprintf(devname, sizeof(devname), "%s%d", TEST_DRIVER_CLASS_PATH, 0);
 
-	while(DevMgr::getNextDeviceName(index, &name, &instname) == 0) {
-		if (name && (strcmp(instname, devname) == 0)) {
+	while(DevMgr::getNextDeviceName(index, &instname) == 0) {
+		if (instname && (strcmp(instname, devname) == 0)) {
 			found = true;
 		}
 		else {
-			DF_LOG_INFO("Found device '%s' '%s'", name, instname == nullptr ? "undefined" : instname);
+			DF_LOG_INFO("Found device '%s'", instname == nullptr ? "undefined" : instname);
 		}
 	}
 
