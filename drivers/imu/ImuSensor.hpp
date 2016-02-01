@@ -36,9 +36,15 @@
 #include <stdint.h>
 #include "SyncObj.hpp"
 #include "SPIDevObj.hpp"
+
+#ifdef __QURT
 #include "dev_fs_lib_spi.h"
 
 #define IMU_DEVICE_PATH "/dev/spi-1"
+#else
+#define IMU_DEVICE_PATH "/dev/spidev0.0"
+#endif
+
 #define IMU_CLASS_PATH  "/dev/imu"
 
 namespace DriverFramework {
@@ -79,9 +85,8 @@ public:
 protected:
 	virtual void _measure() = 0;
 
-	//struct dspal_spi_ioctl_slave_config 	m_slave_config;
 	struct imu_sensor_data 		m_sensor_data;
-	SyncObj 				m_synchronize;
+	SyncObj 			m_synchronize;
 };
 
 }; // namespace DriverFramework

@@ -24,3 +24,6 @@ helgrind: linux
 
 clean:
 	rm -rf build_*
+
+fix-style:
+	./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_nuttx"

@@ -39,9 +39,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "OSConfig.h"
-#include "dev_fs_lib_spi.h"
 #include "SPIDevObj.hpp"
 #include "DevIOCTL.h"
+#ifdef __QURT
+#include "dev_fs_lib_spi.h"
+#endif
 
 using namespace DriverFramework;
 
@@ -83,6 +85,7 @@ int SPIDevObj::readReg(DevHandle &h, uint8_t address, uint8_t &val)
 
 int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
+#ifdef __QURT
 	/* Save the address of the register to read from in the write buffer for the combined write. */
 	struct dspal_spi_ioctl_read_write ioctl_write_read;
 	uint8_t write_buffer[2];
@@ -103,6 +106,10 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 
 	val = read_buffer[1];
 	return 0;
+#else
+	return -1;
+#endif
+
 }
 
 int SPIDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t val)
@@ -163,6 +170,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 
 int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int length)
 {
+#ifdef __QURT
 	int result = 0;
 	int transfer_bytes = 1 + length; // first byte is address
 	struct dspal_spi_ioctl_read_write ioctl_write_read;
@@ -185,20 +193,31 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 	memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
 
 	return 0;
+#else
+	return -1;
+#endif
 }
 
 int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 {
+#ifdef __QURT
 	struct dspal_spi_ioctl_loopback loopback;
 
 	loopback.state = enable ? SPI_LOOPBACK_STATE_ENABLED : SPI_LOOPBACK_STATE_DISABLED;
 	return h.ioctl(SPI_IOCTL_LOOPBACK_TEST, (unsigned long)&loopback);
+#else
+	return -1;
+#endif
 }
 
 int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 {
+#ifdef __QURT
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
 	bus_freq.bus_frequency_in_hz = freq_hz;
 	return h.ioctl(SPI_IOCTL_SET_BUS_FREQUENCY_IN_HZ, (unsigned long)&bus_freq);
+#else
+	return -1;
+#endif
 }
 

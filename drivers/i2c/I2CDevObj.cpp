@@ -38,9 +38,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "OSConfig.h"
-#include "dev_fs_lib_i2c.h"
 #include "I2CDevObj.hpp"
 #include "DevIOCTL.h"
+#ifdef __QURT
+#include "dev_fs_lib_i2c.h"
+#endif
 
 using namespace DriverFramework;
 
@@ -101,13 +103,15 @@ int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int l
 
 int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 {
-	struct dspal_i2c_ioctl_combined_write_read ioctl_write_read;
-	uint8_t write_buffer[1];
 
 	if (m_fd == 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
 	}
+
+#ifdef __QURT
+	struct dspal_i2c_ioctl_combined_write_read ioctl_write_read;
+	uint8_t write_buffer[1];
 
 	/* Save the address of the register to read from in the write buffer for the combined write. */
 	write_buffer[0] = address;
@@ -124,6 +128,9 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 	}
 
 	return 0;
+#else
+	return -1;
+#endif
 }
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)

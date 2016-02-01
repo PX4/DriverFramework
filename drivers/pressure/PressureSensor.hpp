@@ -36,7 +36,6 @@
 #include <stdint.h>
 #include "SyncObj.hpp"
 #include "I2CDevObj.hpp"
-#include "dev_fs_lib_i2c.h"
 
 #define PRESSURE_DEVICE_PATH "/dev/i2c-2"
 #define PRESSURE_CLASS_PATH  "/dev/pressure"
@@ -90,7 +89,6 @@ public:
 protected:
 	virtual void _measure() = 0;
 
-	struct dspal_i2c_ioctl_slave_config 	m_slave_config;
 	struct pressure_sensor_data 		m_sensor_data;
 	float 					m_altimeter_mbars = 0.0;
 	SyncObj 				m_synchronize;

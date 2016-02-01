@@ -34,6 +34,9 @@
 #include <string.h>
 #include "DriverFramework.hpp"
 #include "BMP280.hpp"
+#ifdef __QURT
+#include "dev_fs_lib_i2c.h"
+#endif
 
 using namespace DriverFramework;
 
@@ -149,6 +152,9 @@ int BMP280::bmp280_init() {
 int BMP280::start()
 {
 	int result = 0;
+#ifdef __QURT
+	struct dspal_i2c_ioctl_slave_config slave_config;
+#endif
 
 	/* Open the device path specified in the class initialization */
 	if (devOpen(0) < 0) {
@@ -157,16 +163,18 @@ int BMP280::start()
 		goto exit;
 	}
 
+#ifdef __QURT
 	/* Configure the I2C bus parameters for the pressure sensor. */
-	memset(&m_slave_config, 0, sizeof(m_slave_config));
-	m_slave_config.slave_address = BMP280_SLAVE_ADDRESS;
-	m_slave_config.bus_frequency_in_khz = BMP280_BUS_FREQUENCY_IN_KHZ;
-	m_slave_config.byte_transer_timeout_in_usecs = BMP280_TRANSFER_TIMEOUT_IN_USECS;
-	if (devIOCTL(I2C_IOCTL_SLAVE, reinterpret_cast<unsigned long>(&m_slave_config)) != 0) {
+	memset(&slave_config, 0, sizeof(slave_config));
+	slave_config.slave_address = BMP280_SLAVE_ADDRESS;
+	slave_config.bus_frequency_in_khz = BMP280_BUS_FREQUENCY_IN_KHZ;
+	slave_config.byte_transer_timeout_in_usecs = BMP280_TRANSFER_TIMEOUT_IN_USECS;
+	if (devIOCTL(I2C_IOCTL_SLAVE, reinterpret_cast<unsigned long>(&slave_config)) != 0) {
 		DF_LOG_ERR("unable to open the device path: %s", m_dev_path);
 		result = -1;
 		goto exit;
 	}
+#endif
 
 	/* Initialize the pressure sensor for active and continuous operation. */
 	result = bmp280_init();

@@ -295,7 +295,6 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 				return p->m_next;
 			}
 			p = t;
-			
 		}
 	}
 	m_sync.unlock();
