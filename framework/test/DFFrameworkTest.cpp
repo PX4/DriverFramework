@@ -34,11 +34,11 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include "DFFrameworkTest.hpp"
-#include "DFListTest.hpp" 
-#include "SyncObjTest.hpp" 
-#include "TimeTest.hpp" 
-#include "DevMgrTest.hpp" 
-#include "DFDiag.hpp" 
+#include "DFListTest.hpp"
+#include "SyncObjTest.hpp"
+#include "TimeTest.hpp"
+#include "DevMgrTest.hpp"
+#include "DFDiag.hpp"
 // Add additional framework test includes here
 
 void DFFrameworkTest::_doTests()
@@ -49,7 +49,7 @@ void DFFrameworkTest::_doTests()
 	DevMgrTest devmgr_test;
 	// Add additional framework tests here
 
-	DFDiag::listRawDevices();
+	//DFDiag::listRawDevices();
 
 	reportResult("List tests", list_test.doTests());
 	reportResult("Sync tests", sync_test.doTests());
