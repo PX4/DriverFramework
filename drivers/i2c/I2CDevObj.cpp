@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -48,36 +48,34 @@ using namespace DriverFramework;
 
 I2CDevObj::~I2CDevObj()
 {
-	int ret;
-
-	// first stop the driver
-	ret = stop();
-	if (ret < 0) {
-		DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::stop()");
-	}
-
-	// close the device
-	if (m_fd >=0) {
-		ret = ::close(m_fd);
-		if (ret < 0) {
-			DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::close()");
-		}
-	}
 }
 
-int I2CDevObj::init()
+int I2CDevObj::start()
 {
 	m_fd = ::open(m_dev_path, O_RDWR);
 
-	if (m_fd >=0) {
-		return DevObj::init();
-	}
-	else {
+	if (m_fd < 0) {
 		DF_LOG_ERR("Error: I2CDevObj::init failed on ::open() %s", m_dev_path);
+		return m_fd;
 	}
 
-	return m_fd;
+	return 0;
 }
+
+
+int I2CDevObj::stop()
+{
+	// close the device
+	if (m_fd >=0) {
+		int ret = ::close(m_fd);
+		if (ret < 0) {
+			DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::close()");
+			return ret;
+		}
+	}
+	return 0;
+}
+
 
 int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
@@ -163,3 +161,17 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 	return 0;
 }
 
+int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_khz,
+			       uint32_t transfer_timeout_usec)
+{
+#ifdef __QURT
+	struct dspal_i2c_ioctl_slave_config slave_config;
+	memset(&slave_config, 0, sizeof(slave_config));
+	slave_config.slave_address = slave_address;
+	slave_config.bus_frequency_in_khz = bus_frequency_khz;
+	slave_config.byte_transer_timeout_in_usecs = transfer_timeout_usec;
+	return ::ioctl(m_fd, I2C_IOCTL_SLAVE, &slave_config);
+#else
+	return -1;
+#endif
+}

@@ -63,7 +63,7 @@ struct imu_sensor_data
 	float		temp_c;
 	uint64_t	last_read_time_usec;
 	uint64_t	read_counter;
-	uint64_t	error_count;
+	uint64_t	error_counter;
 };
 
 class ImuSensor : public SPIDevObj

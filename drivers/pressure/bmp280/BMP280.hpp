@@ -68,6 +68,7 @@ public:
 	{}
 
 	virtual int start();
+	virtual int stop();
 
 protected:
 	virtual void _measure();

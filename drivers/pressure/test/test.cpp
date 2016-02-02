@@ -63,14 +63,7 @@ private:
 	bool		m_done = false;
 };
 
-static void printPressureValues(struct pressure_sensor_data &sensor_data)
-{
-	DF_LOG_INFO("bmp280 data [cntr: %" PRIu32 ", time stamp: %" PRId64 ", pressure (pascals): %f, temp (C): %f]",
-        	sensor_data.sensor_read_counter, sensor_data.last_read_time_in_usecs, 
-		sensor_data.pressure_in_pa, (double)sensor_data.temperature_in_c);
-}
-
-int PressureTester::run() 
+int PressureTester::run()
 {
 	DF_LOG_INFO("Entering: run");
 	// Default is fail unless pass critera met
@@ -84,25 +77,26 @@ int PressureTester::run()
 	DevMgr::getHandle(PRESSURE_DEVICE_PATH, h);
 	if (!h.isValid())
 	{
-		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)", 
+		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
 			PRESSURE_DEVICE_PATH, h.getError());
 		m_done = true;
 	}
 	else {
 		m_done = false;
-		m_sensor_data.sensor_read_counter = 0;
+		m_sensor_data.read_counter = 0;
 	}
 
 	while (!m_done) {
 		++m_read_attempts;
 		ret = PressureSensor::getSensorData(h, m_sensor_data, true);
 		if (ret == 0) {
-			uint32_t count = m_sensor_data.sensor_read_counter;
+			uint32_t count = m_sensor_data.read_counter;
 			if (m_read_counter != count) {
+				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
-				printPressureValues(m_sensor_data);
+				PressureSensor::printPressureValues(m_sensor_data);
 			}
-		} 
+		}
 		else {
 			DF_LOG_INFO("error: unable to read the pressure sensor device.");
 		}

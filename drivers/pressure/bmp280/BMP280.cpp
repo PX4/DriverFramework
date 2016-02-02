@@ -38,6 +38,21 @@
 #include "dev_fs_lib_i2c.h"
 #endif
 
+#define BMP280_REG_ID 0xD0
+#define BMP280_REG_CTRL_MEAS 0xF4
+#define BMP280_REG_CONFIG 0xF5
+#define BMP280_REG_PRESS_MSB 0xF7
+
+#define BMP280_ID 0x58
+
+#define BMP280_BITS_CTRL_MEAS_OVERSAMPLING_TEMP2X     0b01000000
+#define BMP280_BITS_CTRL_MEAS_OVERSAMPLING_PRESSURE8X 0b00010000
+#define BMP280_BITS_CTRL_MEAS_POWER_MODE_NORMAL	      0b00000011
+
+#define BMP280_BITS_CONFIG_STANDBY_0MS5	0b00000000
+#define BMP280_BITS_CONFIG_FILTER_OFF	0b00000000
+#define BMP280_BITS_CONFIG_SPI_OFF	0b00000000
+
 using namespace DriverFramework;
 
 // convertPressure must be called after convertTemperature
@@ -110,16 +125,30 @@ int BMP280::loadCalibration()
 }
 
 int BMP280::bmp280_init() {
+
+	/* Zero the struct */
+	m_synchronize.lock();
+
+	m_sensor_data.pressure_pa = 0.0f;
+	m_sensor_data.temperature_c = 0.0f;
+	m_sensor_data.last_read_time_usec = 0;
+	m_sensor_data.read_counter = 0;
+	m_sensor_data.error_counter = 0;
+	m_synchronize.unlock();
+
 	int result;
 	uint8_t sensor_id;
 
 	/* Read the ID of the BMP280 sensor to confirm it's presence. */
-	result = _readReg(0xD0, &sensor_id, sizeof(sensor_id));
+	result = _readReg(BMP280_REG_ID, &sensor_id, sizeof(sensor_id));
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to communicate with the bmp280 pressure sensor");
 		return -EIO;
 	}
-	DF_LOG_ERR("BMP280 pressure sensor ID: 0x%X", sensor_id);
+	if (sensor_id != BMP280_ID) {
+		DF_LOG_ERR("BMP280 sensor ID returned 0x%x instead of 0x%x", sensor_id, BMP280_ID);
+		return -1;
+	}
 
 	/* Load and display the internal calibration values. */
 	result = loadCalibration();
@@ -128,53 +157,56 @@ int BMP280::bmp280_init() {
 		return -EIO;
 	}
 
-	// power on, oversampling 2 for temp and 8 for pressure
-	uint8_t ctrl_meas = 0b01010011;
-	result = _writeReg(0xF4, &ctrl_meas, 1);
+	uint8_t ctrl_meas = (BMP280_BITS_CTRL_MEAS_OVERSAMPLING_TEMP2X |
+                             BMP280_BITS_CTRL_MEAS_OVERSAMPLING_PRESSURE8X |
+                             BMP280_BITS_CTRL_MEAS_POWER_MODE_NORMAL);
+
+	result = _writeReg(BMP280_REG_CTRL_MEAS, &ctrl_meas, sizeof(ctrl_meas));
 	if (result != 0) {
 		DF_LOG_ERR("error: sensor configuration failed");
 		return -EIO;
 	}
-	DF_LOG_ERR("sensor configuration succeeded");
 
-	uint8_t config = 0b00000000;
-	result = _writeReg(0xF5, &config, 1);
+	uint8_t config = (BMP280_BITS_CONFIG_STANDBY_0MS5 |
+			  BMP280_BITS_CONFIG_FILTER_OFF |
+			  BMP280_BITS_CONFIG_SPI_OFF);
+
+	result = _writeReg(0xF5, &config, sizeof(config));
 	if (result != 0) {
 		DF_LOG_ERR("error: additional sensor configuration failed");
 		return -EIO;
 	}
 	DF_LOG_ERR("additional sensor configuration succeeded");
 
-	usleep(10000);
+	usleep(1000);
 	return 0;
 }
 
 int BMP280::start()
 {
-	int result = 0;
-#ifdef __QURT
-	struct dspal_i2c_ioctl_slave_config slave_config;
-#endif
+	int result = devOpen(0);
 
 	/* Open the device path specified in the class initialization */
-	if (devOpen(0) < 0) {
+	if (result < 0) {
 		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
-		result = -1;
+		//goto exit;
+		return -1;
+	}
+
+	result = I2CDevObj::start();
+	if (result != 0) {
+		DF_LOG_ERR("error: could not start DevObj");
 		goto exit;
 	}
 
-#ifdef __QURT
 	/* Configure the I2C bus parameters for the pressure sensor. */
-	memset(&slave_config, 0, sizeof(slave_config));
-	slave_config.slave_address = BMP280_SLAVE_ADDRESS;
-	slave_config.bus_frequency_in_khz = BMP280_BUS_FREQUENCY_IN_KHZ;
-	slave_config.byte_transer_timeout_in_usecs = BMP280_TRANSFER_TIMEOUT_IN_USECS;
-	if (devIOCTL(I2C_IOCTL_SLAVE, reinterpret_cast<unsigned long>(&slave_config)) != 0) {
-		DF_LOG_ERR("unable to open the device path: %s", m_dev_path);
-		result = -1;
+	result = _setSlaveConfig(BMP280_SLAVE_ADDRESS,
+				 BMP280_BUS_FREQUENCY_IN_KHZ,
+				 BMP280_TRANSFER_TIMEOUT_IN_USECS);
+	if (result != 0) {
+		DF_LOG_ERR("I2C slave configuration failed");
 		goto exit;
 	}
-#endif
 
 	/* Initialize the pressure sensor for active and continuous operation. */
 	result = bmp280_init();
@@ -183,35 +215,50 @@ int BMP280::start()
 		goto exit;
 	}
 
+
+	result = DevObj::start();
+	if (result != 0) {
+		DF_LOG_ERR("error: could not start DevObj");
+		goto exit;
+	}
 exit:
 	if (result != 0) {
 		devClose();
-	}
-	else {
-		result = I2CDevObj::start();
 	}
 
 	return result;
 }
 
+int BMP280::stop()
+{
+	int result = DevObj::stop();
+	if (result != 0) {
+		DF_LOG_ERR("DevObj stop failed");
+		return result;
+	}
+
+	result = devClose();
+	if (result != 0) {
+		DF_LOG_ERR("device close failed");
+		return result;
+	}
+	return 0;
+}
+
 void BMP280::_measure(void)
 {
-	int bmp_ret_code;
-	uint32_t pressure_from_sensor;
-	uint32_t temperature_from_sensor;
-	float pressure_in_pa;
-	float temperature_in_c;
 	uint8_t pdata[BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES];
 	memset(pdata, 0, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
 
 	/* Read the data from the pressure sensor. */
-	bmp_ret_code = _readReg(0xF7, pdata, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
-	if (bmp_ret_code < 0) {
+	int result = _readReg(BMP280_REG_PRESS_MSB, pdata, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
+	if (result < 0) {
 		DF_LOG_ERR("error: reading I2C bus failed");
 		return;
 	}
 
-	pressure_from_sensor = 0;
+	// TODO: add endianness defines and do this nicer
+	uint32_t pressure_from_sensor = 0;
 	pressure_from_sensor |= pdata[0];
 	pressure_from_sensor <<= 8;
 	pressure_from_sensor |= pdata[1];
@@ -219,29 +266,25 @@ void BMP280::_measure(void)
 	pressure_from_sensor |= pdata[2] & 0b11110000;
 	pressure_from_sensor >>= 4;
 
-	temperature_from_sensor = 0;
+	uint32_t temperature_from_sensor = 0;
 	temperature_from_sensor |= pdata[3];
 	temperature_from_sensor <<= 8;
 	temperature_from_sensor |= pdata[4];
 	temperature_from_sensor <<= 8;
 	temperature_from_sensor |= pdata[5] & 0b11110000;
 	temperature_from_sensor >>= 4;
-	DF_LOG_DEBUG("raw sensor values: pressure: %u, temperature: %u",
-			pressure_from_sensor, temperature_from_sensor);
 
 	/*
 	 * Process the raw sensor values, being certain to process temperature first
 	 * to obtain the latest temperature reading.
 	 */
-	temperature_in_c = convertTemperature(temperature_from_sensor);
-	pressure_in_pa = convertPressure(pressure_from_sensor);
 
 	m_synchronize.lock();
 
-	m_sensor_data.pressure_in_pa = pressure_in_pa / 256.0;
-	m_sensor_data.temperature_in_c = temperature_in_c / 100.0;
-	m_sensor_data.last_read_time_in_usecs = DriverFramework::offsetTime();
-	m_sensor_data.sensor_read_counter++;
+	m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor) / 256.0;
+	m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
+	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+	m_sensor_data.read_counter++;
 
 	m_synchronize.signal();
 	m_synchronize.unlock();

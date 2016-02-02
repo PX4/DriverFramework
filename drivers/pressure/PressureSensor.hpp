@@ -48,11 +48,11 @@ namespace DriverFramework {
 struct pressure_sensor_data
 {
 	int32_t  t_fine; 			/*! used internally to calculate a temperature compensated pressure value. */
-	float    pressure_in_pa; 		/*! current pressure in Pascals */
-	float    temperature_in_c; 		/*! current temperature in C at which the pressure was read */
-	uint32_t sensor_read_counter;		/*! the total number of pressure sensor readings since the system was started */
-	uint64_t last_read_time_in_usecs; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
-	uint64_t error_count; 			/*! the total number of errors detected when reading the pressure, since the system was started */
+	float    pressure_pa; 		/*! current pressure in Pascals */
+	float    temperature_c; 		/*! current temperature in C at which the pressure was read */
+	uint64_t read_counter;		/*! the total number of pressure sensor readings since the system was started */
+	uint64_t last_read_time_usec; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
+	uint64_t error_counter; 			/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
 class PressureSensor : public I2CDevObj
@@ -84,6 +84,12 @@ public:
 		}
 
 		return ret;
+	}
+
+	static void printPressureValues(struct pressure_sensor_data &data)
+	{
+		DF_LOG_INFO("Pressure: %.2f Pa, temperature: %.2f C",
+			    data.pressure_pa, data.temperature_c);
 	}
 
 protected:
