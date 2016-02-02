@@ -214,7 +214,6 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 	ioctl_write_read.read_buffer_length = transfer_bytes;
 	ioctl_write_read.write_buffer = write_buffer;
 	ioctl_write_read.write_buffer_length = transfer_bytes;
-	DF_LOG_INFO("m_fd: %d", m_fd);
 	result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
 	if (result != transfer_bytes)
 	{
