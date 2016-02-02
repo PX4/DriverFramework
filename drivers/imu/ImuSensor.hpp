@@ -94,11 +94,11 @@ public:
 
 	static void printImuValues(struct imu_sensor_data &data)
 	{
-		DF_LOG_INFO("IMU: accel: [%.2f, %.2f, %.2f] m/s^2, "
-			    "gyro: [%.2f, %.2f, %.2f] rad/s, "
-			    "temp: %.2f C",
-			    data.accel_m_s2_x, data.accel_m_s2_y, data.accel_m_s2_z,
-			    data.gyro_rad_s_x, data.gyro_rad_s_y, data.gyro_rad_s_z,
+		DF_LOG_INFO("IMU: accel: [%.2f, %.2f, %.2f] m/s^2",
+			    data.accel_m_s2_x, data.accel_m_s2_y, data.accel_m_s2_z);
+		DF_LOG_INFO("     gyro:  [%.2f, %.2f, %.2f] rad/s",
+			    data.gyro_rad_s_x, data.gyro_rad_s_y, data.gyro_rad_s_z);
+		DF_LOG_INFO("     temp:  %.2f C",
 			    data.temp_c);
 	}
 
