@@ -236,6 +236,12 @@ int MPU9250::start()
 
 	result = mpu9250_init();
 
+	/* Set the bus frequency for normal operation. */
+	result = _setBusFrequency(SPI_FREQUENCY_10MHZ);
+	if (result != 0) {
+		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
+	}
+
 	if (result != 0) {
 		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
 		goto exit;
