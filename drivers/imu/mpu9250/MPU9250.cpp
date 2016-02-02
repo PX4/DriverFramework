@@ -139,8 +139,22 @@
 
 using namespace DriverFramework;
 
-
 int MPU9250::mpu9250_init() {
+
+	/* Zero the struct */
+	m_synchronize.lock();
+	m_sensor_data.accel_m_s2_x = 0.0f;
+	m_sensor_data.accel_m_s2_y = 0.0f;
+	m_sensor_data.accel_m_s2_z = 0.0f;
+	m_sensor_data.temp_c = 0.0f;
+	m_sensor_data.gyro_rad_s_x = 0.0f;
+	m_sensor_data.gyro_rad_s_y = 0.0f;
+	m_sensor_data.gyro_rad_s_z = 0.0f;
+
+	m_sensor_data.last_read_time_usec = 0;
+	m_sensor_data.read_counter = 0;
+	m_synchronize.unlock();
+
 
 	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
 	if (result != 0) {
@@ -270,10 +284,6 @@ int MPU9250::stop()
 		return result;
 	}
 
-
-	usleep(10000);
-
-	DF_LOG_INFO("stopping");
 	result = devClose();
 	if (result != 0) {
 		DF_LOG_ERR("device close failed");
@@ -284,8 +294,6 @@ int MPU9250::stop()
 
 void MPU9250::_measure(void)
 {
-	DF_LOG_INFO("measuring start");
-#if 1
 #pragma pack(push, 1)
 	struct int_status_report {
 		int16_t		accel_x;
@@ -300,6 +308,7 @@ void MPU9250::_measure(void)
 
 	_bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t*)&report, sizeof(report));
 
+	/* TODO: add ifdef for endianness */
 	report.accel_x = swap16(report.accel_x);
 	report.accel_y = swap16(report.accel_y);
 	report.accel_z = swap16(report.accel_z);
@@ -308,16 +317,19 @@ void MPU9250::_measure(void)
 	report.gyro_y = swap16(report.gyro_y);
 	report.gyro_z = swap16(report.gyro_z);
 
-	DF_LOG_INFO("got: %.3f m/s^2, %.3f m/s^2, %.3f m/s^2, %.3f C, %.3f rad/s, %.3f rad/s, %.3f rad/s",
-		    float(report.accel_x) * (MPU9250_ONE_G / 2048.0f),
-		    float(report.accel_y) * (MPU9250_ONE_G / 2048.0f),
-		    float(report.accel_z) * (MPU9250_ONE_G / 2048.0f),
-		    float(report.temp)/361.0 + 35.0f,
-		    float(report.gyro_x) / (32768.0f) * (2000.0f),
-		    float(report.gyro_y) / (32768.0f) * (2000.0f),
-		    float(report.gyro_z) / (32768.0f) * (2000.0f));
-#else
-	usleep(1000);
-#endif
-	DF_LOG_INFO("measuring stop");
+	m_synchronize.lock();
+
+	m_sensor_data.accel_m_s2_x = float(report.accel_x) * (MPU9250_ONE_G / 2048.0f);
+	m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
+	m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
+	m_sensor_data.temp_c = float(report.temp)/361.0 + 35.0f;
+	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) / (32768.0f) * (2000.0f);
+	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) / (32768.0f) * (2000.0f);
+	m_sensor_data.gyro_rad_s_z = float(report.gyro_z) / (32768.0f) * (2000.0f);
+
+	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+	m_sensor_data.read_counter++;
+
+	m_synchronize.signal();
+	m_synchronize.unlock();
 }

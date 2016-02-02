@@ -88,31 +88,34 @@ int ImuTester::run()
 		m_done = false;
 	}
 
-	//while (!m_done) {
-		//++m_read_attempts;
-		//ret = ImuSensor::getSensorData(h, true);
-		//if (ret == 0) {
-		//	uint32_t count = m_sensor_data.sensor_read_counter;
-		//	if (m_read_counter != count) {
-		//		m_read_counter = count;
-		//		printImuValues(m_sensor_data);
-		//	}
-		//}
-		//else {
-		//	DF_LOG_INFO("error: unable to read the IMU sensor device.");
-		//}
+	while (!m_done) {
+		++m_read_attempts;
 
-		//if ((m_read_counter >= 1000) && (m_read_attempts == m_read_counter)) {
-		//	// Done test - PASSED
-		//	m_pass = TEST_PASS;
-		//	m_done = true;
-		//}
-		//else if (m_read_attempts > 1000) {
-		//	DF_LOG_INFO("error: unable to read the IMU sensor device.");
-		//	m_done = true;
-		//}
-	//}
-	usleep(1000000);
+		struct imu_sensor_data data;
+
+		ret = ImuSensor::getSensorData(h, data, true);
+		if (ret == 0) {
+			uint32_t count = data.read_counter;
+			DF_LOG_INFO("count: %d", count);
+			if (m_read_counter != count) {
+				m_read_counter = count;
+				ImuSensor::printImuValues(data);
+			}
+		}
+		else {
+			DF_LOG_INFO("error: unable to read the IMU sensor device.");
+		}
+
+		if ((m_read_counter >= 1000) && (m_read_attempts == m_read_counter)) {
+			// Done test - PASSED
+			m_pass = TEST_PASS;
+			m_done = true;
+		}
+		else if (m_read_attempts > 1000) {
+			DF_LOG_INFO("error: unable to read the IMU sensor device.");
+			m_done = true;
+		}
+	}
 
 	DF_LOG_INFO("Closing IMU sensor\n");
 	m_sensor.stop();
