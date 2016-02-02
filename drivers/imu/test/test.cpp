@@ -62,11 +62,6 @@ private:
 	bool		m_done = false;
 };
 
-static void printImuValues()
-{
-	DF_LOG_INFO("Hello MPU9250");
-}
-
 int ImuTester::run()
 {
 	// Default is fail unless pass critera met
