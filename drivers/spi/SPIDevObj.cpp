@@ -68,8 +68,10 @@ int SPIDevObj::stop()
 		int ret = ::close(m_fd);
 		if (ret < 0) {
 			DF_LOG_ERR("Error: SPIDevObj::stop failed on ::close()");
+			return ret;
 		}
 	}
+	return 0;
 }
 
 

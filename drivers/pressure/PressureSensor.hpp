@@ -89,7 +89,7 @@ public:
 	static void printPressureValues(struct pressure_sensor_data &data)
 	{
 		DF_LOG_INFO("Pressure: %.2f Pa, temperature: %.2f C",
-			    data.pressure_pa, data.temperature_c);
+			    (double)data.pressure_pa, (double)data.temperature_c);
 	}
 
 protected:

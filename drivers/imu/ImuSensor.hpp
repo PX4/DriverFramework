@@ -95,15 +95,23 @@ public:
 	static void printImuValues(struct imu_sensor_data &data)
 	{
 		DF_LOG_INFO("IMU: accel: [%.2f, %.2f, %.2f] m/s^2",
-			    data.accel_m_s2_x, data.accel_m_s2_y, data.accel_m_s2_z);
+			    (double)data.accel_m_s2_x,
+			    (double)data.accel_m_s2_y,
+			    (double)data.accel_m_s2_z);
 		DF_LOG_INFO("     gyro:  [%.2f, %.2f, %.2f] rad/s",
-			    data.gyro_rad_s_x, data.gyro_rad_s_y, data.gyro_rad_s_z);
+			    (double)data.gyro_rad_s_x,
+			    (double)data.gyro_rad_s_y,
+			    (double)data.gyro_rad_s_z);
 		DF_LOG_INFO("     temp:  %.2f C",
-			    data.temp_c);
+			    (double)data.temp_c);
 	}
 
 protected:
 	virtual void _measure() = 0;
+
+	virtual int _publish_callback(struct imu_sensor_data &data) {
+		return -1;
+	};
 
 	struct imu_sensor_data 		m_sensor_data;
 	SyncObj 			m_synchronize;
