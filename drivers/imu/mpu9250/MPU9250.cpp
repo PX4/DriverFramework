@@ -332,4 +332,6 @@ void MPU9250::_measure(void)
 
 	m_synchronize.signal();
 	m_synchronize.unlock();
+
+	_update_callback(m_sensor_data);
 }

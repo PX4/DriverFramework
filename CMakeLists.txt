@@ -85,6 +85,7 @@ endif()
 include_directories(
 	framework/include
 	os/qurt/include
+	drivers/imu
 	)
 
 set(DF_TARGET "linux" CACHE STRING "desired target")
