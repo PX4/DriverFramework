@@ -292,7 +292,7 @@ int MPU9250::stop()
 	return 0;
 }
 
-void MPU9250::_measure(void)
+void MPU9250::_measure()
 {
 #pragma pack(push, 1)
 	struct int_status_report {
