@@ -335,3 +335,9 @@ void MPU9250::_measure(void)
 
 	_update_callback(m_sensor_data);
 }
+
+int MPU9250::_update_callback(struct imu_sensor_data)
+{
+	// TBD
+	return -1;
+}
