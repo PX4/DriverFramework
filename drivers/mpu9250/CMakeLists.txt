@@ -37,7 +37,8 @@ include_directories(
 	../../framework/include
 	)
 
-df_add_library(df_mpu9250
+get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+df_add_library(df_${drivername}
 	MPU9250.cpp
 	)
 
