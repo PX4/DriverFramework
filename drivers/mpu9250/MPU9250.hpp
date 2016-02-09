@@ -53,7 +53,7 @@ public:
 
 protected:
 	virtual void _measure();
-	virtual int _update_callback(struct imu_sensor_data);
+	virtual int _publish_callback(struct imu_sensor_data &data);
 
 private:
 	// @returns 0 on success, -errno on failure
