@@ -34,6 +34,8 @@
 #include "DriverFramework.hpp"
 #include "BMP280.hpp"
 
+#define BARO_DEVICE_PATH "/dev/iic-3"
+
 using namespace DriverFramework;
 
 class PressureTester
@@ -43,7 +45,7 @@ public:
 	static const int TEST_FAIL = 1;
 
 	PressureTester() :
-		m_sensor(PRESSURE_DEVICE_PATH)
+		m_sensor(BARO_DEVICE_PATH)
 	{}
 
 	static void readSensorCallback(void *arg);
@@ -57,7 +59,7 @@ private:
 	BMP280		m_sensor;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
-	struct pressure_sensor_data m_sensor_data;
+	struct baro_sensor_data m_sensor_data;
 
 	int		m_pass;
 	bool		m_done = false;
@@ -74,11 +76,11 @@ int PressureTester::run()
 
 	// Open the pressure sensor
 	DevHandle h;
-	DevMgr::getHandle(PRESSURE_DEVICE_PATH, h);
+	DevMgr::getHandle(BARO_DEVICE_PATH, h);
 	if (!h.isValid())
 	{
 		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
-			PRESSURE_DEVICE_PATH, h.getError());
+			BARO_DEVICE_PATH, h.getError());
 		m_done = true;
 	}
 	else {
@@ -88,13 +90,13 @@ int PressureTester::run()
 
 	while (!m_done) {
 		++m_read_attempts;
-		ret = PressureSensor::getSensorData(h, m_sensor_data, true);
+		ret = BaroSensor::getSensorData(h, m_sensor_data, true);
 		if (ret == 0) {
 			uint32_t count = m_sensor_data.read_counter;
 			if (m_read_counter != count) {
 				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
-				PressureSensor::printPressureValues(m_sensor_data);
+				BaroSensor::printPressureValues(m_sensor_data);
 			}
 		}
 		else {

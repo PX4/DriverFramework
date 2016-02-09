@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "PressureSensor.hpp"
+#include "BaroSensor.hpp"
 
 namespace DriverFramework {
 
@@ -60,11 +60,11 @@ struct bmp280_sensor_calibration
 #define BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES 6
 #define BMP280_MAX_LEN_CALIB_VALUES 26
 
-class BMP280 : public PressureSensor
+class BMP280 : public BaroSensor
 {
 public:
 	BMP280(const char *device_path) :
-		PressureSensor(device_path, 1000)
+		BaroSensor(device_path, 1000)
 	{}
 
 	virtual int start();

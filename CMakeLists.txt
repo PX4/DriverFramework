@@ -85,7 +85,6 @@ endif()
 include_directories(
 	framework/include
 	os/qurt/include
-	drivers/imu
 	)
 
 set(DF_TARGET "linux" CACHE STRING "desired target")
@@ -97,12 +96,10 @@ if(NOT "${DF_TARGET}" STREQUAL "nuttx")
 	# Add driver libraries
 	add_subdirectory(drivers)
 
-if("${DF_ENABLE_TESTS}" STREQUAL "1")
-	# Add unit test
-	add_subdirectory(framework/test)
-	set(df_link_libs df_framework_test ${df_link_libs})
-	add_subdirectory(test)
-endif()
+	if("${DF_ENABLE_TESTS}" STREQUAL "1")
+		# Add unit test
+		add_subdirectory(test)
+	endif()
 endif()
 
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")

@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (c) 2015 Mark Charlebois. All rights reserved.
+# Copyright (c) 2015 Julian Oes. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,8 +31,18 @@
 #
 ############################################################################
 
-df_add_library(df_i2c
-	I2CDevObj.cpp
+include(../../../../cmake_hexagon/qurt_app.cmake)
+
+QURT_BUNDLE(APP_NAME df_imu_test
+	APPS_SOURCES df_imu_test.cpp
+	DSP_SOURCES
+		df_imu_test_dsp.cpp
+		../test.cpp
+	DSP_LINK_LIBS 
+		df_driver_framework
+		df_mpu9250 
+		${df_link_libs}
+	APPS_COMPILER arm-linux-gnueabihf-gcc
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

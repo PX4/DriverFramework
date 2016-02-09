@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (c) 2015 Mark Charlebois. All rights reserved.
+# Copyright (c) 2015 Julian Oes. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,8 +31,18 @@
 #
 ############################################################################
 
-df_add_library(df_bmp280
-	BMP280.cpp
+include(../../cmake/df_add_library.cmake)
+
+include_directories(
+	../../framework/include
 	)
+
+df_add_library(df_mpu9250
+	MPU9250.cpp
+	)
+
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
+	add_subdirectory(test)
+endif()
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

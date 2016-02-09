@@ -51,6 +51,8 @@ else()
 		DFList.cpp
 		Time.cpp
 		DFDiag.cpp
+		I2CDevObj.cpp
+		SPIDevObj.cpp
 		)
 endif()
 

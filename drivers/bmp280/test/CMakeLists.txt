@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (c) 2015 Julian Oes. All rights reserved.
+# Copyright (c) 2015 Mark Charlebois. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,8 +31,20 @@
 #
 ############################################################################
 
-df_add_library(df_mpu9250
-	MPU9250.cpp
-	)
+include_directories(..)
 
+if("${DF_TARGET}" STREQUAL "qurt")
+	add_subdirectory(qurt)
+else()
+	add_executable(df_bmp280_test
+		main.cpp
+		test.cpp
+		)
+
+	target_link_libraries(df_bmp280_test
+		df_driver_framework
+		df_bmp280
+		${df_link_libs}
+		)
+endif()
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

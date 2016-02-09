@@ -37,41 +37,40 @@
 #include "SyncObj.hpp"
 #include "I2CDevObj.hpp"
 
-#define PRESSURE_DEVICE_PATH "/dev/i2c-2"
-#define PRESSURE_CLASS_PATH  "/dev/pressure"
+#define BARO_CLASS_PATH  "/dev/baro"
 
 namespace DriverFramework {
 
 /**
  * The sensor independent data structure containing pressure values.
  */
-struct pressure_sensor_data
+struct baro_sensor_data
 {
-	int32_t  t_fine; 			/*! used internally to calculate a temperature compensated pressure value. */
+	int32_t  t_fine; 		/*! used internally to calculate a temperature compensated pressure value. */
 	float    pressure_pa; 		/*! current pressure in Pascals */
-	float    temperature_c; 		/*! current temperature in C at which the pressure was read */
+	float    temperature_c;		/*! current temperature in C at which the pressure was read */
 	uint64_t read_counter;		/*! the total number of pressure sensor readings since the system was started */
 	uint64_t last_read_time_usec; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
-	uint64_t error_counter; 			/*! the total number of errors detected when reading the pressure, since the system was started */
+	uint64_t error_counter;		/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
-class PressureSensor : public I2CDevObj
+class BaroSensor : public I2CDevObj
 {
 public:
-	PressureSensor(const char *device_path, unsigned int sample_interval_usec) :
-		I2CDevObj("PressureSensor", device_path, PRESSURE_CLASS_PATH, sample_interval_usec)
+	BaroSensor(const char *device_path, unsigned int sample_interval_usec) :
+		I2CDevObj("BaroSensor", device_path, BARO_CLASS_PATH, sample_interval_usec)
 	{}
 
-	~PressureSensor() {}
+	~BaroSensor() {}
 
 	void setAltimeter(float altimeter_setting_in_mbars)
 	{
 		m_altimeter_mbars = altimeter_setting_in_mbars;
 	}
 
-	static int getSensorData(DevHandle &h, struct pressure_sensor_data &out_data, bool is_new_data_required)
+	static int getSensorData(DevHandle &h, struct baro_sensor_data &out_data, bool is_new_data_required)
 	{
-		PressureSensor *me = DevMgr::getDevObjByHandle<PressureSensor>(h);
+		BaroSensor *me = DevMgr::getDevObjByHandle<BaroSensor>(h);
 		int ret = -1;
 		if (me != nullptr) {
 			me->m_synchronize.lock();
@@ -86,7 +85,7 @@ public:
 		return ret;
 	}
 
-	static void printPressureValues(struct pressure_sensor_data &data)
+	static void printPressureValues(struct baro_sensor_data &data)
 	{
 		DF_LOG_INFO("Pressure: %.2f Pa, temperature: %.2f C",
 			    (double)data.pressure_pa, (double)data.temperature_c);
@@ -95,9 +94,9 @@ public:
 protected:
 	virtual void _measure() = 0;
 
-	struct pressure_sensor_data 		m_sensor_data;
-	float 					m_altimeter_mbars = 0.0;
-	SyncObj 				m_synchronize;
+	struct baro_sensor_data		m_sensor_data;
+	float 				m_altimeter_mbars = 0.0;
+	SyncObj 			m_synchronize;
 };
 
 }; // namespace DriverFramework

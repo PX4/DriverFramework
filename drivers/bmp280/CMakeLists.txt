@@ -31,16 +31,16 @@
 #
 ############################################################################
 
-include(../../../../cmake_hexagon/qurt_app.cmake)
+include(../../cmake/df_add_library.cmake)
 
-QURT_BUNDLE(APP_NAME df_pressure_test
-	APPS_SOURCES df_pressure_test.cpp
-	DSP_SOURCES df_pressure_test_dsp.cpp
-	../test.cpp
-	DSP_LINK_LIBS df_driver_framework
-	df_bmp280 df_i2c
-	${df_link_libs}
-	APPS_COMPILER arm-linux-gnueabihf-gcc
+include_directories(../../framework/include)
+
+df_add_library(df_bmp280
+	BMP280.cpp
 	)
+
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
+	add_subdirectory(test)
+endif()
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

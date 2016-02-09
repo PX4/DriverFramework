@@ -31,11 +31,9 @@
 #
 ############################################################################
 
-include_directories(
-	./
-	../framework/test
-	../drivers/test
-	)
+include_directories(framework)
+
+add_subdirectory(framework)
 
 if("${DF_TARGET}" STREQUAL "qurt")
 
@@ -49,6 +47,7 @@ else()
 	target_link_libraries(df_testapp
 		df_driver_framework
 		${df_driver_libs}
+		df_framework_test
 		${df_link_libs}
 		)
 endif()
