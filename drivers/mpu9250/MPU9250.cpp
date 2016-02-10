@@ -333,10 +333,10 @@ void MPU9250::_measure()
 	m_synchronize.signal();
 	m_synchronize.unlock();
 
-	_publish_callback(m_sensor_data);
+	_publish(m_sensor_data);
 }
 
-int MPU9250::_publish_callback(struct imu_sensor_data &data)
+int MPU9250::_publish(struct imu_sensor_data &data)
 {
 	// TBD
 	return -1;

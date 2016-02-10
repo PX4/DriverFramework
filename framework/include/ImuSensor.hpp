@@ -109,7 +109,7 @@ public:
 protected:
 	virtual void _measure() = 0;
 
-	virtual int _publish_callback(struct imu_sensor_data &data) {
+	virtual int _publish(struct imu_sensor_data &data) {
 		return -1;
 	};
 
