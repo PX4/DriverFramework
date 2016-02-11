@@ -37,12 +37,15 @@
 
 namespace DriverFramework {
 
+// update frequency 250 Hz
+#define MPU9250_MEASURE_INTERVAL_US 4000
+
 
 class MPU9250 : public ImuSensor
 {
 public:
 	MPU9250(const char *device_path) :
-		ImuSensor(device_path, 1000)
+		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US)
 	{}
 
 	// @return 0 on success, -errno on failure
