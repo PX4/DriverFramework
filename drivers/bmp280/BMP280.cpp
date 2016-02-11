@@ -288,4 +288,12 @@ void BMP280::_measure(void)
 
 	m_synchronize.signal();
 	m_synchronize.unlock();
+
+	_publish(m_sensor_data);
+}
+
+int BMP280::_publish(struct baro_sensor_data &data)
+{
+	// TBD
+	return -1;
 }

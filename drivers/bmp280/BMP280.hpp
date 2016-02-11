@@ -67,11 +67,15 @@ public:
 		BaroSensor(device_path, 1000)
 	{}
 
+	// @return 0 on success, -errno on failure
 	virtual int start();
+
+	// @return 0 on success, -errno on failure
 	virtual int stop();
 
 protected:
 	virtual void _measure();
+	virtual int _publish(struct baro_sensor_data &data);
 
 private:
 	// Returns pressure in Pa as unsigned 32 bit integer in
