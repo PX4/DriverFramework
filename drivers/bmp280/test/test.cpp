@@ -34,7 +34,6 @@
 #include "DriverFramework.hpp"
 #include "BMP280.hpp"
 
-#define BARO_DEVICE_PATH "/dev/iic-3"
 
 using namespace DriverFramework;
 

@@ -53,6 +53,12 @@ struct bmp280_sensor_calibration
 	int16_t dig_P9;
 };
 
+
+#define BARO_DEVICE_PATH "/dev/iic-3"
+
+// update frequency is 50 Hz (44.4-51.3Hz ) at 8x oversampling
+#define BMP280_MEASURE_INTERVAL_US 20000
+
 #define BMP280_SLAVE_ADDRESS 0b1110110       /* 7-bit slave address */
 #define BMP280_BUS_FREQUENCY_IN_KHZ 400
 #define BMP280_TRANSFER_TIMEOUT_IN_USECS 9000
@@ -64,7 +70,7 @@ class BMP280 : public BaroSensor
 {
 public:
 	BMP280(const char *device_path) :
-		BaroSensor(device_path, 1000)
+		BaroSensor(device_path, BMP280_MEASURE_INTERVAL_US)
 	{}
 
 	// @return 0 on success, -errno on failure
