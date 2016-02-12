@@ -189,7 +189,7 @@ bool WorkMgr::isValid(const WorkHandle &h)
 	return ((h.m_handle >=0) && ((unsigned int)h.m_handle < g_work_items->size()));
 }
 
-static uint64_t TSToABSTime(struct timespec *ts)
+static uint64_t TsToAbstime(struct timespec *ts)
 {
         uint64_t result;
 
@@ -210,17 +210,20 @@ uint64_t DriverFramework::offsetTime(void)
 
 	pthread_mutex_lock(&g_timestart_lock);
 	if (!g_timestart) {
-		g_timestart = TSToABSTime(&ts);
+		g_timestart = TsToAbstime(&ts);
 	}
+	// Time is in microseconds
+	uint64_t result = TsToAbstime(&ts) - g_timestart;
 	pthread_mutex_unlock(&g_timestart_lock);
 
-	// Time is in microseconds
-	return TSToABSTime(&ts) - g_timestart;
+	return result;
 }
 
 timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 {
+	pthread_mutex_lock(&g_timestart_lock);
 	uint64_t abs_time = offset_time + g_timestart;
+	pthread_mutex_unlock(&g_timestart_lock);
 	struct timespec ts = {};
 	ts.tv_sec = abs_time / 1000000;
 	ts.tv_nsec = (abs_time % 1000000) * 1000;
