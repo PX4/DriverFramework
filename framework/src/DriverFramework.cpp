@@ -48,6 +48,11 @@
 #include <execinfo.h>
 #endif
 
+// TODO XXX this value was found empirically and is only a workaround
+// for pthread_cond_timedwait never returning when the time is less than
+// 100 us away.
+#define MIN_RESCHEDULE_TIME_US 100
+
 #define SHOW_STATS 0
 
 namespace DriverFramework {
@@ -524,7 +529,8 @@ void HRTWorkQueue::process(void)
 				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
 
-				if (elapsed >= item->m_delay) {
+				// TODO XXX: get rid of this workaround
+				if (elapsed + MIN_RESCHEDULE_TIME_US >= item->m_delay) {
 
 					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item->m_callback);
 					item->updateStats(now);
