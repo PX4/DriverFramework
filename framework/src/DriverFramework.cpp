@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -330,7 +330,7 @@ void WorkItem::updateStats(unsigned int cur_usec)
 #endif
 }
 
-void WorkItem::resetStats() 
+void WorkItem::resetStats()
 {
 	m_last = ~(unsigned long)0;
 	m_min = ~(unsigned long)0;
@@ -339,9 +339,9 @@ void WorkItem::resetStats()
 	m_count = 0;
 }
 
-void WorkItem::dumpStats() 
+void WorkItem::dumpStats()
 {
-	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu", 
+	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu",
 		m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
@@ -464,7 +464,7 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 		WorkItem *item;
 		if (!g_work_items->getAt(index, &item)) {
 			DF_LOG_INFO("HRTWorkQueue::unscheduleWorkItem - invalid index");
-		} 
+		}
 		else {
 			if (item->m_in_use == false) {
 				idx = m_work_list.erase(idx);
@@ -524,7 +524,7 @@ void HRTWorkQueue::process(void)
 		while ((!m_exit_requested) && (idx != nullptr)) {
 			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
 			now = offsetTime();
-			unsigned int index; 
+			unsigned int index;
 			m_work_list.get(idx, index);
 			if (index < g_work_items->size()) {
 				WorkItem *item;
@@ -624,7 +624,7 @@ void WorkMgr::finalize()
 		}
 		idx = g_work_items->next(idx);
 	}
-	
+
 	g_work_items->clear();
 	delete g_work_items;
 	g_work_items = nullptr;
@@ -677,7 +677,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHand
 	}
 
 	if (isValid(wh)) {
-	
+
 		// Re-use the WorkItem
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
@@ -718,7 +718,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 		setError(wh, EBADF);
 		ret = -1;
 	}
-	
+
 	g_lock->unlock();
 	return ret;
 }
