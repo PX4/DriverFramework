@@ -201,7 +201,7 @@ uint64_t DriverFramework::offsetTime(void)
 {
 	struct timespec ts = {};
 
-	(void)clockGetRealtime(&ts);
+	(void)clockGetMonotonic(&ts);
 
 	pthread_mutex_lock(&g_timestart_lock);
 	if (!g_timestart) {

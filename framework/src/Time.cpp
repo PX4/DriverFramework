@@ -69,15 +69,20 @@ int DriverFramework::clockGetRealtime(struct timespec *ts)
 	return clock_gettime(CLOCK_REALTIME, ts);
 }
 
+int DriverFramework::clockGetMonotonic(struct timespec *ts)
+{
+	return clock_gettime(CLOCK_MONOTONIC, ts);
+}
+
 timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
 {
 	struct timespec ts;
 
-	clockGetRealtime(&ts);
+	clockGetMonotonic(&ts);
 
 	uint64_t nsecs = ts.tv_nsec + time_ms*1000000;
 	uint64_t secs = (nsecs/1000000000);
-	
+
 	ts.tv_sec += secs;
 	ts.tv_nsec = nsecs - secs*1000000000;
 
