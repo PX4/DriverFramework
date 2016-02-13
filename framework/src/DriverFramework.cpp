@@ -562,12 +562,27 @@ void HRTWorkQueue::process(void)
 			}
 		}
 
-		// pthread_cond_timedwait uses absolute time
-		ts = offsetTimeToAbsoluteTime(now+next);
-		
+		// Check time again now to make sure we don't call pthread_cond_timedwait()
+		// with a timeout too close in the future. If so, just start from the top
+		// which means the task will get done immediately.
+		const uint64_t now_after_callback = offsetTime();
+		const uint64_t schedule_time = now + next;
+
+		if (schedule_time < now_after_callback + 200) {
+			DF_LOG_INFO("close one: %llu us", schedule_time - now_after_callback);
+		}
+
+		if (schedule_time >= now_after_callback + MIN_RESCHEDULE_TIME_US) {
+			// pthread_cond_timedwait uses absolute time
+			ts = offsetTimeToAbsoluteTime(schedule_time);
+			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
+		} else {
+			DF_LOG_INFO("ignore timeout of only %llu us",
+				    now_after_callback + MIN_RESCHEDULE_TIME_US - schedule_time);
+		}
+
 		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
 		// Wait until next expiry or until a new item is rescheduled
-		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();
 	}
 }
