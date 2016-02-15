@@ -330,10 +330,10 @@ void MPU9250::_measure()
 	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
 	m_sensor_data.read_counter++;
 
+	_publish(m_sensor_data);
+
 	m_synchronize.signal();
 	m_synchronize.unlock();
-
-	_publish(m_sensor_data);
 }
 
 int MPU9250::_publish(struct imu_sensor_data &data)
