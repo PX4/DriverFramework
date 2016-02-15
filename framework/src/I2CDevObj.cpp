@@ -117,11 +117,11 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 	ioctl_write_read.write_buf_len = 1;
 	ioctl_write_read.read_buf = out_buffer;
 	ioctl_write_read.read_buf_len = length;
-	int bytes_written = ::ioctl(m_fd, I2C_IOCTL_RDWR, &ioctl_write_read);
-	if (bytes_written != length) {
+	int bytes_read = ::ioctl(m_fd, I2C_IOCTL_RDWR, &ioctl_write_read);
+	if (bytes_read != length) {
 		DF_LOG_ERR(
 			"error: read register reports a read of %d bytes, but attempted to set %d bytes",
-			bytes_written, length);
+			bytes_read, length);
 		return -1;
 	}
 
@@ -133,14 +133,14 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
-	uint8_t write_buffer[MAX_LEN_TRANSMIT_BUFFER_IN_BYTES];
+	uint8_t write_buffer[length+1];
 
 	/*
 	 * Verify that the length of the caller's buffer does not exceed the local stack
 	 * buffer with one additional byte for the register ID.
 	 */
 	if (length + 1 > MAX_LEN_TRANSMIT_BUFFER_IN_BYTES) {
-		DF_LOG_ERR("error: caller's buffer exceeds size of local buffer");
+		DF_LOG_ERR("error: caller's buffer exceeds max len");
 		return -1;
 	}
 	if (m_fd == 0) {
