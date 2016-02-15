@@ -133,14 +133,14 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
-	uint8_t write_buffer[MAX_LEN_TRANSMIT_BUFFER_IN_BYTES];
+	uint8_t write_buffer[length+1];
 
 	/*
 	 * Verify that the length of the caller's buffer does not exceed the local stack
 	 * buffer with one additional byte for the register ID.
 	 */
 	if (length + 1 > MAX_LEN_TRANSMIT_BUFFER_IN_BYTES) {
-		DF_LOG_ERR("error: caller's buffer exceeds size of local buffer");
+		DF_LOG_ERR("error: caller's buffer exceeds max len");
 		return -1;
 	}
 	if (m_fd == 0) {
