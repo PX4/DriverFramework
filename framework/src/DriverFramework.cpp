@@ -48,10 +48,14 @@
 #include <execinfo.h>
 #endif
 
+#ifdef __PX4_QURT
 // TODO XXX this value was found empirically and is only a workaround
 // for pthread_cond_timedwait never returning when the time is less than
 // 100 us away.
 #define MIN_RESCHEDULE_TIME_US 100
+#else
+#define MIN_RESCHEDULE_TIME_US 0
+#endif
 
 #define SHOW_STATS 0
 
