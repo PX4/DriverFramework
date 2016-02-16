@@ -69,6 +69,11 @@ int DriverFramework::clockGetRealtime(struct timespec *ts)
 	return clock_gettime(CLOCK_REALTIME, ts);
 }
 
+#ifdef __PX4_NUTTX
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 1
+#endif
+#endif
 int DriverFramework::clockGetMonotonic(struct timespec *ts)
 {
 	return clock_gettime(CLOCK_MONOTONIC, ts);
