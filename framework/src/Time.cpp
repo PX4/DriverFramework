@@ -76,7 +76,13 @@ int DriverFramework::clockGetRealtime(struct timespec *ts)
 #endif
 int DriverFramework::clockGetMonotonic(struct timespec *ts)
 {
+#if defined(__APPLE__) && defined(__MACH__)
+#define CLOCK_REALTIME 0
+	// CLOCK_MONOTONIC not available on Mac
+	return clock_gettime(CLOCK_REALTIME, ts);
+#else
 	return clock_gettime(CLOCK_MONOTONIC, ts);
+#endif
 }
 
 timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
