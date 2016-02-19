@@ -39,8 +39,6 @@
 #include "SPIDevObj.hpp"
 #include "DevIOCTL.h"
 
-#define __RPI2
-
 #ifdef __RPI2
 #include <sys/ioctl.h>
 #include <linux/types.h>
@@ -102,28 +100,31 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    uint8_t write_buffer[2];
-    uint8_t read_buffer[2];
-
-    write_buffer[0] = address | DIR_READ;
-    write_buffer[1] = 0;
     int transfer_bytes = 1 + 1; // first byte is address
+    uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
+    uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
 
-    struct spi_ioc_transfer spi_transfer;
+    write_buffer[0] = address | DIR_READ; // read mode
+    write_buffer[1] = 0; // write data
 
+    struct pi_ioc_transfer spi_transfer; // datastructures for linux spi interface
     memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
 
     spi_transfer.tx_buf = (unsigned long)write_buffer;
     spi_transfer.rx_buf = (unsigned long)read_buffer;
     spi_transfer.len = transfer_bytes;
-    // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ;
+    // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ; // temporarily override spi speed
     spi_transfer.bits_per_word = 8;
     spi_transfer.delay_usecs = 0;
 
-    ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+    int result = 0;
+    result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+    if (result != transfer_bytes) {
+        DF_LOG_ERR("error: SPI combined read write failed: %d", result);
+        return -1;
+    }
 
     val = read_buffer[1];
-
     return 0;
 #endif // __RPI2
 
@@ -195,7 +196,36 @@ int SPIDevObj::writeRegVerified(DevHandle &h, uint8_t address, uint8_t val)
 
 int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 {
-	uint8_t write_buffer[2];
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    int transfer_bytes = 1 + 1; // first byte is address
+    uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
+    uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
+
+    struct spi_ioc_transfer spi_transfer; // datastructures for linux spi interface
+    memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
+
+    write_buffer[0] = address | DIR_WRITE; // write mode
+    write_buffer[1] = val; // write data
+
+    spi_transfer.rx_buf = (unsigned long)read_buffer;
+    spi_transfer.len = transfer_bytes;
+    spi_transfer.tx_buf = (unsigned long)write_buffer;
+    // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ; // temporarily override spi speed
+    spi_transfer.bits_per_word = 8;
+    spi_transfer.delay_usecs = 0;
+
+    int result = 0;
+    result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+
+    if (result != transfer_bytes) {
+        DF_LOG_ERR("Error: SPI write failed. Reported %d bytes written (%d)", result, errno);
+        return -1;
+    }
+    return 0;
+#endif
+
+    uint8_t write_buffer[2];
 
 	write_buffer[0] = address | DIR_WRITE;
 	write_buffer[1] = val;
@@ -253,13 +283,12 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    int result = 0;
     int transfer_bytes = 1 + length; // first byte is address
-    struct spi_ioc_transfer spi_transfer;
-    uint8_t write_buffer[transfer_bytes];
-    uint8_t read_buffer[transfer_bytes];
+    uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
+    uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
 
-    write_buffer[0] = address | DIR_READ;
+    struct spi_ioc_transfer spi_transfer; // datastructure for linux spi interface
+    memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
 
     spi_transfer.rx_buf = (unsigned long)read_buffer;
     spi_transfer.len = transfer_bytes;
@@ -268,7 +297,8 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
     spi_transfer.bits_per_word = 8;
     spi_transfer.delay_usecs = 0;
 
-    result = ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+    int result = 0;
+    result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
 
     if (result != transfer_bytes)
     {
@@ -277,7 +307,6 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
     }
 
     memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
-
     return 0;
 #endif // __RPI2
 
@@ -353,7 +382,8 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
     int32_t samplerate_div = (int32_t)((1000.0 / freq_hz) + 0.5f) - 1;
-    _writeReg(0x19, samplerate_div);
+#define MPUREG_SMPLRT_DIV 0x19
+    _writeReg(MPUREG_SMPLRT_DIV, samplerate_div);
 #endif // __RPI2
 
 #ifdef __QURT

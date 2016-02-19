@@ -41,8 +41,15 @@ set(package-contact "charlebm@gmail.com")
 
 message("DF_TARGET = ${DF_TARGET}")
 
+######### test DriverFramework for rpi2 ###
 # used for debug
 set(DF_DEBUG 1)
+
+# temporary solution to test DriverFramework for rpi2
+if (NOT "${DF_TARGET}" STREQUAL "linux")
+        set(__RPI2 1)
+endif
+######### test DriverFramework for rpi2 ###
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 message("Enabling Thread Sanitizer")
