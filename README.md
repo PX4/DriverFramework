@@ -130,6 +130,3 @@ if (ret < 0) {
 
 ```
 Errors can be checked by testing for errors after a
-
-# Porting Navio drivers
-
