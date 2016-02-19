@@ -38,14 +38,14 @@
 #include "SPIDevObj.hpp"
 
 #ifdef __QURT
-    #include "dev_fs_lib_spi.h"
-    #define IMU_DEVICE_PATH "/dev/spi-1"
+#include "dev_fs_lib_spi.h"
+#define IMU_DEVICE_PATH "/dev/spi-1"
 #else
-    #ifdef __RPI2
-        #define IMU_DEVICE_PATH "/dev/spidev0.1"
-    #else
-        #define IMU_DEVICE_PATH "/dev/spidev0.0"
-    #endif
+#ifdef __RPI2
+#define IMU_DEVICE_PATH "/dev/spidev0.1"
+#else
+#define IMU_DEVICE_PATH "/dev/spidev0.0"
+#endif
 #endif
 
 #define IMU_CLASS_PATH  "/dev/imu"
@@ -57,67 +57,67 @@ namespace DriverFramework {
  */
 struct imu_sensor_data
 {
-	float		accel_m_s2_x;
-	float		accel_m_s2_y;
-	float		accel_m_s2_z;
-	float		gyro_rad_s_x;
-	float		gyro_rad_s_y;
-	float		gyro_rad_s_z;
-	float		temp_c;
-	uint64_t	last_read_time_usec;
-	uint64_t	read_counter;
-	uint64_t	error_counter;
+    float		accel_m_s2_x;
+    float		accel_m_s2_y;
+    float		accel_m_s2_z;
+    float		gyro_rad_s_x;
+    float		gyro_rad_s_y;
+    float		gyro_rad_s_z;
+    float		temp_c;
+    uint64_t	last_read_time_usec;
+    uint64_t	read_counter;
+    uint64_t	error_counter;
 };
 
 class ImuSensor : public SPIDevObj
 {
 public:
-	ImuSensor(const char *device_path, unsigned int sample_interval_usec) :
-		SPIDevObj("ImuSensor", device_path, IMU_CLASS_PATH, sample_interval_usec)
-	{}
+    ImuSensor(const char *device_path, unsigned int sample_interval_usec) :
+        SPIDevObj("ImuSensor", device_path, IMU_CLASS_PATH, sample_interval_usec)
+    {}
 
-	~ImuSensor() {}
+    ~ImuSensor() {}
 
-	static int getSensorData(DevHandle &h, struct imu_sensor_data &out_data, bool is_new_data_required)
-	{
-		ImuSensor *me = DevMgr::getDevObjByHandle<ImuSensor>(h);
-		int ret = -1;
-		if (me != nullptr) {
-			me->m_synchronize.lock();
-			if (is_new_data_required) {
-				me->m_synchronize.waitOnSignal(0);
-			}
-			out_data = me->m_sensor_data;
-			me->m_synchronize.unlock();
-			ret = 0;
-		}
+    static int getSensorData(DevHandle &h, struct imu_sensor_data &out_data, bool is_new_data_required)
+    {
+        ImuSensor *me = DevMgr::getDevObjByHandle<ImuSensor>(h);
+        int ret = -1;
+        if (me != nullptr) {
+            me->m_synchronize.lock();
+            if (is_new_data_required) {
+                me->m_synchronize.waitOnSignal(0);
+            }
+            out_data = me->m_sensor_data;
+            me->m_synchronize.unlock();
+            ret = 0;
+        }
 
-		return ret;
-	}
+        return ret;
+    }
 
-	static void printImuValues(struct imu_sensor_data &data)
-	{
-		DF_LOG_INFO("IMU: accel: [%.2f, %.2f, %.2f] m/s^2",
-			    (double)data.accel_m_s2_x,
-			    (double)data.accel_m_s2_y,
-			    (double)data.accel_m_s2_z);
-		DF_LOG_INFO("     gyro:  [%.2f, %.2f, %.2f] rad/s",
-			    (double)data.gyro_rad_s_x,
-			    (double)data.gyro_rad_s_y,
-			    (double)data.gyro_rad_s_z);
-		DF_LOG_INFO("     temp:  %.2f C",
-			    (double)data.temp_c);
-	}
+    static void printImuValues(struct imu_sensor_data &data)
+    {
+        DF_LOG_INFO("IMU: accel: [%.2f, %.2f, %.2f] m/s^2",
+                    (double)data.accel_m_s2_x,
+                    (double)data.accel_m_s2_y,
+                    (double)data.accel_m_s2_z);
+        DF_LOG_INFO("     gyro:  [%.2f, %.2f, %.2f] rad/s",
+                    (double)data.gyro_rad_s_x,
+                    (double)data.gyro_rad_s_y,
+                    (double)data.gyro_rad_s_z);
+        DF_LOG_INFO("     temp:  %.2f C",
+                    (double)data.temp_c);
+    }
 
 protected:
-	virtual void _measure() = 0;
+    virtual void _measure() = 0;
 
-	virtual int _publish(struct imu_sensor_data &data) {
-		return -1;
-	};
+    virtual int _publish(struct imu_sensor_data &data) {
+        return -1;
+    };
 
-	struct imu_sensor_data 		m_sensor_data;
-	SyncObj 			m_synchronize;
+    struct imu_sensor_data 		m_sensor_data;
+    SyncObj 			m_synchronize;
 };
 
 }; // namespace DriverFramework

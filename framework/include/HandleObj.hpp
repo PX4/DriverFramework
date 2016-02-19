@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -47,57 +47,57 @@ class DevMgr;
 class HandleObj : public DisableCopy
 {
 public:
-	HandleObj() {}
+    HandleObj() {}
 
-	virtual ~HandleObj() {}
+    virtual ~HandleObj() {}
 
-	bool isValid()
-	{
+    bool isValid()
+    {
 #ifdef __DF_NUTTX
-		return m_fd != -1;
+        return m_fd != -1;
 #else
-		return m_handle != nullptr;
+        return m_handle != nullptr;
 #endif
-	}
+    }
 
-	int getError()
-	{
-		return m_errno;
-	}
+    int getError()
+    {
+        return m_errno;
+    }
 
 protected:
-	friend DevMgr;
+    friend DevMgr;
 
 #ifdef __DF_NUTTX
-	int 	m_fd = -1;
+    int 	m_fd = -1;
 #else
-	void *	m_handle = nullptr;
+    void *	m_handle = nullptr;
 #endif
-	int 	m_errno = 0;
+    int 	m_errno = 0;
 };
 
 class IntHandleObj : public DisableCopy
 {
 public:
-	IntHandleObj() {}
+    IntHandleObj() {}
 
-	virtual ~IntHandleObj() {}
+    virtual ~IntHandleObj() {}
 
-	bool isValid()
-	{
-		return m_handle != -1;
-	}
+    bool isValid()
+    {
+        return m_handle != -1;
+    }
 
-	int getError()
-	{
-		return m_errno;
-	}
+    int getError()
+    {
+        return m_errno;
+    }
 
 protected:
     friend HRTWorkQueue;
-	friend WorkMgr;
+    friend WorkMgr;
 
-	int	m_handle = -1;
-	int 	m_errno = 0;
+    int	m_handle = -1;
+    int 	m_errno = 0;
 };
 };
