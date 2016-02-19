@@ -43,7 +43,7 @@ message("DF_TARGET = ${DF_TARGET}")
 
 ######### test DriverFramework for rpi2 ###
 # used for debug
-add_definitions(-DDF_DEBUG)
+#add_definitions(-DDF_DEBUG)
 
 # temporary solution to test DriverFramework for rpi2
 if ("${DF_TARGET}" STREQUAL "linux")
