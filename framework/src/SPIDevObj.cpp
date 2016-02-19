@@ -283,10 +283,13 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 {
 #ifdef __RPI2
+    DF_LOG_DEBUG("_bulkRead: length = %d", length);
     /* implement sensor interface via rpi2 spi */
     int transfer_bytes = 1 + length; // first byte is address
     uint8_t write_buffer[255] = {0}; // automatic write buffer
     uint8_t read_buffer[255] = {0}; // automatic read buffer
+
+    write_buffer[0] = address | DIR_READ; // read mode
 
     struct spi_ioc_transfer spi_transfer; // datastructure for linux spi interface
     memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
