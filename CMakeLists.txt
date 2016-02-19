@@ -45,12 +45,12 @@ message("DF_TARGET = ${DF_TARGET}")
 
 ######### test DriverFramework for rpi2 ###
 # used for debug
-add_definitions(-DDF_DEBUG 1)
+add_definitions(-DDF_DEBUG)
 
 # temporary solution to test DriverFramework for rpi2
 if ("${DF_TARGET}" STREQUAL "linux")
         message("setting __RPI2 macro")
-        add_definitions(-D__RPI2 1)
+        add_definitions(-D__RPI2)
 endif()
 ######### test DriverFramework for rpi2 ###
 
