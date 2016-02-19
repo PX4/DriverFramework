@@ -100,7 +100,7 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    int transfer_bytes = 1 + 1; // first byte is address
+    constexpr int transfer_bytes = 1 + 1; // first byte is address
     uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
     uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
 
@@ -198,7 +198,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    int transfer_bytes = 1 + 1; // first byte is address
+    constexpr int transfer_bytes = 1 + 1; // first byte is address
     uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
     uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
 
@@ -283,7 +283,7 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    int transfer_bytes = 1 + length; // first byte is address
+    constexpr int transfer_bytes = 1 + length; // first byte is address
     uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
     uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
 
