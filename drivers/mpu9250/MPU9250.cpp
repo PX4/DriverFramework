@@ -237,7 +237,7 @@ int MPU9250::start()
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
 	result = _readReg(MPUREG_WHOAMI, sensor_id);
-    DF_LOG_DEBUG("whoami: %d", result);
+    DF_LOG_DEBUG("whoami: %d", sensor_id);
 	if (result != 0) {
 		DF_LOG_ERR("Unable to communicate with the MPU9250 sensor");
 		goto exit;
