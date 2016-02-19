@@ -46,7 +46,7 @@ message("DF_TARGET = ${DF_TARGET}")
 set(DF_DEBUG 1)
 
 # temporary solution to test DriverFramework for rpi2
-if (NOT "${DF_TARGET}" STREQUAL "linux")
+if ("${DF_TARGET}" STREQUAL "linux")
         set(__RPI2 1)
 endif()
 ######### test DriverFramework for rpi2 ###
