@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -46,6 +46,15 @@
 #ifdef DF_ENABLE_BACKTRACE
 #include <stdlib.h>
 #include <execinfo.h>
+#endif
+
+#ifdef __PX4_QURT
+// TODO XXX this value was found empirically and is only a workaround
+// for pthread_cond_timedwait never returning when the time is less than
+// 100 us away.
+#define MIN_RESCHEDULE_TIME_US 100
+#else
+#define MIN_RESCHEDULE_TIME_US 0
 #endif
 
 #define SHOW_STATS 0
@@ -165,8 +174,8 @@ using namespace DriverFramework;
 static uint64_t g_timestart = 0;
 static pthread_t g_tid;
 
-static pthread_mutex_t g_framework_exit = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t g_hrt_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t g_framework_exit;
+static pthread_mutex_t g_hrt_lock;
 static pthread_mutex_t g_timestart_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
@@ -184,7 +193,7 @@ bool WorkMgr::isValid(const WorkHandle &h)
 	return ((h.m_handle >=0) && ((unsigned int)h.m_handle < g_work_items->size()));
 }
 
-static uint64_t TSToABSTime(struct timespec *ts)
+static uint64_t TsToAbstime(struct timespec *ts)
 {
         uint64_t result;
 
@@ -201,21 +210,24 @@ uint64_t DriverFramework::offsetTime(void)
 {
 	struct timespec ts = {};
 
-	(void)clockGetRealtime(&ts);
+	(void)clockGetMonotonic(&ts);
 
 	pthread_mutex_lock(&g_timestart_lock);
 	if (!g_timestart) {
-		g_timestart = TSToABSTime(&ts);
+		g_timestart = TsToAbstime(&ts);
 	}
+	// Time is in microseconds
+	uint64_t result = TsToAbstime(&ts) - g_timestart;
 	pthread_mutex_unlock(&g_timestart_lock);
 
-	// Time is in microseconds
-	return TSToABSTime(&ts) - g_timestart;
+	return result;
 }
 
 timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 {
+	pthread_mutex_lock(&g_timestart_lock);
 	uint64_t abs_time = offset_time + g_timestart;
+	pthread_mutex_unlock(&g_timestart_lock);
 	struct timespec ts = {};
 	ts.tv_sec = abs_time / 1000000;
 	ts.tv_nsec = (abs_time % 1000000) * 1000;
@@ -322,7 +334,7 @@ void WorkItem::updateStats(unsigned int cur_usec)
 #endif
 }
 
-void WorkItem::resetStats() 
+void WorkItem::resetStats()
 {
 	m_last = ~(unsigned long)0;
 	m_min = ~(unsigned long)0;
@@ -331,9 +343,9 @@ void WorkItem::resetStats()
 	m_count = 0;
 }
 
-void WorkItem::dumpStats() 
+void WorkItem::dumpStats()
 {
-	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu", 
+	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu",
 		m_callback, m_count, m_total/m_count, m_min, m_max);
 }
 
@@ -386,20 +398,23 @@ int HRTWorkQueue::initialize(void)
 
 	// Create a lock for handling the work queue
 	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
-	if (initNormalMutex(g_hrt_lock) < 0) {
+	if (initMutex(g_hrt_lock) < 0) {
 		return -2;
+	}
+	if (initMutex(g_framework_exit) < 0) {
+		return -3;
 	}
 	DF_LOG_INFO("pthread_mutex_init success");
 
 	pthread_attr_t attr;
 	if(setRealtimeSched(attr)) {
-		return -3;
+		return -4;
 	}
 	DF_LOG_INFO("setRealtimeSched success");
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
-		return -4;
+		return -5;
 	}
 	DF_LOG_INFO("pthread_create success");
 	return 0;
@@ -453,7 +468,7 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 		WorkItem *item;
 		if (!g_work_items->getAt(index, &item)) {
 			DF_LOG_INFO("HRTWorkQueue::unscheduleWorkItem - invalid index");
-		} 
+		}
 		else {
 			if (item->m_in_use == false) {
 				idx = m_work_list.erase(idx);
@@ -493,7 +508,7 @@ void HRTWorkQueue::shutdown(void)
 
 void HRTWorkQueue::process(void)
 {
-	DF_LOG_INFO("HRTWorkQueue::process");
+	DF_LOG_DEBUG("HRTWorkQueue::process");
 	uint64_t next;
 	uint64_t elapsed;
 	uint64_t remaining;
@@ -501,7 +516,7 @@ void HRTWorkQueue::process(void)
 	uint64_t now;
 
 	while(!m_exit_requested) {
-		DF_LOG_INFO("HRTWorkQueue::process In while");
+		DF_LOG_DEBUG("HRTWorkQueue::process In while");
 		hrtLock();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -511,9 +526,9 @@ void HRTWorkQueue::process(void)
 		idx = m_work_list.next(idx);
 		now = offsetTime();
 		while ((!m_exit_requested) && (idx != nullptr)) {
-			DF_LOG_INFO("HRTWorkQueue::process work exists");
+			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
 			now = offsetTime();
-			unsigned int index; 
+			unsigned int index;
 			m_work_list.get(idx, index);
 			if (index < g_work_items->size()) {
 				WorkItem *item;
@@ -521,9 +536,10 @@ void HRTWorkQueue::process(void)
 				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
 
-				if (elapsed >= item->m_delay) {
+				// TODO XXX: get rid of this workaround
+				if (elapsed + MIN_RESCHEDULE_TIME_US >= item->m_delay) {
 
-					DF_LOG_INFO("HRTWorkQueue::process do work (%p)", item->m_callback);
+					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item->m_callback);
 					item->updateStats(now);
 
 					// reschedule work
@@ -550,12 +566,23 @@ void HRTWorkQueue::process(void)
 			}
 		}
 
-		// pthread_cond_timedwait uses absolute time
-		ts = offsetTimeToAbsoluteTime(now+next);
-		
-		DF_LOG_INFO("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
+		// Check time again now to make sure we don't call pthread_cond_timedwait()
+		// with a timeout too close in the future. If so, just start from the top
+		// which means the task will get done immediately.
+		const uint64_t now_after_callback = offsetTime();
+		const uint64_t schedule_time = now + next;
+
+		if (schedule_time >= now_after_callback + MIN_RESCHEDULE_TIME_US) {
+			// pthread_cond_timedwait uses absolute time
+			ts = offsetTimeToAbsoluteTime(schedule_time);
+			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
+		} else {
+			DF_LOG_DEBUG("ignore timeout of only %llu us",
+				     now_after_callback + MIN_RESCHEDULE_TIME_US - schedule_time);
+		}
+
+		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
 		// Wait until next expiry or until a new item is rescheduled
-		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();
 	}
 }
@@ -612,7 +639,7 @@ void WorkMgr::finalize()
 		}
 		idx = g_work_items->next(idx);
 	}
-	
+
 	g_work_items->clear();
 	delete g_work_items;
 	g_work_items = nullptr;
@@ -665,7 +692,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHand
 	}
 
 	if (isValid(wh)) {
-	
+
 		// Re-use the WorkItem
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
@@ -706,7 +733,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 		setError(wh, EBADF);
 		ret = -1;
 	}
-	
+
 	g_lock->unlock();
 	return ret;
 }

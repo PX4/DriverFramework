@@ -65,13 +65,13 @@ DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_pat
 		m_name = strdup(name);
 	}
 	else {
-		DF_LOG_INFO("ERROR: no name provided to DevObj::DevObj");
+		DF_LOG_ERR("ERROR: no name provided to DevObj::DevObj");
 	}
 	if (dev_path) {
 		m_dev_path = strdup(dev_path);
 	}
 	else {
-		DF_LOG_INFO("ERROR: no dev_path provided to DevObj::DevObj");
+		DF_LOG_ERR("ERROR: no dev_path provided to DevObj::DevObj");
 	}
 }
 
@@ -117,7 +117,7 @@ DevObj::~DevObj()
 
 int DevObj::init(void)
 {
-	DF_LOG_INFO("DevObj::init %s", m_name);
+	DF_LOG_DEBUG("DevObj::init %s", m_name);
 	if (!isRegistered()) {
 		DF_LOG_DEBUG("DevObj::init registering %s", m_name);
 		int ret = DevMgr::registerDriver(this);
@@ -134,14 +134,14 @@ int DevObj::init(void)
 
 int DevObj::start(void)
 {
-	DF_LOG_INFO("DevObj::start %s", m_name);
+	DF_LOG_DEBUG("DevObj::start %s", m_name);
 
 	if (m_driver_instance < 0) {
 		return -1;
 	}
 
 	if (m_work_handle.isValid()) {
-		DF_LOG_INFO("Err: %s was already started", m_name);
+		DF_LOG_ERR("Err: %s was already started", m_name);
 		return -2;
 	}
 
@@ -163,7 +163,7 @@ int DevObj::start(void)
 }
 
 int DevObj::stop(void) {
-	DF_LOG_INFO("DevObj::stop %s", m_name);
+	DF_LOG_DEBUG("DevObj::stop %s", m_name);
 	if (m_work_handle.isValid()) {
 		WorkMgr::releaseWorkHandle(m_work_handle);
 	}
@@ -176,6 +176,7 @@ int DevObj::stop(void) {
 
 int DevObj::devIOCTL(unsigned long request, unsigned long arg)
 {
+	DF_LOG_DEBUG("DevObj::ioctl %s", m_name);
 	int ret = -1;
 
 	switch (request) {
@@ -204,11 +205,13 @@ int DevObj::devIOCTL(unsigned long request, unsigned long arg)
 
 ssize_t DevObj::devRead(void *buf, size_t count)
 {
+	DF_LOG_DEBUG("DevObj::devRead %s", m_name);
 	return -1;
 }
 
 ssize_t DevObj::devWrite(const void *buf, size_t count)
 {
+	DF_LOG_DEBUG("DevObj::devWrite %s", m_name);
 	return -1;
 }
 
@@ -223,10 +226,18 @@ int DevObj::addHandle(DevHandle &h)
 	DF_LOG_DEBUG("DevObj::addHandle (%p)", &h);
 	int ret = 0;
 	m_handle_lock.lock();
-	if (m_handles.size() == 0) {
 
+	if (!isRegistered()) {
+		ret = init();
+		if (ret < 0) {
+			DF_LOG_DEBUG("DevObj::addHandle init failed (%p)", &h);
+			goto exit;
+		}
+	}
+
+	if (m_handles.size() == 0) {
 		// Start the driver if its not running
-		if (!m_work_handle.isValid()) {
+		if (!m_work_handle.isValid() && m_sample_interval_usecs > 0) {
 			ret = start();
 			if (ret < 0) {
 				DF_LOG_DEBUG("DevObj::addHandle start failed (%p)", &h);
@@ -237,6 +248,8 @@ int DevObj::addHandle(DevHandle &h)
 		DF_LOG_INFO("DevObj::addHandle failed memory allocation");
 		ret = -1;
 	}
+
+exit:
 	m_handle_lock.unlock();
 	DF_LOG_DEBUG("DevObj::addHandle end (%p)", &h);
 	return (ret < 0) ? -1 : 0;

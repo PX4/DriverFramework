@@ -78,7 +78,6 @@ public:
 	static int registerDriver(DevObj *obj);
 	static void unregisterDriver(DevObj *obj);
 
-	static DevObj *getDevObjByName(const char *name, unsigned int instance);
 	static DevObj *getDevObjByID(union DeviceId id);
 
 	template <typename T>
@@ -108,7 +107,7 @@ public:
 
 	static void setDevHandleError(DevHandle &h, int error);
 
-	static int getNextDeviceName(unsigned int &index, const char **devname);
+	static int getNextDeviceName(unsigned int &index, const char **instancename);
 private:
 	friend class Framework;
 

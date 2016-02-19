@@ -190,13 +190,13 @@ void *DFPointerList::get(Index idx)
 	return nullptr;
 }
 
-DFUIntList::DFUIListNode::DFUIListNode(unsigned int item) :
+DFUIntList::DFUIntListNode::DFUIntListNode(unsigned int item) :
 	m_next(nullptr),
 	m_item(item)
 {
 }
 
-DFUIntList::DFUIListNode::~DFUIListNode()
+DFUIntList::DFUIntListNode::~DFUIntListNode()
 {
 }
 
@@ -229,7 +229,7 @@ unsigned int DFUIntList::size()
 bool DFUIntList::pushBack(unsigned int item)
 {
 	m_sync.lock();
-	Index t = new DFUIListNode(item);
+	Index t = new DFUIntListNode(item);
 	if (t == nullptr) {
 		m_sync.unlock();
 		return false;
@@ -249,7 +249,7 @@ bool DFUIntList::pushBack(unsigned int item)
 bool DFUIntList::pushFront(unsigned int item)
 {
 	m_sync.lock();
-	Index t = new DFUIListNode(item);
+	Index t = new DFUIntListNode(item);
 	if (t == nullptr) {
 		m_sync.unlock();
 		return false;
@@ -294,6 +294,7 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 				m_sync.unlock();
 				return p->m_next;
 			}
+			p = t;
 		}
 	}
 	m_sync.unlock();

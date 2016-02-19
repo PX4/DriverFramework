@@ -1,19 +1,18 @@
 all: linux qurt
 
-.PHONY submodule:
-submodule:
-	git submodule init
-	git submodule update
+.PHONY update:
+update:
+	git submodule update --init --recursive
 
 define df_cmake_generate
 mkdir -p build_$(1) && cd build_$(1) && cmake .. -DDF_TARGET=$(1) -DCMAKE_TOOLCHAIN_FILE=$(2) -DDF_ENABLE_TESTS=1
 endef
 
-linux nuttx:
+linux nuttx: update
 	$(call df_cmake_generate,$@,cmake/toolchains/Toolchain-$@.cmake)
 	cd build_$@ && make
 
-qurt:
+qurt: update
 	$(call df_cmake_generate,qurt,cmake_hexagon/toolchain/Toolchain-qurt.cmake)
 	cd build_qurt && make
 
@@ -25,3 +24,6 @@ helgrind: linux
 
 clean:
 	rm -rf build_*
+
+fix-style:
+	./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_nuttx"
