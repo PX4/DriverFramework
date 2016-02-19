@@ -47,49 +47,49 @@ namespace DriverFramework {
 class SPIDevHandle : public DevHandle
 {
 public:
-	SPIDevHandle() :
-		DevHandle()
-	{}
-	virtual ~SPIDevHandle();
+    SPIDevHandle() :
+        DevHandle()
+    {}
+    virtual ~SPIDevHandle();
 };
 
 class SPIDevObj : public DevObj
 {
 public:
-	enum SPI_FREQUENCY
-	{
-	   SPI_FREQUENCY_1MHZ = 1000000UL,
-	   SPI_FREQUENCY_5MHZ = 5000000UL,
-	   SPI_FREQUENCY_10MHZ = 10000000UL,
-	   SPI_FREQUENCY_15MHZ = 15000000UL,
-	   SPI_FREQUENCY_20MHZ = 20000000UL,
-	};
+    enum SPI_FREQUENCY
+    {
+        SPI_FREQUENCY_1MHZ = 1000000UL,
+        SPI_FREQUENCY_5MHZ = 5000000UL,
+        SPI_FREQUENCY_10MHZ = 10000000UL,
+        SPI_FREQUENCY_15MHZ = 15000000UL,
+        SPI_FREQUENCY_20MHZ = 20000000UL,
+    };
 
-	SPIDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
-		DevObj(name, dev_path, dev_class_path, DeviceBusType_SPI, sample_interval_usec)
-	{}
+    SPIDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
+        DevObj(name, dev_path, dev_class_path, DeviceBusType_SPI, sample_interval_usec)
+    {}
 
-	virtual ~SPIDevObj();
+    virtual ~SPIDevObj();
 
-	virtual int start();
-	virtual int stop();
+    virtual int start();
+    virtual int stop();
 
-	static int readReg(DevHandle &h, uint8_t address, uint8_t &val);
-	static int writeReg(DevHandle &h, uint8_t address, uint8_t val);
-	static int writeRegVerified(DevHandle &h, uint8_t address, uint8_t val);
-	static int bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
-	static int setLoopbackMode(DevHandle &h, bool enable);
-	static int setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz);
+    static int readReg(DevHandle &h, uint8_t address, uint8_t &val);
+    static int writeReg(DevHandle &h, uint8_t address, uint8_t val);
+    static int writeRegVerified(DevHandle &h, uint8_t address, uint8_t val);
+    static int bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
+    static int setLoopbackMode(DevHandle &h, bool enable);
+    static int setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz);
 
 protected:
-	int _readReg(uint8_t address, uint8_t &val);
-	int _writeReg(uint8_t address, uint8_t val);
+    int _readReg(uint8_t address, uint8_t &val);
+    int _writeReg(uint8_t address, uint8_t val);
 
-	int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
-	int _setBusFrequency(SPI_FREQUENCY freq_hz);
+    int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
+    int _setBusFrequency(SPI_FREQUENCY freq_hz);
 
-	int devOpen(int flags)
-	{
+    int devOpen(int flags)
+    {
 #ifdef __RPI2
         int fd = ::open(m_dev_path, flags);
 #else
@@ -98,17 +98,17 @@ protected:
         int fd = ::open(m_dev_instance_path, flags);
 #endif
         if (fd >= 0) {
-			m_fd = fd;
-		}
-		return (fd >= 0) ? 0 : -errno;
-	}
+            m_fd = fd;
+        }
+        return (fd >= 0) ? 0 : -errno;
+    }
 
-	int devClose()
-	{
-		return ::close(m_fd);
-	}
+    int devClose()
+    {
+        return ::close(m_fd);
+    }
 
-	int m_fd = 0;
+    int m_fd = 0;
 };
 
 };
