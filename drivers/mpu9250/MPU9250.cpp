@@ -228,11 +228,11 @@ int MPU9250::start()
 		return result;
 	}
 
-//	/* Set the bus frequency for register get/set. */
-//	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
-//	if (result != 0) {
-//		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
-//	}
+    /* Set the bus frequency for register get/set. */
+    result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
+    if (result != 0) {
+        DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
+    }
 
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
