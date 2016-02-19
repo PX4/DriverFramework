@@ -223,7 +223,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
         return -1;
     }
     return 0;
-#endif
+#else
 
     uint8_t write_buffer[2];
 
@@ -238,6 +238,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 	}
 
 	return 0;
+#endif
 }
 
 int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int length)
