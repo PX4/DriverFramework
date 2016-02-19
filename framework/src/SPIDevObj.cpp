@@ -107,7 +107,7 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
     write_buffer[0] = address | DIR_READ; // read mode
     write_buffer[1] = 0; // write data
 
-    struct pi_ioc_transfer spi_transfer; // datastructures for linux spi interface
+    struct spi_ioc_transfer spi_transfer; // datastructures for linux spi interface
     memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
 
     spi_transfer.tx_buf = (unsigned long)write_buffer;
