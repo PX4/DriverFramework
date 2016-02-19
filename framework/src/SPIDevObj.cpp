@@ -100,9 +100,9 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    constexpr int transfer_bytes = 1 + 1; // first byte is address
-    uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
-    uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
+    // constexpr int transfer_bytes = 1 + 1; // first byte is address
+    uint8_t write_buffer[2] = {0}; // automatic write buffer
+    uint8_t read_buffer[2] = {0}; // automatic read buffer
 
     write_buffer[0] = address | DIR_READ; // read mode
     write_buffer[1] = 0; // write data
@@ -112,14 +112,14 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 
     spi_transfer.tx_buf = (unsigned long)write_buffer;
     spi_transfer.rx_buf = (unsigned long)read_buffer;
-    spi_transfer.len = transfer_bytes;
+    spi_transfer.len = 2;
     // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ; // temporarily override spi speed
     spi_transfer.bits_per_word = 8;
     spi_transfer.delay_usecs = 0;
 
     int result = 0;
     result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
-    if (result != transfer_bytes) {
+    if (result != 2) {
         DF_LOG_ERR("error: SPI combined read write failed: %d", result);
         return -1;
     }
@@ -198,9 +198,9 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    constexpr int transfer_bytes = 1 + 1; // first byte is address
-    uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
-    uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
+    // constexpr int transfer_bytes = 1 + 1; // first byte is address
+    uint8_t write_buffer[2] = {0}; // automatic write buffer
+    uint8_t read_buffer[2] = {0}; // automatic read buffer
 
     struct spi_ioc_transfer spi_transfer; // datastructures for linux spi interface
     memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
@@ -209,7 +209,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
     write_buffer[1] = val; // write data
 
     spi_transfer.rx_buf = (unsigned long)read_buffer;
-    spi_transfer.len = transfer_bytes;
+    spi_transfer.len = 2;
     spi_transfer.tx_buf = (unsigned long)write_buffer;
     // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ; // temporarily override spi speed
     spi_transfer.bits_per_word = 8;
@@ -218,7 +218,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
     int result = 0;
     result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
 
-    if (result != transfer_bytes) {
+    if (result != 2) {
         DF_LOG_ERR("Error: SPI write failed. Reported %d bytes written (%d)", result, errno);
         return -1;
     }
@@ -283,9 +283,9 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    constexpr int transfer_bytes = 1 + length; // first byte is address
-    uint8_t write_buffer[transfer_bytes] = {0}; // automatic write buffer
-    uint8_t read_buffer[transfer_bytes] = {0}; // automatic read buffer
+    int transfer_bytes = 1 + length; // first byte is address
+    uint8_t write_buffer[255] = {0}; // automatic write buffer
+    uint8_t read_buffer[255] = {0}; // automatic read buffer
 
     struct spi_ioc_transfer spi_transfer; // datastructure for linux spi interface
     memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
