@@ -38,15 +38,14 @@
 #include "SPIDevObj.hpp"
 
 #ifdef __QURT
-#include "dev_fs_lib_spi.h"
-
-#define IMU_DEVICE_PATH "/dev/spi-1"
+    #include "dev_fs_lib_spi.h"
+    #define IMU_DEVICE_PATH "/dev/spi-1"
 #else
-#define IMU_DEVICE_PATH "/dev/spidev0.0"
-#endif
-
-#ifdef __RPI2
-#define IMU_DEVICE_PATH "/dev/spidev0.1"
+    #ifdef __RPI2
+        #define IMU_DEVICE_PATH "/dev/spidev0.1"
+    #else
+        #define IMU_DEVICE_PATH "/dev/spidev0.0"
+    #endif
 #endif
 
 #define IMU_CLASS_PATH  "/dev/imu"
