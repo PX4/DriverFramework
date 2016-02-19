@@ -46,7 +46,7 @@ uint64_t offsetTime(void);
 
 }
 
-#define DF_DEBUG 0
+#define DF_DEBUG 1
 #define DF_INFO 0
 
 #ifdef __QURT

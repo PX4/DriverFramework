@@ -43,6 +43,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexa
 
 message("DF_TARGET = ${DF_TARGET}")
 
+# used for debug
+set(DF_DEBUG 1)
+
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 message("Enabling Thread Sanitizer")
 
