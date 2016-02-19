@@ -38,6 +38,20 @@
 #include "OSConfig.h"
 #include "SPIDevObj.hpp"
 #include "DevIOCTL.h"
+
+#define __RPI2
+
+#ifdef __RPI2
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#endif // __RPI2
+
 #ifdef __QURT
 #include "dev_fs_lib_spi.h"
 #endif
@@ -86,6 +100,33 @@ int SPIDevObj::readReg(DevHandle &h, uint8_t address, uint8_t &val)
 
 int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    uint8_t write_buffer[2];
+    uint8_t read_buffer[2];
+
+    write_buffer[0] = address | DIR_READ;
+    write_buffer[1] = 0;
+    int transfer_bytes = 1 + 1; // first byte is address
+
+    struct spi_ioc_transfer spi_transfer;
+
+    memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
+
+    spi_transfer.tx_buf = (unsigned long)write_buffer;
+    spi_transfer.rx_buf = (unsigned long)read_buffer;
+    spi_transfer.len = transfer_bytes;
+    // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ;
+    spi_transfer.bits_per_word = 8;
+    spi_transfer.delay_usecs = 0;
+
+    ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+
+    val = read_buffer[1];
+
+    return 0;
+#endif // __RPI2
+
 #ifdef __QURT
 	/* Save the address of the register to read from in the write buffer for the combined write. */
 	struct dspal_spi_ioctl_read_write ioctl_write_read;
@@ -99,7 +140,7 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 	ioctl_write_read.read_buffer = read_buffer;
 	ioctl_write_read.read_buffer_length = 2;
 
-	int result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
+    int result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
 	if (result < 0) {
 		DF_LOG_ERR("error: SPI combined read write failed: %d", result);
 		return -1;
@@ -171,6 +212,15 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 
 int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int length)
 {
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+    if (obj) {
+        return obj->_bulkRead(address, out_buffer, length);
+    }
+    return -1;
+#endif // __RPI2
+
 #ifdef __QURT
 	int result = 0;
 	int transfer_bytes = 1 + length; // first byte is address
@@ -184,7 +234,7 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 	ioctl_write_read.read_buffer_length = transfer_bytes;
 	ioctl_write_read.write_buffer = write_buffer;
 	ioctl_write_read.write_buffer_length = transfer_bytes;
-	result = h.ioctl(SPI_IOCTL_RDWR, (unsigned long)&ioctl_write_read);
+    result = h.ioctl(SPI_IOCTL_RDWR, (unsigned long)&ioctl_write_read);
 	if (result != transfer_bytes)
 	{
 		DF_LOG_ERR("bulkRead error %d (%d)", result, h.getError());
@@ -201,6 +251,36 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 
 int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 {
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    int result = 0;
+    int transfer_bytes = 1 + length; // first byte is address
+    struct spi_ioc_transfer spi_transfer;
+    uint8_t write_buffer[transfer_bytes];
+    uint8_t read_buffer[transfer_bytes];
+
+    write_buffer[0] = address | DIR_READ;
+
+    spi_transfer.rx_buf = (unsigned long)read_buffer;
+    spi_transfer.len = transfer_bytes;
+    spi_transfer.tx_buf = (unsigned long)write_buffer;
+    // spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ;
+    spi_transfer.bits_per_word = 8;
+    spi_transfer.delay_usecs = 0;
+
+    result = ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+
+    if (result != transfer_bytes)
+    {
+        DF_LOG_ERR("bulkRead error %d", result);
+        return result;
+    }
+
+    memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
+
+    return 0;
+#endif // __RPI2
+
 #ifdef __QURT
 	int result = 0;
 	int transfer_bytes = 1 + length; // first byte is address
@@ -209,7 +289,7 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 	uint8_t write_buffer[transfer_bytes];
 	uint8_t read_buffer[transfer_bytes];
 
-	::memset(write_buffer, 0, sizeof(write_buffer));
+    ::memset(write_buffer, 0, sizeof(write_buffer));
 	write_buffer[0] = address | DIR_READ;
 
 	ioctl_write_read.read_buffer = read_buffer;
@@ -233,6 +313,11 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 
 int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 {
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    return -1;
+#endif // __RPI2
+
 #ifdef __QURT
 	struct dspal_spi_ioctl_loopback loopback;
 
@@ -245,6 +330,15 @@ int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 
 int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 {
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+    if (obj) {
+        return obj->_setBusFrequency(freq_hz);
+    }
+    return -1;
+#endif // __RPI2
+
 #ifdef __QURT
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
 	bus_freq.bus_frequency_in_hz = freq_hz;
@@ -256,6 +350,12 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 
 int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 {
+#ifdef __RPI2
+    /* implement sensor interface via rpi2 spi */
+    int32_t samplerate_div = (int32_t)((1000.0 / freq_hz) + 0.5f) - 1;
+    _writeReg(0x19, samplerate_div);
+#endif // __RPI2
+
 #ifdef __QURT
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
 	bus_freq.bus_frequency_in_hz = freq_hz;

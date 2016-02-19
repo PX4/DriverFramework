@@ -41,6 +41,9 @@ set(package-contact "charlebm@gmail.com")
 
 message("DF_TARGET = ${DF_TARGET}")
 
+# used for debug
+set(DF_DEBUG 1)
+
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 message("Enabling Thread Sanitizer")
 
