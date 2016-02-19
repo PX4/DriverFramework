@@ -382,7 +382,7 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 {
 #ifdef __RPI2
     /* implement sensor interface via rpi2 spi */
-    int32_t samplerate_div = (int32_t)((1000.0 / freq_hz) + 0.5f) - 1;
+    int32_t samplerate_div = (int32_t)((SPI_FREQUENCY_20MHZ / freq_hz) + 0.5f) - 1;
 #define MPUREG_SMPLRT_DIV 0x19
     DF_LOG_DEBUG("samplereate_div = %d", samplerate_div);
     _writeReg(MPUREG_SMPLRT_DIV, samplerate_div);
