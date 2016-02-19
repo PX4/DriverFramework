@@ -307,7 +307,7 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
         return result;
     }
 
-    DF_LOG_DEBUG("_bulkRead: read_buffer[1] = %u", readbuffer[1]);
+    DF_LOG_DEBUG("_bulkRead: read_buffer[1] = %u", read_buffer[1]);
 
     memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
     return 0;
