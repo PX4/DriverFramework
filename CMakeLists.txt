@@ -50,7 +50,7 @@ set(DF_DEBUG 1)
 # temporary solution to test DriverFramework for rpi2
 if (NOT "${DF_TARGET}" STREQUAL "linux")
         set(__RPI2 1)
-endif
+endif()
 ######### test DriverFramework for rpi2 ###
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
