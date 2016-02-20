@@ -56,18 +56,18 @@ uint64_t offsetTime(void);
 extern "C" {
 
 // declaration to make the compiler happy.  This symbol is part of the DSP static image.
-    void HAP_debug(const char *msg, int level, const char *filename, int line);
+void HAP_debug(const char *msg, int level, const char *filename, int line);
 
 };
 
 static __inline void qurt_log_2(int level, const char *file, int line, const char *format, ...)
 {
-    char buf[256];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buf, sizeof(buf), format, args);
-    va_end(args);
-    HAP_debug(buf, level, file, line);
+	char buf[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+	HAP_debug(buf, level, file, line);
 }
 
 #define DF_LOG_INFO(FMT, ...) qurt_log_2(0, __FILE__, __LINE__, "%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
