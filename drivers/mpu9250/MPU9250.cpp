@@ -237,7 +237,6 @@ int MPU9250::start()
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
 	result = _readReg(MPUREG_WHOAMI, sensor_id);
-    	DF_LOG_DEBUG("whoami: %x", sensor_id);
 	if (result != 0) {
 		DF_LOG_ERR("Unable to communicate with the MPU9250 sensor");
 		goto exit;
@@ -310,7 +309,6 @@ void MPU9250::_measure()
 	_bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t*)&report, sizeof(report));
 
 	/* TODO: add ifdef for endianness */
-    	DF_LOG_DEBUG("report.accel_x before swap= %f", float(report.accel_x));
 	report.accel_x = swap16(report.accel_x);
 	report.accel_y = swap16(report.accel_y);
 	report.accel_z = swap16(report.accel_z);
@@ -321,7 +319,6 @@ void MPU9250::_measure()
 
 	m_synchronize.lock();
 
-    	DF_LOG_DEBUG("report.accel_x after swap= %f", float(report.accel_x));
 	m_sensor_data.accel_m_s2_x = float(report.accel_x) * (MPU9250_ONE_G / 2048.0f);
 	m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
 	m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
