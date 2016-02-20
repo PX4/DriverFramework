@@ -138,7 +138,7 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 	ioctl_write_read.read_buffer = read_buffer;
 	ioctl_write_read.read_buffer_length = 2;
 
-    	int result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
+        int result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
 	if (result < 0) {
 		DF_LOG_ERR("error: SPI combined read write failed: %d", result);
 		return -1;
@@ -262,7 +262,7 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 	ioctl_write_read.read_buffer_length = transfer_bytes;
 	ioctl_write_read.write_buffer = write_buffer;
 	ioctl_write_read.write_buffer_length = transfer_bytes;
-    	result = h.ioctl(SPI_IOCTL_RDWR, (unsigned long)&ioctl_write_read);
+        result = h.ioctl(SPI_IOCTL_RDWR, (unsigned long)&ioctl_write_read);
 	if (result != transfer_bytes)
 	{
 		DF_LOG_ERR("bulkRead error %d (%d)", result, h.getError());
@@ -324,7 +324,7 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 	uint8_t write_buffer[transfer_bytes];
 	uint8_t read_buffer[transfer_bytes];
 
-    	::memset(write_buffer, 0, sizeof(write_buffer));
+        ::memset(write_buffer, 0, sizeof(write_buffer));
 	write_buffer[0] = address | DIR_READ;
 
 	ioctl_write_read.read_buffer = read_buffer;
