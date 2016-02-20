@@ -94,7 +94,7 @@ public:
 	}
 
 protected:
-    	friend HRTWorkQueue;
+        friend HRTWorkQueue;
 	friend WorkMgr;
 
 	int	m_handle = -1;
