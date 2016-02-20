@@ -141,92 +141,92 @@ using namespace DriverFramework;
 
 int MPU9250::mpu9250_init() {
 
-    /* Zero the struct */
-    m_synchronize.lock();
-    m_sensor_data.accel_m_s2_x = 0.0f;
-    m_sensor_data.accel_m_s2_y = 0.0f;
-    m_sensor_data.accel_m_s2_z = 0.0f;
-    m_sensor_data.temp_c = 0.0f;
-    m_sensor_data.gyro_rad_s_x = 0.0f;
-    m_sensor_data.gyro_rad_s_y = 0.0f;
-    m_sensor_data.gyro_rad_s_z = 0.0f;
+	/* Zero the struct */
+	m_synchronize.lock();
+	m_sensor_data.accel_m_s2_x = 0.0f;
+	m_sensor_data.accel_m_s2_y = 0.0f;
+	m_sensor_data.accel_m_s2_z = 0.0f;
+	m_sensor_data.temp_c = 0.0f;
+	m_sensor_data.gyro_rad_s_x = 0.0f;
+	m_sensor_data.gyro_rad_s_y = 0.0f;
+	m_sensor_data.gyro_rad_s_z = 0.0f;
 
-    m_sensor_data.last_read_time_usec = 0;
-    m_sensor_data.read_counter = 0;
-    m_synchronize.unlock();
-
-
-    int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
-    if (result != 0) {
-        DF_LOG_ERR("reset failed");
-    }
-    usleep(1000);
-
-    result = _writeReg(MPUREG_PWR_MGMT_1, MPU_CLK_SEL_AUTO);
-    if (result != 0) {
-        DF_LOG_ERR("clock selection failed");
-    }
-    usleep(1000);
-
-    result = _writeReg(MPUREG_PWR_MGMT_2, 0);
-    if (result != 0) {
-        DF_LOG_ERR("clock selection failed");
-    }
-    usleep(1000);
-
-    result = _writeReg(MPUREG_FIFO_EN, BITS_FIFO_ENABLE_TEMP_OUT |
-                       BITS_FIFO_ENABLE_GYRO_XOUT |
-                       BITS_FIFO_ENABLE_GYRO_YOUT |
-                       BITS_FIFO_ENABLE_GYRO_ZOUT);
-    if (result != 0) {
-        DF_LOG_ERR("FIFO enable failed");
-    }
-    usleep(1000);
-
-    uint8_t samplerate_div = 10;
-    result = _writeReg(MPUREG_FIFO_EN, samplerate_div);
-    if (result != 0) {
-        DF_LOG_ERR("sample rate config failed");
-    }
-    usleep(1000);
-
-    result = _writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_41HZ);
-    if (result != 0) {
-        DF_LOG_ERR("DLPF config failed");
-    }
-    usleep(1000);
-
-    result = _writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS);
-    if (result != 0) {
-        DF_LOG_ERR("Gyro scale config failed");
-    }
-    usleep(1000);
-
-    result = _writeReg(MPUREG_ACCEL_CONFIG, BITS_ACCEL_CONFIG_16G);
-    if (result != 0) {
-        DF_LOG_ERR("Accel scale config failed");
-    }
-    usleep(1000);
+	m_sensor_data.last_read_time_usec = 0;
+	m_sensor_data.read_counter = 0;
+	m_synchronize.unlock();
 
 
-    return 0;
+	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
+	if (result != 0) {
+		DF_LOG_ERR("reset failed");
+	}
+	usleep(1000);
+
+	result = _writeReg(MPUREG_PWR_MGMT_1, MPU_CLK_SEL_AUTO);
+	if (result != 0) {
+		DF_LOG_ERR("clock selection failed");
+	}
+	usleep(1000);
+
+	result = _writeReg(MPUREG_PWR_MGMT_2, 0);
+	if (result != 0) {
+		DF_LOG_ERR("clock selection failed");
+	}
+	usleep(1000);
+
+	result = _writeReg(MPUREG_FIFO_EN, BITS_FIFO_ENABLE_TEMP_OUT |
+					   BITS_FIFO_ENABLE_GYRO_XOUT |
+					   BITS_FIFO_ENABLE_GYRO_YOUT |
+					   BITS_FIFO_ENABLE_GYRO_ZOUT);
+	if (result != 0) {
+		DF_LOG_ERR("FIFO enable failed");
+	}
+	usleep(1000);
+
+	uint8_t samplerate_div = 10;
+	result = _writeReg(MPUREG_FIFO_EN, samplerate_div);
+	if (result != 0) {
+		DF_LOG_ERR("sample rate config failed");
+	}
+	usleep(1000);
+
+	result = _writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_41HZ);
+	if (result != 0) {
+		DF_LOG_ERR("DLPF config failed");
+	}
+	usleep(1000);
+
+	result = _writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS);
+	if (result != 0) {
+		DF_LOG_ERR("Gyro scale config failed");
+	}
+	usleep(1000);
+
+	result = _writeReg(MPUREG_ACCEL_CONFIG, BITS_ACCEL_CONFIG_16G);
+	if (result != 0) {
+		DF_LOG_ERR("Accel scale config failed");
+	}
+	usleep(1000);
+
+
+	return 0;
 }
 
 int MPU9250::start()
 {
 
-    /* Open the device path specified in the class initialization. */
-    int result = devOpen(0);
-    if (result < 0) {
-        DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
-        goto exit;
-    }
+	/* Open the device path specified in the class initialization. */
+	int result = devOpen(0);
+	if (result < 0) {
+		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
+		goto exit;
+	}
 
-    result = SPIDevObj::start();
-    if (result != 0) {
-        DF_LOG_ERR("DevObj start failed");
-        return result;
-    }
+	result = SPIDevObj::start();
+	if (result != 0) {
+		DF_LOG_ERR("DevObj start failed");
+		return result;
+	}
 
     /* Set the bus frequency for register get/set. */
     result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
@@ -234,113 +234,113 @@ int MPU9250::start()
         DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
     }
 
-    /* Try to talk to the sensor. */
-    uint8_t sensor_id;
-    result = _readReg(MPUREG_WHOAMI, sensor_id);
+	/* Try to talk to the sensor. */
+	uint8_t sensor_id;
+	result = _readReg(MPUREG_WHOAMI, sensor_id);
     DF_LOG_DEBUG("whoami: %x", sensor_id);
-    if (result != 0) {
-        DF_LOG_ERR("Unable to communicate with the MPU9250 sensor");
-        goto exit;
-    }
+	if (result != 0) {
+		DF_LOG_ERR("Unable to communicate with the MPU9250 sensor");
+		goto exit;
+	}
 
-    if (sensor_id != MPU_WHOAMI_9250) {
-        DF_LOG_ERR("MPU9250 sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, MPU_WHOAMI_9250);
-        result = -1;
-        goto exit;
-    }
+	if (sensor_id != MPU_WHOAMI_9250) {
+		DF_LOG_ERR("MPU9250 sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, MPU_WHOAMI_9250);
+		result = -1;
+		goto exit;
+	}
 
-    result = mpu9250_init();
+	result = mpu9250_init();
 
-    /* Set the bus frequency for normal operation. */
-    result = _setBusFrequency(SPI_FREQUENCY_20MHZ);
-    if (result != 0) {
-        DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
-    }
+	/* Set the bus frequency for normal operation. */
+	result = _setBusFrequency(SPI_FREQUENCY_20MHZ);
+	if (result != 0) {
+		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
+	}
 
-    if (result != 0) {
-        DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
-        goto exit;
-    }
+	if (result != 0) {
+		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
+		goto exit;
+	}
 
-    result = DevObj::start();
-    if (result != 0) {
-        DF_LOG_ERR("DevObj start failed");
-        return result;
-    }
+	result = DevObj::start();
+	if (result != 0) {
+		DF_LOG_ERR("DevObj start failed");
+		return result;
+	}
 
 
 exit:
-    if (result != 0) {
-        devClose();
-    }
+	if (result != 0) {
+		devClose();
+	}
 
-    return result;
+	return result;
 }
 
 int MPU9250::stop()
 {
-    int result = DevObj::stop();
-    if (result != 0) {
-        DF_LOG_ERR("DevObj stop failed");
-        return result;
-    }
+	int result = DevObj::stop();
+	if (result != 0) {
+		DF_LOG_ERR("DevObj stop failed");
+		return result;
+	}
 
-    result = devClose();
-    if (result != 0) {
-        DF_LOG_ERR("device close failed");
-        return result;
-    }
-    return 0;
+	result = devClose();
+	if (result != 0) {
+		DF_LOG_ERR("device close failed");
+		return result;
+	}
+	return 0;
 }
 
 void MPU9250::_measure()
 {
 #pragma pack(push, 1)
-    struct int_status_report {
-        int16_t		accel_x;
-        int16_t		accel_y;
-        int16_t		accel_z;
-        int16_t		temp;
-        int16_t		gyro_x;
-        int16_t		gyro_y;
-        int16_t		gyro_z;
-    } report;
+	struct int_status_report {
+		int16_t		accel_x;
+		int16_t		accel_y;
+		int16_t		accel_z;
+		int16_t		temp;
+		int16_t		gyro_x;
+		int16_t		gyro_y;
+		int16_t		gyro_z;
+	} report;
 #pragma pack(pop)
 
-    _bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t*)&report, sizeof(report));
+	_bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t*)&report, sizeof(report));
 
-    /* TODO: add ifdef for endianness */
+	/* TODO: add ifdef for endianness */
     DF_LOG_DEBUG("report.accel_x before swap= %f", float(report.accel_x));
-    report.accel_x = swap16(report.accel_x);
-    report.accel_y = swap16(report.accel_y);
-    report.accel_z = swap16(report.accel_z);
-    report.temp = swap16(report.temp);
-    report.gyro_x = swap16(report.gyro_x);
-    report.gyro_y = swap16(report.gyro_y);
-    report.gyro_z = swap16(report.gyro_z);
+	report.accel_x = swap16(report.accel_x);
+	report.accel_y = swap16(report.accel_y);
+	report.accel_z = swap16(report.accel_z);
+	report.temp = swap16(report.temp);
+	report.gyro_x = swap16(report.gyro_x);
+	report.gyro_y = swap16(report.gyro_y);
+	report.gyro_z = swap16(report.gyro_z);
 
-    m_synchronize.lock();
+	m_synchronize.lock();
 
     DF_LOG_DEBUG("report.accel_x after swap= %f", float(report.accel_x));
-    m_sensor_data.accel_m_s2_x = float(report.accel_x) * (MPU9250_ONE_G / 2048.0f);
-    m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
-    m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
-    m_sensor_data.temp_c = float(report.temp)/361.0f + 35.0f;
-    m_sensor_data.gyro_rad_s_x = float(report.gyro_x) / (32768.0f) * (2000.0f);
-    m_sensor_data.gyro_rad_s_y = float(report.gyro_y) / (32768.0f) * (2000.0f);
-    m_sensor_data.gyro_rad_s_z = float(report.gyro_z) / (32768.0f) * (2000.0f);
+	m_sensor_data.accel_m_s2_x = float(report.accel_x) * (MPU9250_ONE_G / 2048.0f);
+	m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
+	m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
+	m_sensor_data.temp_c = float(report.temp)/361.0f + 35.0f;
+	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) / (32768.0f) * (2000.0f);
+	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) / (32768.0f) * (2000.0f);
+	m_sensor_data.gyro_rad_s_z = float(report.gyro_z) / (32768.0f) * (2000.0f);
 
-    m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-    m_sensor_data.read_counter++;
+	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+	m_sensor_data.read_counter++;
 
-    _publish(m_sensor_data);
+	_publish(m_sensor_data);
 
-    m_synchronize.signal();
-    m_synchronize.unlock();
+	m_synchronize.signal();
+	m_synchronize.unlock();
 }
 
 int MPU9250::_publish(struct imu_sensor_data &data)
 {
-    // TBD
-    return -1;
+	// TBD
+	return -1;
 }
