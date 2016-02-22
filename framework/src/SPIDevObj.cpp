@@ -396,11 +396,31 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 {
 #if defined(__RPI2)
 	/* implement sensor interface via rpi2 spi */
-	int32_t samplerate_div = (int32_t)((SPI_FREQUENCY_20MHZ / freq_hz) + 0.5f) - 1;
+	// RPI2 rounds down freq_hz to powers of 2
+	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
+	// in-reality 32Mbs is the upper limit of the SPI clock on RPI2.
+	switch (freq_hz) {
+		case SPI_FREQUENCY_1MHZ :
+			DF_LOG_INFO("SPI speed set to 1MHz.");
+			break;
+		case SPI_FREQUENCY_5MHZ :
+			DF_LOG_INFO("SPI speed set to 4MHz instead of 5MHz.");
+			break;
+		case SPI_FREQUENCY_10MHZ :
+			DF_LOG_INFO("SPI speed set to 8MHz instead of 10MHz.");
+			break;
+		case SPI_FREQUENCY_15MHZ :
+			DF_LOG_INFO("SPI speed set to 8MHz instead of 15MHz.");
+			break;
+		case SPI_FREQUENCY_20MHZ :
+			DF_LOG_INFO("SPI speed set to 16MHz instead of 20MHz.");
+			break;
+		default :
+			DF_LOG_INFO("SPI speed value not enum SPI_FREQUENCY.");
+			break;
+	}
 
-	#define MPUREG_SMPLRT_DIV 0x19
-	DF_LOG_DEBUG("samplereate_div = %d", samplerate_div);
-	return _writeReg(MPUREG_SMPLRT_DIV, samplerate_div);
+	return ::ioctl (m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
 
 #elif defined(__QURT)
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
