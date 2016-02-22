@@ -174,8 +174,8 @@ int SPIDevObj::writeRegVerified(DevHandle &h, uint8_t address, uint8_t val)
 			}
 			result = obj->_readReg(address, read_val);
 			if (result < 0 || read_val != val) {
-				--retries;
-				continue;
+				 --retries;
+				 continue;
 			}
 		}
 		if (val == read_val) {
