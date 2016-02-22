@@ -216,7 +216,7 @@ int MPU9250::start()
 {
 
 	/* Open the device path specified in the class initialization. */
-    	// attempt to open device in start()
+	// attempt to open device in start()
 	int result = SPIDevObj::start();
 	if (result != 0) {
 		DF_LOG_ERR("DevObj start failed");

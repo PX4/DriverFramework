@@ -37,15 +37,13 @@
 #include "SyncObj.hpp"
 #include "SPIDevObj.hpp"
 
-#ifdef __QURT
-    #include "dev_fs_lib_spi.h"
-    #define IMU_DEVICE_PATH "/dev/spi-1"
+#if defined(__QURT)
+	#include "dev_fs_lib_spi.h"
+	#define IMU_DEVICE_PATH "/dev/spi-1"
+#elif defined(__RPI2)
+	#define IMU_DEVICE_PATH "/dev/spidev0.1"
 #else
-    #ifdef __RPI2
-        #define IMU_DEVICE_PATH "/dev/spidev0.1"
-    #else
-        #define IMU_DEVICE_PATH "/dev/spidev0.0"
-    #endif
+	#define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
 #define IMU_CLASS_PATH  "/dev/imu"
