@@ -90,8 +90,8 @@ protected:
 
 	int devOpen(int flags)
 	{
-        	int fd = ::open(m_dev_instance_path, flags);
-        	if (fd >= 0) {
+		int fd = ::open(m_dev_instance_path, flags);
+		if (fd >= 0) {
 			m_fd = fd;
 		}
 		return (fd >= 0) ? 0 : -errno;
