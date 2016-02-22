@@ -90,13 +90,7 @@ protected:
 
 	int devOpen(int flags)
 	{
-#ifdef __RPI2
-        int fd = ::open(m_dev_path, flags);
-#else
-        DF_LOG_DEBUG("SPIDevObj::devOpen(): trying to open m_dev_instance_path: %s", m_dev_instance_path);
-        DF_LOG_DEBUG("SPIDevObj::devOpen(): m_dev_path: %s", m_dev_path);
         int fd = ::open(m_dev_instance_path, flags);
-#endif
         if (fd >= 0) {
 			m_fd = fd;
 		}
