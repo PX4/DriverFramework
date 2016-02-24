@@ -1,4 +1,4 @@
-all: linux qurt
+all: linux qurt rpi2
 
 .PHONY update:
 update:
@@ -8,7 +8,7 @@ define df_cmake_generate
 mkdir -p build_$(1) && cd build_$(1) && cmake .. -DDF_TARGET=$(1) -DCMAKE_TOOLCHAIN_FILE=$(2) -DDF_ENABLE_TESTS=1
 endef
 
-linux nuttx: update
+rpi2 linux nuttx: update
 	$(call df_cmake_generate,$@,cmake/toolchains/Toolchain-$@.cmake)
 	cd build_$@ && make
 
