@@ -98,7 +98,7 @@ int initMutex(pthread_mutex_t &mutex)
 		DF_LOG_ERR("pthread_mutexattr_init failed");
 		return -1;
 	}
-#ifndef __NUTTX
+#ifndef __PX4_NUTTX
 	rv = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
 	if (rv != 0) {
 		DF_LOG_ERR("pthread_mutexattr_settype failed");

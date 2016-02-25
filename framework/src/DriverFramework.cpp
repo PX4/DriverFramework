@@ -48,10 +48,14 @@
 #include <execinfo.h>
 #endif
 
+#ifdef __PX4_QURT
 // TODO XXX this value was found empirically and is only a workaround
 // for pthread_cond_timedwait never returning when the time is less than
 // 100 us away.
 #define MIN_RESCHEDULE_TIME_US 100
+#else
+#define MIN_RESCHEDULE_TIME_US 0
+#endif
 
 #define SHOW_STATS 0
 
@@ -568,17 +572,13 @@ void HRTWorkQueue::process(void)
 		const uint64_t now_after_callback = offsetTime();
 		const uint64_t schedule_time = now + next;
 
-		if (schedule_time < now_after_callback + 200) {
-			DF_LOG_INFO("close one: %llu us", schedule_time - now_after_callback);
-		}
-
 		if (schedule_time >= now_after_callback + MIN_RESCHEDULE_TIME_US) {
 			// pthread_cond_timedwait uses absolute time
 			ts = offsetTimeToAbsoluteTime(schedule_time);
 			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		} else {
-			DF_LOG_INFO("ignore timeout of only %llu us",
-				    now_after_callback + MIN_RESCHEDULE_TIME_US - schedule_time);
+			DF_LOG_DEBUG("ignore timeout of only %llu us",
+				     now_after_callback + MIN_RESCHEDULE_TIME_US - schedule_time);
 		}
 
 		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);

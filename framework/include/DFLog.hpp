@@ -38,6 +38,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdio.h>
 
 namespace DriverFramework {
 
@@ -50,7 +51,6 @@ uint64_t offsetTime(void);
 #ifdef __QURT
 
 #include <stdarg.h>
-#include <stdio.h>
 
 extern "C" {
 
@@ -78,11 +78,24 @@ static __inline void qurt_log_2(int level, const char *file, int line, const cha
 #define DF_LOG_DEBUG(FMT, ...)
 #endif
 
+#elif defined(__PX4_NUTTX)
+
+// TODO: Substitute logging implementation here
+
+// TODO: NuttX doesn't support the PRIuN defines
+// TODO: The NuttX build doesn't link to offsetTime() yet
+#define DF_LOG_INFO(FMT, ...) printf(FMT  "\n", ##__VA_ARGS__)
+#define DF_LOG_ERR(FMT, ...)  printf(FMT "\n", ##__VA_ARGS__)
+
+#if DF_DEBUG
+#define DF_LOG_DEBUG(FMT, ...)  printf(FMT "\n", ##__VA_ARGS__)
+#else
+#define DF_LOG_DEBUG(FMT, ...)
+#endif
+
 #else
 
-#include <stdio.h>
-
-// Substitute logging implemntation here
+// TODO: Substitute logging implementation here
 #define DF_LOG_INFO(FMT, ...) printf("%" PRIu64 " " FMT  "\n", offsetTime(), ##__VA_ARGS__)
 #define DF_LOG_ERR(FMT, ...)  printf("%" PRIu64 " " FMT "\n", offsetTime(), ##__VA_ARGS__)
 
