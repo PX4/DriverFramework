@@ -238,6 +238,7 @@ int MPU9250::start()
 		goto exit;
 	}
 
+	DF_LOG_DEBUG("MPU9250 whoami: 0x%X", sensor_id);
 	if (sensor_id != MPU_WHOAMI_9250) {
 		DF_LOG_ERR("MPU9250 sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, MPU_WHOAMI_9250);
 		result = -1;
