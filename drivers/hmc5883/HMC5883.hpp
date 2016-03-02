@@ -40,9 +40,7 @@ namespace DriverFramework {
 #define MAG_DEVICE_PATH "/dev/iic-2"
 
 // 150 Hz (supported in single measurment mode is up to 160 Hz
-//#define HMC5883_MEASURE_INTERVAL_US (1000000/150)
-// TODO: For now, use 75 Hz continuous measurement mode.
-#define HMC5883_MEASURE_INTERVAL_US (1000000/75)
+#define HMC5883_MEASURE_INTERVAL_US (1000000/150)
 
 
 class HMC5883 : public MagSensor

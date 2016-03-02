@@ -110,23 +110,6 @@ int HMC5883::hmc5883_init() {
 		return -1;
 	}
 
-	// TODO: use single measurement mode instead of continuous and remove this.
-	uint8_t mode = HMC5883_BITS_MODE_CONTINUOUS_MODE;
-	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
-	if (result != 0) {
-		// TODO: count it as an error and keep going
-		DF_LOG_ERR("error: setting sensor mode failed");
-	}
-
-	uint8_t config_a = HMC5883_BITS_CONFIG_A_CONTINUOUS_75HZ;
-	result = _writeReg(HMC5883_REG_CONFIG_A, &config_a, sizeof(config_a));
-	if (result != 0) {
-		DF_LOG_ERR("error: sensor configuration A failed");
-		return -EIO;
-	}
-	// For continuous mode, this flag is always true.
-	_measurement_requested = true;
-
 	uint8_t config_b = HMC5883_BITS_CONFIG_B_RANGE_1GA3;
 	result = _writeReg(HMC5883_REG_CONFIG_B, &config_b, sizeof(config_b));
 	if (result != 0) {
@@ -246,14 +229,14 @@ void HMC5883::_measure(void)
 		}
 	}
 
-	// TODO: enable this once I2C write is fixed on QURT
+
 	/* Request next measurement. */
-	//uint8_t mode = HMC5883_BITS_MODE_SINGLE_MODE;
-	//result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
-	//if (result != 0) {
-	//	// TODO: count it as an error and keep going
-	//	DF_LOG_ERR("error: setting sensor mode failed");
-	//}
+	uint8_t mode = HMC5883_BITS_MODE_SINGLE_MODE;
+	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
+	if (result != 0) {
+		// TODO: count it as an error and keep going
+		DF_LOG_ERR("error: setting sensor mode failed");
+	}
 
 	_measurement_requested = true;
 }
