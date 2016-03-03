@@ -3,4 +3,4 @@
 	url = https://github.com/ATLFlight/cmake_hexagon.git
 [submodule "dspal"]
 	path = dspal
-	url = https://github.com/ATLFlight/dspal
+	url = https://github.com/PX4/dspal
