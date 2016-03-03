@@ -13,7 +13,7 @@ linux nuttx: update
 	cd build_$@ && make
 
 qurt: update
-	$(call df_cmake_generate,qurt,cmake_hexagon/toolchain/Toolchain-qurt.cmake)
+	$(call df_cmake_generate,qurt,cmake/cmake_hexagon/toolchain/Toolchain-qurt.cmake)
 	cd build_qurt && make
 
 run: linux

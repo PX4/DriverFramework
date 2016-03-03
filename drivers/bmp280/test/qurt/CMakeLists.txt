@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-include(../../../../cmake_hexagon/qurt_app.cmake)
+include(bundle)
 
 QURT_BUNDLE(APP_NAME df_pressure_test
 	APPS_SOURCES df_pressure_test.cpp
