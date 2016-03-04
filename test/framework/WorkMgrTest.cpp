@@ -49,7 +49,7 @@ void WorkMgrTest::_doTests()
 static void callback(void *arg)
 {
 	int *x = reinterpret_cast<int *>(arg);
-	*x = 1;
+	*x += 1;
 }
 
 static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
@@ -61,13 +61,13 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 	}
 	uint64_t now;
 	uint64_t elapsedtime;
-	while(*arg != 1) {
+	while(*arg < 3) {
 		now = offsetTime(); // In usec
 		elapsedtime = now - starttime;
 
 		// Shouldn't make more than extra 10us
-		if (elapsedtime > (delay_usec+10)) {
-			DF_LOG_ERR("Failed %ums timeout (%" PRIu64 ")", delay_usec, elapsedtime);
+		if (elapsedtime > ((uint64_t)delay_usec*3+50)) {
+			DF_LOG_ERR("Failed %uusec timeout * 3 (%" PRIu64 ")", delay_usec, elapsedtime);
 			return false;
 		}
 	}
@@ -97,8 +97,9 @@ bool WorkMgrTest::verifySchedule()
 	if (!verifyDelay(h, delay_usec, &arg)) {
 		return false;
 	}
-	for (uint32_t i=10; i<1000010; i+=10000) {
+	for (uint32_t i=10; i<300010; i+=10000) {
 		delay_usec=i;
+		WorkMgr::releaseWorkHandle(h);
 		WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
 		if (!h.isValid()) {
 			DF_LOG_ERR("getWorkHandle failed for delay of %u", delay_usec);

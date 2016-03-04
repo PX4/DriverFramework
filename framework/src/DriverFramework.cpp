@@ -282,18 +282,18 @@ void Framework::shutdown()
 
 int Framework::initialize()
 {
-	DF_LOG_INFO("Framework::initialize");
+	DF_LOG_DEBUG("Framework::initialize");
 
 	int ret = HRTWorkQueue::initialize();
 	if (ret < 0) {
 		return ret-10;
 	}
-	DF_LOG_INFO("Calling DevMgr::initialize");
+	DF_LOG_DEBUG("Calling DevMgr::initialize");
 	ret = DevMgr::initialize();
 	if (ret < 0) {
 		return ret-20;
 	}
-	DF_LOG_INFO("Calling WorkMgr::initialize");
+	DF_LOG_DEBUG("Calling WorkMgr::initialize");
 	ret = WorkMgr::initialize();
 	if (ret < 0) {
 		return ret-30;
@@ -356,7 +356,7 @@ HRTWorkQueue *HRTWorkQueue::m_instance = NULL;
 
 void *HRTWorkQueue::process_trampoline(void *arg)
 {
-	DF_LOG_INFO("HRTWorkQueue::process_trampoline");
+	DF_LOG_DEBUG("HRTWorkQueue::process_trampoline");
 	if (m_instance) {
 		m_instance->process();
 	}
@@ -386,15 +386,15 @@ static int setRealtimeSched(pthread_attr_t &attr)
 
 int HRTWorkQueue::initialize(void)
 {
-	DF_LOG_INFO("HRTWorkQueue::initialize");
+	DF_LOG_DEBUG("HRTWorkQueue::initialize");
 	m_instance = new HRTWorkQueue();
-	DF_LOG_INFO("Created HRTWorkQueue");
+	DF_LOG_DEBUG("Created HRTWorkQueue");
 
 	if (m_instance == nullptr) {
 		return -1;
 	}
-	DF_LOG_INFO("m_instance = %p", m_instance);
-	DF_LOG_INFO("Calling pthread_mutex_init");
+	DF_LOG_DEBUG("m_instance = %p", m_instance);
+	DF_LOG_DEBUG("Calling pthread_mutex_init");
 
 	// Create a lock for handling the work queue
 	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
@@ -404,19 +404,19 @@ int HRTWorkQueue::initialize(void)
 	if (initMutex(g_framework_exit) < 0) {
 		return -3;
 	}
-	DF_LOG_INFO("pthread_mutex_init success");
+	DF_LOG_DEBUG("pthread_mutex_init success");
 
 	pthread_attr_t attr;
 	if(setRealtimeSched(attr)) {
 		return -4;
 	}
-	DF_LOG_INFO("setRealtimeSched success");
+	DF_LOG_DEBUG("setRealtimeSched success");
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
 		return -5;
 	}
-	DF_LOG_INFO("pthread_create success");
+	DF_LOG_DEBUG("pthread_create success");
 	return 0;
 }
 
@@ -467,13 +467,11 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 		// remove unscheduled item
 		WorkItem *item;
 		if (!g_work_items->getAt(index, &item)) {
-			DF_LOG_INFO("HRTWorkQueue::unscheduleWorkItem - invalid index");
+			DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - invalid index");
 		}
 		else {
-			if (item->m_in_use == false) {
-				idx = m_work_list.erase(idx);
-				break;
-			}
+			DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - 2");
+			idx = m_work_list.erase(idx);
 		}
 		idx = m_work_list.next(idx);
 	}
@@ -539,7 +537,7 @@ void HRTWorkQueue::process(void)
 				// TODO XXX: get rid of this workaround
 				if (elapsed + MIN_RESCHEDULE_TIME_US >= item->m_delay_usec) {
 
-					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item->m_callback);
+					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p) (%u)", item, item->m_delay_usec);
 					item->updateStats(now);
 
 					// reschedule work
@@ -551,7 +549,7 @@ void HRTWorkQueue::process(void)
 					item->m_callback(tmpptr);
 					hrtLock();
 
-					// Start again from the top to ge rescheduled work
+					// Start again from the top to get rescheduled work
 					idx = nullptr;
 					idx = m_work_list.next(idx);
 				} else {
@@ -664,6 +662,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
 		if (item->m_in_use) {
+			DF_LOG_DEBUG("Unscheduled work (%p) (%u)", item, item->m_delay_usec);
 			HRTWorkQueue::instance()->unscheduleWorkItem(wh);
 		}
 	}
