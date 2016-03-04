@@ -33,6 +33,8 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
+#pragma once
+
 #include "DriverFramework.hpp"
 #include "DFTest.hpp"
 #include "testdriver.hpp"
@@ -42,7 +44,7 @@ using namespace DriverFramework;
 class DevMgrTest : public DFTestObj
 {
 public:
-	DevMgrTest() : DFTestObj("Time Test") {}
+	DevMgrTest() : DFTestObj("DevMgr Test") {}
 	~DevMgrTest() {}
 
 protected:

@@ -77,12 +77,12 @@ public:
 	void resetStats();
 	void dumpStats();
 
-	void set(WorkCallback callback, void *arg, uint32_t delay)
+	void set(WorkCallback callback, void *arg, uint32_t delay_usec)
 	{
 		m_arg = arg;
 		m_queue_time = 0;
 		m_callback = callback;
-		m_delay =delay;
+		m_delay_usec =delay_usec;
 		m_in_use = false;
 
 		resetStats();
@@ -91,7 +91,7 @@ public:
 	void *		m_arg;
 	uint64_t	m_queue_time;
 	WorkCallback	m_callback;
-	uint32_t	m_delay;
+	uint32_t	m_delay_usec;
 	//WorkHandle 	m_handle;
 
 	// statistics
@@ -314,16 +314,16 @@ void Framework::waitForShutdown()
 *************************************************************************/
 void WorkItem::updateStats(unsigned int cur_usec)
 {
-	unsigned long delay = (m_last == ~0x0UL) ? (cur_usec - m_queue_time) : (cur_usec - m_last);
+	unsigned long delay_usec = (m_last == ~0x0UL) ? (cur_usec - m_queue_time) : (cur_usec - m_last);
 
-	if (delay < m_min) {
-		m_min = delay;
+	if (delay_usec < m_min) {
+		m_min = delay_usec;
 	}
-	if (delay > m_max) {
-		m_max = delay;
+	if (delay_usec > m_max) {
+		m_max = delay_usec;
 	}
 
-	m_total += delay;
+	m_total += delay_usec;
 	m_count += 1;
 	m_last = cur_usec;
 
@@ -534,10 +534,10 @@ void HRTWorkQueue::process(void)
 				WorkItem *item;
 				g_work_items->getAt(index, &item);
 				elapsed = now - item->m_queue_time;
-				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %lu\n", now, elapsed, item.m_delay);
+				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
 
 				// TODO XXX: get rid of this workaround
-				if (elapsed + MIN_RESCHEDULE_TIME_US >= item->m_delay) {
+				if (elapsed + MIN_RESCHEDULE_TIME_US >= item->m_delay_usec) {
 
 					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p)", item->m_callback);
 					item->updateStats(now);
@@ -555,7 +555,7 @@ void HRTWorkQueue::process(void)
 					idx = nullptr;
 					idx = m_work_list.next(idx);
 				} else {
-					remaining = item->m_delay - elapsed;
+					remaining = item->m_delay_usec - elapsed;
 					if (remaining < next) {
 						next = remaining;
 					}
@@ -648,7 +648,7 @@ void WorkMgr::finalize()
 	g_lock = nullptr;
 }
 
-void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle &wh)
+void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::getWorkHandle");
 	if (!g_lock) {
@@ -697,7 +697,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHand
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
 
-		item->set(cb, arg, delay);
+		item->set(cb, arg, delay_usec);
 	}
 
 	g_lock->unlock();
