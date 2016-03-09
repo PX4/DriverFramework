@@ -34,15 +34,19 @@
 #pragma once
 
 #include "ImuSensor.hpp"
-//#include <px4_defines.h>
 
 
 namespace DriverFramework {
 
+// TODO: use define from some include for this
+#define PI_HALF_F	1.57079632679489661923f
+
 // update frequency 250 Hz
-#define PI_HALF	1.57079632679489661923
 #define MPU9250_MEASURE_INTERVAL_US 4000
-#define GYRO_RAW_TO_RAD_S 	 2000.0f / 32768.0f * PI_HALF / 180.0f 	// max 2000 degrees/s, 16 bit register, deg to rad conversion
+
+// max 2000 degrees/s, 16 bit register, deg to rad conversion
+#define GYRO_RAW_TO_RAD_S 	 (2000.0f / 32768.0f * PI_HALF_F / 180.0f)
+
 
 class MPU9250 : public ImuSensor
 {
