@@ -172,30 +172,6 @@ void DevMgr::unregisterDriver(DevObj *obj)
 	g_lock->unlock();
 }
 
-DevObj *DevMgr::getDevObjByName(const char *name, unsigned int instance)
-{
-#if 0
-	g_lock->lock();
-	DFPointerList::Index idx = nullptr;
-	idx = g_driver_list.next(idx);
-	while (idx != nullptr) {
-		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
-		if (strcmp(list_obj->m_name, name) == 0) {
-			// see if instance matches
-			char tmp_path[strlen(list_obj->m_dev_class_path)+3];
-			snprintf(tmp_path,sizeof(tmp_path), "%s%d", obj->m_dev_class_path, i);
-			if (strcmp(tmp_path, list_obj->m_dev_instance_path) == 0) {
-				break;
-			}
-		}
-		idx = g_driver_list.next(idx);
-	}
-	g_lock->unlock();
-	return (idx != nullptr) ? reinterpret_cast<DevObj *>(g_driver_list.get(idx)) : nullptr;
-#endif
-	return nullptr;
-}
-
 DevObj *DevMgr::getDevObjByID(union DeviceId id)
 {
 	g_lock->lock();
@@ -276,17 +252,19 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 	h.m_errno = error;
 }
 
-int DevMgr::getNextDeviceName(unsigned int &index, const char **devname)
+int DevMgr::getNextDeviceName(unsigned int &index, const char **instancename)
 {
 	unsigned int i = 0;
 	int ret = -1;
 	g_lock->lock();
+
+	// First go through actual dev names
 	DFPointerList::Index idx = nullptr;
 	idx = g_driver_list.next(idx);
 	while (idx != nullptr) {
 		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 		if (i == index) {
-			*devname = list_obj->m_dev_path;
+			*instancename = list_obj->m_dev_instance_path;
 			index+=1;
 			ret = 0;
 			break;

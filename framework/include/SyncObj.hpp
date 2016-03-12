@@ -40,7 +40,7 @@
 
 namespace DriverFramework {
 
-int initNormalMutex(pthread_mutex_t &mutex);
+int initMutex(pthread_mutex_t &mutex);
 
 class SyncObj
 {

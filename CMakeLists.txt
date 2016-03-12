@@ -39,6 +39,8 @@ set(version_patch 0)
 set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexagon")
+
 message("DF_TARGET = ${DF_TARGET}")
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
@@ -96,10 +98,10 @@ if(NOT "${DF_TARGET}" STREQUAL "nuttx")
 	# Add driver libraries
 	add_subdirectory(drivers)
 
-if("${DF_ENABLE_TESTS}" STREQUAL "1")
-	# Add unit test
-	add_subdirectory(test)
-endif()
+	if("${DF_ENABLE_TESTS}" STREQUAL "1")
+		# Add unit test
+		add_subdirectory(test)
+	endif()
 endif()
 
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")

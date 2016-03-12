@@ -146,15 +146,15 @@ public:
 class DFUIntList : public DisableCopy
 {
 public:
-	class DFUIListNode;
+	class DFUIntListNode;
 
-	typedef DFUIListNode * Index;
+	typedef DFUIntListNode * Index;
 
-	class DFUIListNode
+	class DFUIntListNode
 	{
 	public:
-		DFUIListNode(unsigned int item);
-		~DFUIListNode();
+		DFUIntListNode(unsigned int item);
+		~DFUIntListNode();
 
 		Index		m_next;
 		unsigned int	m_item;

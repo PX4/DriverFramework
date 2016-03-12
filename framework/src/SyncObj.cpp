@@ -45,10 +45,8 @@ using namespace DriverFramework;
 
 SyncObj::SyncObj()
 {
-	m_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-
 	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
-	initNormalMutex(m_lock);
+	initMutex(m_lock);
 	pthread_cond_init(&m_new_data_cond, NULL);
 }
 
@@ -91,18 +89,28 @@ void SyncObj::signal(void)
 
 namespace DriverFramework {
 
-int initNormalMutex(pthread_mutex_t &mutex)
+int initMutex(pthread_mutex_t &mutex)
 {
 	pthread_mutexattr_t attr;
 
-#ifdef PTHREAD_MUTEX_NORMAL
-	return (pthread_mutexattr_init(&attr) != 0 ||
-		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL) != 0 ||
-		pthread_mutex_init(&mutex, &attr) != 0) ? -1 : 0;
-#else
-	return (pthread_mutexattr_init(&attr) != 0 ||
-		pthread_mutex_init(&mutex, &attr) != 0) ? -1 : 0;
+	int rv = pthread_mutexattr_init(&attr);
+	if (rv != 0) {
+		DF_LOG_ERR("pthread_mutexattr_init failed");
+		return -1;
+	}
+#ifndef __PX4_NUTTX
+	rv = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+	if (rv != 0) {
+		DF_LOG_ERR("pthread_mutexattr_settype failed");
+		return -1;
+	}
 #endif
-}
+	rv = pthread_mutex_init(&mutex, &attr);
+	if (rv != 0) {
+		DF_LOG_ERR("pthread_mutex_init failed");
+		return -1;
+	}
 
+	return 0;
+}
 };

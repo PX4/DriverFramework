@@ -35,9 +35,6 @@
 *************************************************************************/
 #pragma once
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include <stdint.h>
 #include <time.h>
 #ifdef __QURT
@@ -76,7 +73,7 @@ class WorkMgr
 {
 public:
 	// Interface functions
-	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay, WorkHandle& handle);
+	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle& handle);
 	static int releaseWorkHandle(WorkHandle &handle);
 	static int schedule(WorkHandle &handle);
 	static void setError(WorkHandle &h, int error);
