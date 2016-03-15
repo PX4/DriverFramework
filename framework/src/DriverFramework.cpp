@@ -470,18 +470,10 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 			DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - invalid index");
 		}
 		else {
-#ifndef __QURT
-// XXX this is to revive the baro simulation for non-flying platforms
-// most likely this is not the correct fix,
-// and the root cause needs to be fixed
 			if (item->m_in_use == false) {
-#endif
 				DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - 2");
 				idx = m_work_list.erase(idx);
-#ifndef __QURT
-				break;
 			}
-#endif
 		}
 		idx = m_work_list.next(idx);
 	}
