@@ -48,15 +48,6 @@
 #include <execinfo.h>
 #endif
 
-#ifdef __PX4_QURT
-// TODO XXX this value was found empirically and is only a workaround
-// for pthread_cond_timedwait never returning when the time is less than
-// 100 us away.
-#define MIN_RESCHEDULE_TIME_US 100
-#else
-#define MIN_RESCHEDULE_TIME_US 0
-#endif
-
 #define SHOW_STATS 0
 
 namespace DriverFramework {
@@ -536,8 +527,7 @@ void HRTWorkQueue::process(void)
 				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
 
-				// TODO XXX: get rid of this workaround
-				if (elapsed + MIN_RESCHEDULE_TIME_US >= item->m_delay_usec) {
+				if (elapsed >= item->m_delay_usec) {
 
 					DF_LOG_DEBUG("HRTWorkQueue::process do work (%p) (%u)", item, item->m_delay_usec);
 					item->updateStats(now);
@@ -566,23 +556,12 @@ void HRTWorkQueue::process(void)
 			}
 		}
 
-		// Check time again now to make sure we don't call pthread_cond_timedwait()
-		// with a timeout too close in the future. If so, just start from the top
-		// which means the task will get done immediately.
-		const uint64_t now_after_callback = offsetTime();
-		const uint64_t schedule_time = now + next;
-
-		if (schedule_time >= now_after_callback + MIN_RESCHEDULE_TIME_US) {
-			// pthread_cond_timedwait uses absolute time
-			ts = offsetTimeToAbsoluteTime(schedule_time);
-			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
-		} else {
-			DF_LOG_DEBUG("ignore timeout of only %llu us",
-				     now_after_callback + MIN_RESCHEDULE_TIME_US - schedule_time);
-		}
+		// pthread_cond_timedwait uses absolute time
+		ts = offsetTimeToAbsoluteTime(now+next);
 
 		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIu64 ")", next);
 		// Wait until next expiry or until a new item is rescheduled
+		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		hrtUnlock();
 	}
 }
