@@ -262,8 +262,8 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **instancename)
 	DFPointerList::Index idx = nullptr;
 	idx = g_driver_list.next(idx);
 	while (idx != nullptr) {
-		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 		if (i == index) {
+            		DevObj *list_obj = reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 			*instancename = list_obj->m_dev_instance_path;
 			index+=1;
 			ret = 0;
