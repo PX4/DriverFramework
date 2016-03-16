@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2016 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -49,7 +49,8 @@ void DFDiag::listRegisteredDevices()
 	const char *name;
 
 	DF_LOG_INFO("Registered Devices:");
-	while(DevMgr::getNextDeviceName(index, &name) == 0) {
+
+	while (DevMgr::getNextDeviceName(index, &name) == 0) {
 		DF_LOG_INFO("   '%s'", name);
 	}
 }
@@ -60,26 +61,30 @@ void DFDiag::listRawDevices()
 	char devname[15];
 
 	DF_LOG_INFO("I2C devices:");
-	for (unsigned int i=0; i < 8; i++) {
+
+	for (unsigned int i = 0; i < 8; i++) {
 #ifdef __QURT
 		sprintf(devname, "/dev/iic-%u", i);
 #else
 		sprintf(devname, "/dev/i2c-%u", i);
 #endif
 		fd = ::open(devname, O_RDONLY);
+
 		if (fd != -1) {
 			DF_LOG_INFO("  %s", devname);
 			close(fd);
-		}
-		else if (errno == EACCES) {
+
+		} else if (errno == EACCES) {
 			DF_LOG_INFO("  %s (WARNING access denied)", devname);
 		}
 	}
 
 	DF_LOG_INFO("SPI devices:");
-	for (unsigned int i=0; i < 8; i++) {
+
+	for (unsigned int i = 0; i < 8; i++) {
 		sprintf(devname, "/dev/spi-%u", i);
 		fd = ::open(devname, O_RDONLY);
+
 		if (fd != -1) {
 			DF_LOG_INFO("  %s", devname);
 			close(fd);

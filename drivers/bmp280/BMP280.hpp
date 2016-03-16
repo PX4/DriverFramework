@@ -35,10 +35,10 @@
 
 #include "BaroSensor.hpp"
 
-namespace DriverFramework {
-
-struct bmp280_sensor_calibration
+namespace DriverFramework
 {
+
+struct bmp280_sensor_calibration {
 	uint16_t dig_T1;
 	uint16_t dig_P1;
 	int16_t dig_T2;

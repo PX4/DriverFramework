@@ -49,7 +49,8 @@
 
 #define DRIVER_MAX_INSTANCES 5
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 // Re-use Device ID types from PX4
 enum DeviceBusType {
@@ -71,9 +72,9 @@ struct DeviceStructure {
 		uint8_t bus: 5;    // which instance of the bus type
 		uint8_t address;   // address on the bus (eg. I2C address)
 		uint8_t devtype;   // device class specific device type
-};
+	};
 
-union DeviceId {
+	union DeviceId {
 	struct DeviceStructure dev_id_s;
 	uint32_t dev_id;
 };
@@ -81,7 +82,8 @@ union DeviceId {
 class DevObj : public DisableCopy
 {
 public:
-	DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type, unsigned int sample_interval_usec);
+	DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type,
+	       unsigned int sample_interval_usec);
 
 	virtual int init();
 
@@ -108,11 +110,11 @@ public:
 		return m_driver_instance;
 	}
 
-        virtual int devIOCTL(unsigned long request, unsigned long arg);
+	virtual int devIOCTL(unsigned long request, unsigned long arg);
 
-        virtual ssize_t devRead(void *buf, size_t count);
+	virtual ssize_t devRead(void *buf, size_t count);
 
-        virtual ssize_t devWrite(const void *buf, size_t count);
+	virtual ssize_t devWrite(const void *buf, size_t count);
 
 	void updateNotify();
 
@@ -122,10 +124,10 @@ public:
 
 	static uint16_t swap16(uint16_t val) { return (val >> 8) | (val << 8); }
 
-	const char *	 	m_name;
-	const char *	 	m_dev_path;
-	char *	 		m_dev_class_path;
-	char *	 		m_dev_instance_path;
+	const char 	 	*m_name;
+	const char 	 	*m_dev_path;
+	char 	 		*m_dev_class_path;
+	char 	 		*m_dev_instance_path;
 	unsigned int 		m_sample_interval_usecs;
 	union DeviceId		m_id;
 
@@ -141,7 +143,7 @@ private:
 	static void measure(void *arg);
 
 	// Disallow copy
-	DevObj(const DevObj&);
+	DevObj(const DevObj &);
 
 	int 			m_driver_instance;	// m_driver_instance = -1 when unregistered
 	DFPointerList		m_handles;

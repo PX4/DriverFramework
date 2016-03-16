@@ -66,13 +66,15 @@ int I2CDevObj::start()
 int I2CDevObj::stop()
 {
 	// close the device
-	if (m_fd >=0) {
+	if (m_fd >= 0) {
 		int ret = ::close(m_fd);
+
 		if (ret < 0) {
 			DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::close()");
 			return ret;
 		}
 	}
+
 	return 0;
 }
 
@@ -80,10 +82,11 @@ int I2CDevObj::stop()
 int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
 	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
+
 	if (obj) {
 		return obj->_readReg(address, out_buffer, length);
-	}
-	else {
+
+	} else {
 		return -1;
 	}
 }
@@ -91,10 +94,11 @@ int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int l
 int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length)
 {
 	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
+
 	if (obj) {
 		return obj->_writeReg(address, in_buffer, length);
-	}
-	else {
+
+	} else {
 		return -1;
 	}
 }
@@ -118,6 +122,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 	ioctl_write_read.read_buf = out_buffer;
 	ioctl_write_read.read_buf_len = length;
 	int bytes_read = ::ioctl(m_fd, I2C_IOCTL_RDWR, &ioctl_write_read);
+
 	if (bytes_read != length) {
 		DF_LOG_ERR(
 			"error: read register reports a read of %d bytes, but attempted to set %d bytes",
@@ -133,7 +138,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
-	uint8_t write_buffer[length+1];
+	uint8_t write_buffer[length + 1];
 
 	/*
 	 * Verify that the length of the caller's buffer does not exceed the local stack
@@ -143,6 +148,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 		DF_LOG_ERR("error: caller's buffer exceeds max len");
 		return -1;
 	}
+
 	if (m_fd == 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
@@ -152,9 +158,10 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 	write_buffer[0] = address;
 	memcpy(&write_buffer[1], in_buffer, length);
 	int bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
+
 	if (bytes_written != length + 1) {
 		DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
-				bytes_written);
+			   bytes_written);
 		return -1;
 	}
 

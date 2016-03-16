@@ -39,13 +39,13 @@
 
 #define MAG_CLASS_PATH  "/dev/mag"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 /**
  * The sensor independent data structure containing pressure values.
  */
-struct mag_sensor_data
-{
+struct mag_sensor_data {
 	float field_x_ga;
 	float field_y_ga;
 	float field_z_ga;
@@ -67,11 +67,14 @@ public:
 	{
 		MagSensor *me = DevMgr::getDevObjByHandle<MagSensor>(h);
 		int ret = -1;
+
 		if (me != nullptr) {
 			me->m_synchronize.lock();
+
 			if (is_new_data_required) {
 				me->m_synchronize.waitOnSignal(0);
 			}
+
 			out_data = me->m_sensor_data;
 			me->m_synchronize.unlock();
 			ret = 0;

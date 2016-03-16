@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -70,11 +70,12 @@ int SyncObj::waitOnSignal(unsigned long timeout_ms)
 {
 	int ret;
 	DEBUG("wait %p\n", &m_new_data_cond);
+
 	if (timeout_ms) {
 		struct timespec ts = absoluteTimeInFuture(timeout_ms);
 		ret = pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
-	}
-	else {
+
+	} else {
 		ret = pthread_cond_wait(&m_new_data_cond, &m_lock);
 	}
 
@@ -87,25 +88,31 @@ void SyncObj::signal(void)
 	pthread_cond_signal(&m_new_data_cond);
 }
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 int initMutex(pthread_mutex_t &mutex)
 {
 	pthread_mutexattr_t attr;
 
 	int rv = pthread_mutexattr_init(&attr);
+
 	if (rv != 0) {
 		DF_LOG_ERR("pthread_mutexattr_init failed");
 		return -1;
 	}
+
 #ifndef __PX4_NUTTX
 	rv = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+
 	if (rv != 0) {
 		DF_LOG_ERR("pthread_mutexattr_settype failed");
 		return -1;
 	}
+
 #endif
 	rv = pthread_mutex_init(&mutex, &attr);
+
 	if (rv != 0) {
 		DF_LOG_ERR("pthread_mutex_init failed");
 		return -1;

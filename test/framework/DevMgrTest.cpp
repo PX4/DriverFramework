@@ -47,6 +47,7 @@ bool DevMgrTest::verifyStart(TestDriver &test)
 {
 	// Register the driver
 	int ret = test.init();
+
 	if (ret < 0) {
 		DF_LOG_INFO("init() failed (%d))", ret);
 		return false;
@@ -54,10 +55,12 @@ bool DevMgrTest::verifyStart(TestDriver &test)
 
 	// Start the driver
 	ret = test.start();
+
 	if (ret < 0) {
 		DF_LOG_INFO("start() failed (%d)", ret);
 		return false;
 	}
+
 	usleep(1000);
 	return true;
 }
@@ -68,14 +71,14 @@ bool DevMgrTest::verifyRegisterDriver()
 	const char *instname = nullptr;
 	bool found = false;
 
-	char devname[strlen(TEST_DRIVER_CLASS_PATH)+3];
+	char devname[strlen(TEST_DRIVER_CLASS_PATH) + 3];
 	snprintf(devname, sizeof(devname), "%s%d", TEST_DRIVER_CLASS_PATH, 0);
 
-	while(DevMgr::getNextDeviceName(index, &instname) == 0) {
+	while (DevMgr::getNextDeviceName(index, &instname) == 0) {
 		if (instname && (strcmp(instname, devname) == 0)) {
 			found = true;
-		}
-		else {
+
+		} else {
 			DF_LOG_INFO("Found device '%s'", instname == nullptr ? "undefined" : instname);
 		}
 	}
@@ -91,18 +94,19 @@ bool DevMgrTest::verifyRegisterDriver()
 
 bool DevMgrTest::verifyUpdateNotify()
 {
-	char devname[strlen(TEST_DRIVER_CLASS_PATH)+3];
+	char devname[strlen(TEST_DRIVER_CLASS_PATH) + 3];
 	snprintf(devname, sizeof(devname), "%s%d", TEST_DRIVER_CLASS_PATH, 0);
-	
+
 	DevHandle h;
 	DevMgr::getHandle(devname, h);
-	
+
 	if (!h.isValid()) {
 		DF_LOG_INFO("Failed to open %s (%d)", devname, h.getError());
 		return false;
 	}
 
 	TestDriver *p = DevMgr::getDevObjByHandle<TestDriver>(h);
+
 	if (p == nullptr) {
 		DF_LOG_INFO("Failed to get dev obj from handle");
 		return false;
@@ -139,6 +143,7 @@ bool DevMgrTest::verifyUpdateNotify()
 	DevMgr::releaseHandle(h);
 
 	DevMgr::setDevHandleError(h, 1);
+
 	if (h.getError() != 1) {
 		DF_LOG_INFO("Failed to set handle error");
 		return false;

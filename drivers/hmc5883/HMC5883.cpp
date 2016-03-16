@@ -66,7 +66,8 @@
 using namespace DriverFramework;
 
 
-int HMC5883::hmc5883_init() {
+int HMC5883::hmc5883_init()
+{
 
 	/* Zero the struct */
 	m_synchronize.lock();
@@ -81,30 +82,36 @@ int HMC5883::hmc5883_init() {
 
 	/* Read the IDs of the HMC5883 sensor to confirm it's presence. */
 	result = _readReg(HMC5883_REG_ID_A, &sensor_id, sizeof(sensor_id));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to communicate with the hmc5883 mag sensor");
 		return -EIO;
 	}
+
 	if (sensor_id != HMC5883_ID_A) {
 		DF_LOG_ERR("HMC5883 sensor ID_A returned 0x%x instead of 0x%x", sensor_id, HMC5883_ID_A);
 		return -1;
 	}
 
 	result = _readReg(HMC5883_REG_ID_B, &sensor_id, sizeof(sensor_id));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to communicate with the hmc5883 mag sensor");
 		return -EIO;
 	}
+
 	if (sensor_id != HMC5883_ID_B) {
 		DF_LOG_ERR("HMC5883 sensor ID_B returned 0x%x instead of 0x%x", sensor_id, HMC5883_ID_B);
 		return -1;
 	}
 
 	result = _readReg(HMC5883_REG_ID_C, &sensor_id, sizeof(sensor_id));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to communicate with the hmc5883 mag sensor");
 		return -EIO;
 	}
+
 	if (sensor_id != HMC5883_ID_C) {
 		DF_LOG_ERR("HMC5883 sensor ID_C returned 0x%x instead of 0x%x", sensor_id, HMC5883_ID_C);
 		return -1;
@@ -112,6 +119,7 @@ int HMC5883::hmc5883_init() {
 
 	uint8_t config_b = HMC5883_BITS_CONFIG_B_RANGE_1GA3;
 	result = _writeReg(HMC5883_REG_CONFIG_B, &config_b, sizeof(config_b));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: sensor configuration B failed");
 		return -EIO;
@@ -134,6 +142,7 @@ int HMC5883::start()
 	}
 
 	result = I2CDevObj::start();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
 		goto exit;
@@ -143,6 +152,7 @@ int HMC5883::start()
 	result = _setSlaveConfig(HMC5883_SLAVE_ADDRESS,
 				 HMC5883_BUS_FREQUENCY_IN_KHZ,
 				 HMC5883_TRANSFER_TIMEOUT_IN_USECS);
+
 	if (result != 0) {
 		DF_LOG_ERR("I2C slave configuration failed");
 		goto exit;
@@ -150,6 +160,7 @@ int HMC5883::start()
 
 	/* Initialize the mag sensor. */
 	result = hmc5883_init();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: mag sensor initialization failed, sensor read thread not started");
 		goto exit;
@@ -157,11 +168,14 @@ int HMC5883::start()
 
 
 	result = DevObj::start();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
 		goto exit;
 	}
+
 exit:
+
 	if (result != 0) {
 		devClose();
 	}
@@ -172,17 +186,21 @@ exit:
 int HMC5883::stop()
 {
 	int result = DevObj::stop();
+
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
 		return result;
 	}
+
 	usleep(100000);
 
 	result = devClose();
+
 	if (result != 0) {
 		DF_LOG_ERR("device close failed");
 		return result;
 	}
+
 	usleep(100000);
 	return 0;
 }
@@ -202,10 +220,12 @@ void HMC5883::_measure(void)
 #pragma pack(pop)
 
 		result = _readReg(HMC5883_REG_DATA_OUT_X_MSB, (uint8_t *)&hmc_report, sizeof(hmc_report));
+
 		if (result != 0) {
 			m_synchronize.lock();
 			m_sensor_data.error_counter++;
 			m_synchronize.unlock();
+
 		} else {
 
 			// TODO: add define if byteswap is needed
@@ -233,6 +253,7 @@ void HMC5883::_measure(void)
 	/* Request next measurement. */
 	uint8_t mode = HMC5883_BITS_MODE_SINGLE_MODE;
 	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
+
 	if (result != 0) {
 		// TODO: count it as an error and keep going
 		DF_LOG_ERR("error: setting sensor mode failed");

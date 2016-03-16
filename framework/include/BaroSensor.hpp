@@ -39,13 +39,13 @@
 
 #define BARO_CLASS_PATH  "/dev/baro"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 /**
  * The sensor independent data structure containing pressure values.
  */
-struct baro_sensor_data
-{
+struct baro_sensor_data {
 	int32_t  t_fine; 		/*! used internally to calculate a temperature compensated pressure value. */
 	float    pressure_pa; 		/*! current pressure in Pascals */
 	float    temperature_c;		/*! current temperature in C at which the pressure was read */
@@ -72,11 +72,14 @@ public:
 	{
 		BaroSensor *me = DevMgr::getDevObjByHandle<BaroSensor>(h);
 		int ret = -1;
+
 		if (me != nullptr) {
 			me->m_synchronize.lock();
+
 			if (is_new_data_required) {
 				me->m_synchronize.waitOnSignal(0);
 			}
+
 			out_data = me->m_sensor_data;
 			me->m_synchronize.unlock();
 			ret = 0;

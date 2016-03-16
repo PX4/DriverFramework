@@ -76,13 +76,13 @@ int PressureTester::run()
 	// Open the pressure sensor
 	DevHandle h;
 	DevMgr::getHandle(BARO_DEVICE_PATH, h);
-	if (!h.isValid())
-	{
+
+	if (!h.isValid()) {
 		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
-			BARO_DEVICE_PATH, h.getError());
+			    BARO_DEVICE_PATH, h.getError());
 		m_done = true;
-	}
-	else {
+
+	} else {
 		m_done = false;
 		m_sensor_data.read_counter = 0;
 	}
@@ -90,15 +90,17 @@ int PressureTester::run()
 	while (!m_done) {
 		++m_read_attempts;
 		ret = BaroSensor::getSensorData(h, m_sensor_data, true);
+
 		if (ret == 0) {
 			uint32_t count = m_sensor_data.read_counter;
+
 			if (m_read_counter != count) {
 				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
 				BaroSensor::printPressureValues(m_sensor_data);
 			}
-		}
-		else {
+
+		} else {
 			DF_LOG_INFO("error: unable to read the pressure sensor device.");
 		}
 
@@ -106,8 +108,8 @@ int PressureTester::run()
 			// Done test - PASSED
 			m_pass = TEST_PASS;
 			m_done = true;
-		}
-		else if (m_read_attempts > 1000) {
+
+		} else if (m_read_attempts > 1000) {
 			DF_LOG_INFO("error: unable to read the pressure sensor device.");
 			m_done = true;
 		}
@@ -121,6 +123,7 @@ int PressureTester::run()
 int do_test()
 {
 	int ret = Framework::initialize();
+
 	if (ret < 0) {
 		return ret;
 	}

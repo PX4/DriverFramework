@@ -37,96 +37,95 @@ using namespace DriverFramework;
 
 extern "C" {
 
-void block_indefinite( void )
-{
-   for(;;)
-   {
-      volatile int x = 0;
-      ++x;
-   }
-}
+	void block_indefinite(void)
+	{
+		for (;;) {
+			volatile int x = 0;
+			++x;
+		}
+	}
 
-unsigned int sleep(unsigned int seconds)
-{
-	return usleep(seconds*1000000);
-}
+	unsigned int sleep(unsigned int seconds)
+	{
+		return usleep(seconds * 1000000);
+	}
 
-void _Read_uleb( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Read_uleb(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Parse_fde_instr( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Parse_fde_instr(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Parse_csd( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Parse_csd(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Locksyslock( int x )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Locksyslock(int x)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Unlocksyslock( int x )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Unlocksyslock(int x)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Valbytes( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Valbytes(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Get_eh_data( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Get_eh_data(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Parse_lsda( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Parse_lsda(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void __cxa_guard_release( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void __cxa_guard_release(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Read_enc_ptr( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Read_enc_ptr(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void _Read_sleb( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void _Read_sleb(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void __cxa_guard_acquire( void )
-{
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void __cxa_guard_acquire(void)
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
-void __cxa_pure_virtual() 
-{ 
-   DF_LOG_ERR( "Error: Calling unresolved symbol stub[%s]", __FUNCTION__ );
-   block_indefinite(); 
-}
+	void __cxa_pure_virtual()
+	{
+		DF_LOG_ERR("Error: Calling unresolved symbol stub[%s]", __FUNCTION__);
+		block_indefinite();
+	}
 
 };

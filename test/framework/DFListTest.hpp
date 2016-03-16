@@ -43,12 +43,14 @@ class DFListTest : public DFTestObj
 {
 public:
 	struct testStr {
-		testStr(int x) {
+		testStr(int x)
+		{
 			msg[0] = '0' + x;
 			msg[1] = '\0';
 		};
 
-		~testStr() {
+		~testStr()
+		{
 			DF_LOG_DEBUG("Deleting testStr %s", msg);
 		}
 		char msg[2];

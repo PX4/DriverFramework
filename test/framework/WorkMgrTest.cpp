@@ -56,12 +56,15 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 {
 	*arg = 0;
 	uint64_t starttime = offsetTime();
+
 	if (WorkMgr::schedule(h) != 0) {
 		return false;
 	}
+
 	uint64_t now;
 	uint64_t elapsedtime;
-	while(*arg < 3) {
+
+	while (*arg < 3) {
 		now = offsetTime(); // In usec
 		elapsedtime = now - starttime;
 
@@ -73,29 +76,35 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 			return false;
 		}
 	}
+
 	DF_LOG_INFO("Verified %uusec timeout", delay_usec);
 	return true;
 }
 
 bool WorkMgrTest::verifySchedule()
 {
-	int arg=0;
+	int arg = 0;
 	WorkHandle h;
 	uint32_t delay_usec = 0;
 	WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
+
 	if (!h.isValid()) {
 		DF_LOG_ERR("getWorkHandle failed for delay of 0");
 		return false;
 	}
+
 	if (!verifyDelay(h, delay_usec, &arg)) {
 		return false;
 	}
-	delay_usec=1;
+
+	delay_usec = 1;
 	WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
+
 	if (!h.isValid()) {
 		DF_LOG_ERR("getWorkHandle failed for delay of 1");
 		return false;
 	}
+
 	if (!verifyDelay(h, delay_usec, &arg)) {
 		return false;
 	}
@@ -106,19 +115,24 @@ bool WorkMgrTest::verifySchedule()
 			DF_LOG_ERR("releaseWorkHandle failed with ret %d", ret);
 		}
 		WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
+
 		if (!h.isValid()) {
 			DF_LOG_ERR("getWorkHandle failed for delay of %u", delay_usec);
 			return false;
 		}
+
 		if (!verifyDelay(h, delay_usec, &arg)) {
 			return false;
 		}
 	}
+
 	int rv = WorkMgr::releaseWorkHandle(h);
+
 	if (rv != 0) {
 		DF_LOG_ERR("Failed: releaseWorkHandle returned %d", rv);
 		return false;
 	}
+
 	return true;
 }
 

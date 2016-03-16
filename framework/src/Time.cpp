@@ -42,12 +42,12 @@
 #if defined(__APPLE__) && defined(__MACH__)
 #include <sys/time.h>
 #define CLOCK_REALTIME 0
-static int clock_gettime(int clk_id, struct timespec* t)
+static int clock_gettime(int clk_id, struct timespec *t)
 {
 	struct timeval now;
 	int rv = gettimeofday(&now, NULL);
 
-	if(rv) {
+	if (rv) {
 		return rv;
 	}
 
@@ -91,11 +91,11 @@ timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
 
 	clockGetMonotonic(&ts);
 
-	uint64_t nsecs = ts.tv_nsec + time_ms*1000000;
-	uint64_t secs = (nsecs/1000000000);
+	uint64_t nsecs = ts.tv_nsec + time_ms * 1000000;
+	uint64_t secs = (nsecs / 1000000000);
 
 	ts.tv_sec += secs;
-	ts.tv_nsec = nsecs - secs*1000000000;
+	ts.tv_nsec = nsecs - secs * 1000000000;
 
 	return ts;
 }

@@ -41,10 +41,12 @@ using namespace DriverFramework;
 int doTest()
 {
 	int ret = Framework::initialize();
+
 	if (ret < 0) {
 		DF_LOG_INFO("Framework::initialize() failed");
 		return ret;
 	}
+
 	DFFrameworkTest df;
 
 	df.doTests();

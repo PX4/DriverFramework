@@ -65,8 +65,9 @@ int64_t BMP280::convertPressure(int64_t adc_P)
 	var2 = var2 + ((var1 * (int64_t) m_sensor_calibration.dig_P5) << 17);
 	var2 = var2 + (((int64_t) m_sensor_calibration.dig_P4) << 35);
 	var1 = ((var1 * var1 * (int64_t) m_sensor_calibration.dig_P3) >> 8)
-			+ ((var1 * (int64_t) m_sensor_calibration.dig_P2) << 12);
+	       + ((var1 * (int64_t) m_sensor_calibration.dig_P2) << 12);
 	var1 = (((((int64_t) 1) << 47) + var1) * ((int64_t) m_sensor_calibration.dig_P1)) >> 33;
+
 	if (var1 == 0) {
 		return 0; // avoid exception caused by division by zero
 	}
@@ -84,11 +85,11 @@ int32_t BMP280::convertTemperature(int32_t adc_T)
 {
 	int32_t var1, var2, T;
 	var1 = ((((adc_T >> 3)
-			- ((int32_t) m_sensor_calibration.dig_T1 << 1)))
-			* ((int32_t) m_sensor_calibration.dig_T2)) >> 11;
+		  - ((int32_t) m_sensor_calibration.dig_T1 << 1)))
+		* ((int32_t) m_sensor_calibration.dig_T2)) >> 11;
 	var2 = (((((adc_T >> 4) - ((int32_t) m_sensor_calibration.dig_T1))
-			* ((adc_T >> 4) - ((int32_t) m_sensor_calibration.dig_T1)))
-			>> 12) * ((int32_t) m_sensor_calibration.dig_T3)) >> 14;
+		  * ((adc_T >> 4) - ((int32_t) m_sensor_calibration.dig_T1)))
+		 >> 12) * ((int32_t) m_sensor_calibration.dig_T3)) >> 14;
 	m_sensor_data.t_fine = var1 + var2;
 	T = (m_sensor_data.t_fine * 5 + 128) >> 8;
 
@@ -103,6 +104,7 @@ int BMP280::loadCalibration()
 	memset(calib_values, 0, BMP280_MAX_LEN_CALIB_VALUES);
 
 	result = _readReg(0x88, calib_values, BMP280_MAX_LEN_CALIB_VALUES);
+
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to read sensor calibration values from the sensor");
 		return -EIO;
@@ -124,7 +126,8 @@ int BMP280::loadCalibration()
 	return 0;
 }
 
-int BMP280::bmp280_init() {
+int BMP280::bmp280_init()
+{
 
 	/* Zero the struct */
 	m_synchronize.lock();
@@ -141,10 +144,12 @@ int BMP280::bmp280_init() {
 
 	/* Read the ID of the BMP280 sensor to confirm it's presence. */
 	result = _readReg(BMP280_REG_ID, &sensor_id, sizeof(sensor_id));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to communicate with the bmp280 pressure sensor");
 		return -EIO;
 	}
+
 	if (sensor_id != BMP280_ID) {
 		DF_LOG_ERR("BMP280 sensor ID returned 0x%x instead of 0x%x", sensor_id, BMP280_ID);
 		return -1;
@@ -152,16 +157,18 @@ int BMP280::bmp280_init() {
 
 	/* Load and display the internal calibration values. */
 	result = loadCalibration();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: unable to complete initialization of the bmp280 pressure sensor");
 		return -EIO;
 	}
 
 	uint8_t ctrl_meas = (BMP280_BITS_CTRL_MEAS_OVERSAMPLING_TEMP2X |
-                             BMP280_BITS_CTRL_MEAS_OVERSAMPLING_PRESSURE8X |
-                             BMP280_BITS_CTRL_MEAS_POWER_MODE_NORMAL);
+			     BMP280_BITS_CTRL_MEAS_OVERSAMPLING_PRESSURE8X |
+			     BMP280_BITS_CTRL_MEAS_POWER_MODE_NORMAL);
 
 	result = _writeReg(BMP280_REG_CTRL_MEAS, &ctrl_meas, sizeof(ctrl_meas));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: sensor configuration failed");
 		return -EIO;
@@ -172,10 +179,12 @@ int BMP280::bmp280_init() {
 			  BMP280_BITS_CONFIG_SPI_OFF);
 
 	result = _writeReg(0xF5, &config, sizeof(config));
+
 	if (result != 0) {
 		DF_LOG_ERR("error: additional sensor configuration failed");
 		return -EIO;
 	}
+
 	DF_LOG_ERR("additional sensor configuration succeeded");
 
 	usleep(1000);
@@ -194,6 +203,7 @@ int BMP280::start()
 	}
 
 	result = I2CDevObj::start();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
 		goto exit;
@@ -203,6 +213,7 @@ int BMP280::start()
 	result = _setSlaveConfig(BMP280_SLAVE_ADDRESS,
 				 BMP280_BUS_FREQUENCY_IN_KHZ,
 				 BMP280_TRANSFER_TIMEOUT_IN_USECS);
+
 	if (result != 0) {
 		DF_LOG_ERR("I2C slave configuration failed");
 		goto exit;
@@ -210,6 +221,7 @@ int BMP280::start()
 
 	/* Initialize the pressure sensor for active and continuous operation. */
 	result = bmp280_init();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: pressure sensor initialization failed, sensor read thread not started");
 		goto exit;
@@ -217,11 +229,14 @@ int BMP280::start()
 
 
 	result = DevObj::start();
+
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
 		goto exit;
 	}
+
 exit:
+
 	if (result != 0) {
 		devClose();
 	}
@@ -232,16 +247,19 @@ exit:
 int BMP280::stop()
 {
 	int result = DevObj::stop();
+
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
 		return result;
 	}
 
 	result = devClose();
+
 	if (result != 0) {
 		DF_LOG_ERR("device close failed");
 		return result;
 	}
+
 	return 0;
 }
 
@@ -252,6 +270,7 @@ void BMP280::_measure(void)
 
 	/* Read the data from the pressure sensor. */
 	int result = _readReg(BMP280_REG_PRESS_MSB, pdata, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
+
 	if (result < 0) {
 		DF_LOG_ERR("error: reading I2C bus failed");
 		return;

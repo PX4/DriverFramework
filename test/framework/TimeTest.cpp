@@ -42,23 +42,25 @@ bool TimeTest::verifyOffsetTime()
 	uint64_t st = offsetTime();
 	usleep(1000);
 	uint64_t us = offsetTime();
-	uint64_t delta = us-st;
+	uint64_t delta = us - st;
 
 	// Verify the delta was not less than sleep time and was close to sleep time
 	if ((delta < 1000) || (delta > 1200)) {
 		DF_LOG_INFO("Usleep of 1000us reported delta of %" PRIu64 "us", delta);
 		passed = false;
 	}
-	
+
 	sleep(1);
 
 	uint64_t sl = offsetTime();
-	delta = sl-us;
+	delta = sl - us;
+
 	// Verify the delta was not less than sleep time and was close to sleep time
 	if ((delta < 1000000) || (delta > 1000200)) {
 		DF_LOG_INFO("Sleep of 1s reported delta of %" PRIu64 "us", delta);
 		passed = false;
 	}
+
 	return passed;
 }
 

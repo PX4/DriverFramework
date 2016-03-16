@@ -1,24 +1,24 @@
 /**********************************************************************
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of Dronecode Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -38,7 +38,8 @@
 
 #include "DFLog.hpp"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 class DFTestObj
 {
@@ -61,8 +62,10 @@ protected:
 	void reportResult(const char *name, bool passed)
 	{
 		DF_LOG_INFO("TEST %s: %s", name, passed ? "PASSED" : "FAILED");
+
 		if (passed) {
 			++m_passed_count;
+
 		} else {
 			++m_failed_count;
 		}
@@ -83,7 +86,8 @@ private:
 
 	void testEnd()
 	{
-		DF_LOG_INFO("======= END OF TESTS FOR %s. %u of %u tests passed", m_name, m_passed_count, m_passed_count+m_failed_count);
+		DF_LOG_INFO("======= END OF TESTS FOR %s. %u of %u tests passed", m_name, m_passed_count,
+			    m_passed_count + m_failed_count);
 	}
 
 	const char *m_name;

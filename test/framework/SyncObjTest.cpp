@@ -51,15 +51,19 @@ void SyncObjTest::_doTests()
 	int rv = so.waitOnSignal(1);
 	uint64_t after = offsetTime();
 	uint64_t delta = after - now;
+
 	if (rv != ETIMEDOUT) {
 		DF_LOG_INFO("waitSignal() did not return ETIMEDOUT");
 		passed = false;
 	}
+
 	bool dtime_ok = (delta > 1000) && (delta < 1200);
+
 	if (!dtime_ok) {
 		DF_LOG_INFO("waitSignal() timeout of 1ms was %" PRIu64 "us", delta);
 		passed = false;
 	}
+
 	reportResult("waitSignal() timeout", passed && dtime_ok);
 #endif
 }

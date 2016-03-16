@@ -42,7 +42,8 @@
 
 #pragma once
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 class SPIDevHandle : public DevHandle
 {
@@ -56,13 +57,12 @@ public:
 class SPIDevObj : public DevObj
 {
 public:
-	enum SPI_FREQUENCY
-	{
-	   SPI_FREQUENCY_1MHZ = 1000000UL,
-	   SPI_FREQUENCY_5MHZ = 5000000UL,
-	   SPI_FREQUENCY_10MHZ = 10000000UL,
-	   SPI_FREQUENCY_15MHZ = 15000000UL,
-	   SPI_FREQUENCY_20MHZ = 20000000UL,
+	enum SPI_FREQUENCY {
+		SPI_FREQUENCY_1MHZ = 1000000UL,
+		SPI_FREQUENCY_5MHZ = 5000000UL,
+		SPI_FREQUENCY_10MHZ = 10000000UL,
+		SPI_FREQUENCY_15MHZ = 15000000UL,
+		SPI_FREQUENCY_20MHZ = 20000000UL,
 	};
 
 	SPIDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
@@ -91,9 +91,11 @@ protected:
 	int devOpen(int flags)
 	{
 		int fd = ::open(m_dev_instance_path, flags);
+
 		if (fd >= 0) {
 			m_fd = fd;
 		}
+
 		return (fd >= 0) ? 0 : -errno;
 	}
 

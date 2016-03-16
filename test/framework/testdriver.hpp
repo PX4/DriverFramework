@@ -56,7 +56,7 @@ class TestDriver : public VirtDevObj
 public:
 	TestDriver() :
 		VirtDevObj("TestDriver", TEST_DRIVER_PATH, TEST_DRIVER_CLASS_PATH, 50000),
-		m_count(sizeof(m_message)/sizeof(m_message[0]))
+		m_count(sizeof(m_message) / sizeof(m_message[0]))
 	{}
 	virtual ~TestDriver() {}
 
@@ -64,20 +64,23 @@ public:
 	static int readMessages(DevHandle &h, TestMessage *m, unsigned int count)
 	{
 		TestDriver *me = DevMgr::getDevObjByHandle<TestDriver>(h);
+
 		if (me != nullptr) {
-			if (count > me->m_count)
-			{
+			if (count > me->m_count) {
 				count = me->m_count;
 			}
+
 			me->m_lock.lock();
+
 			for (unsigned int i = 0; i < count; i++) {
 				m[i] = me->m_message[i];
 			}
+
 			me->m_lock.unlock();
 			DevMgr::setDevHandleError(h, 0);
 			return count;
-		}
-		else {
+
+		} else {
 			return -1;
 		}
 	}
@@ -85,10 +88,10 @@ public:
 	// Alternate (old) way to read
 	virtual ssize_t devRead(void *buf, size_t len)
 	{
-		if (len > sizeof(m_message))
-		{
+		if (len > sizeof(m_message)) {
 			len = sizeof(m_message);
 		}
+
 		m_lock.lock();
 		memcpy(buf, m_message, len);
 		m_lock.unlock();
@@ -97,10 +100,10 @@ public:
 
 	virtual int devIOCTL(unsigned long cmd, unsigned long arg)
 	{
-		if (cmd == TEST_IOCTL_CMD)
-		{
+		if (cmd == TEST_IOCTL_CMD) {
 			return TEST_IOCTL_RESULT;
 		}
+
 		return -1;
 	}
 

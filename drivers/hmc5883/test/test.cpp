@@ -76,13 +76,13 @@ int MagTester::run()
 	// Open the mag sensor
 	DevHandle h;
 	DevMgr::getHandle(MAG_DEVICE_PATH, h);
-	if (!h.isValid())
-	{
+
+	if (!h.isValid()) {
 		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
-			MAG_DEVICE_PATH, h.getError());
+			    MAG_DEVICE_PATH, h.getError());
 		m_done = true;
-	}
-	else {
+
+	} else {
 		m_done = false;
 		m_sensor_data.read_counter = 0;
 	}
@@ -90,15 +90,17 @@ int MagTester::run()
 	while (!m_done) {
 		++m_read_attempts;
 		ret = MagSensor::getSensorData(h, m_sensor_data, true);
+
 		if (ret == 0) {
 			uint32_t count = m_sensor_data.read_counter;
+
 			if (m_read_counter != count) {
 				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
 				MagSensor::printValues(m_sensor_data);
 			}
-		}
-		else {
+
+		} else {
 			DF_LOG_INFO("error: unable to read the mag sensor device.");
 		}
 
@@ -106,8 +108,8 @@ int MagTester::run()
 			// Done test - PASSED
 			m_pass = TEST_PASS;
 			m_done = true;
-		}
-		else if (m_read_attempts > 1000) {
+
+		} else if (m_read_attempts > 1000) {
 			DF_LOG_INFO("error: unable to read the mag sensor device.");
 			m_done = true;
 		}
@@ -121,6 +123,7 @@ int MagTester::run()
 int do_test()
 {
 	int ret = Framework::initialize();
+
 	if (ret < 0) {
 		return ret;
 	}

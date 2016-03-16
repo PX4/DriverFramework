@@ -36,7 +36,8 @@
 #include "ImuSensor.hpp"
 
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 // TODO: use define from some include for this
 #define	M_PI		3.14159265358979323846	/* pi */

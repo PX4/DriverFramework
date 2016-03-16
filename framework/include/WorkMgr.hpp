@@ -42,7 +42,8 @@
 #endif
 #include "HandleObj.hpp"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 // Types
 class WorkHandle : public IntHandleObj
@@ -73,7 +74,7 @@ class WorkMgr
 {
 public:
 	// Interface functions
-	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle& handle);
+	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle &handle);
 	static int releaseWorkHandle(WorkHandle &handle);
 	static int schedule(WorkHandle &handle);
 	static void setError(WorkHandle &h, int error);

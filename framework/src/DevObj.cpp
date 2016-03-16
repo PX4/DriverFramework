@@ -1,25 +1,25 @@
 /**********************************************************************
 * Copyright (c) 2012 Lorenz Meier
 * Copyright (c) 2015 Mark Charlebois
-* 
+*
 * All rights reserved.
-* 
+*
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
 * disclaimer below) provided that the following conditions are met:
-* 
+*
 *  * Redistributions of source code must retain the above copyright
 *    notice, this list of conditions and the following disclaimer.
-* 
+*
 *  * Redistributions in binary form must reproduce the above copyright
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the
 *    distribution.
-* 
+*
 *  * Neither the name of PX4 Project nor the names of its
 *    contributors may be used to endorse or promote products derived
 *    from this software without specific prior written permission.
-* 
+*
 * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
 * GRANTED BY THIS LICENSE.  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
 * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -41,7 +41,8 @@
 
 using namespace DriverFramework;
 
-DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type, unsigned int sample_interval_usecs) :
+DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_path, DeviceBusType bus_type,
+	       unsigned int sample_interval_usecs) :
 	m_name(nullptr),
 	m_dev_path(nullptr),
 	m_dev_class_path(nullptr),
@@ -61,39 +62,45 @@ DevObj::DevObj(const char *name, const char *dev_path, const char *dev_class_pat
 	if (dev_class_path) {
 		m_dev_class_path = strdup(dev_class_path);
 	}
+
 	if (name) {
 		m_name = strdup(name);
-	}
-	else {
+
+	} else {
 		DF_LOG_ERR("ERROR: no name provided to DevObj::DevObj");
 	}
+
 	if (dev_path) {
 		m_dev_path = strdup(dev_path);
-	}
-	else {
+
+	} else {
 		DF_LOG_ERR("ERROR: no dev_path provided to DevObj::DevObj");
 	}
 }
 
-DevObj::~DevObj() 
+DevObj::~DevObj()
 {
 	m_handle_lock.lock();
 	DFPointerList::Index idx = nullptr;
 	idx = m_handles.next(idx);
+
 	while (idx != nullptr) {
 		DevHandle *h = reinterpret_cast<DevHandle *>(m_handles.get(idx));
+
 		if (h->isValid()) {
 			m_handle_lock.unlock();
 			DevMgr::releaseHandle(*h);
 			m_handle_lock.lock();
-		}
-		else {
+
+		} else {
 			idx = m_handles.erase(idx);
 		}
+
 		// m_handles may have been modified by DevMgr::releaseHandle()
 		idx = nullptr;
 		idx = m_handles.next(idx);
 	}
+
 	m_handle_lock.unlock();
 
 	if (isRegistered()) {
@@ -104,12 +111,15 @@ DevObj::~DevObj()
 	if (m_name) {
 		free((void *)m_name);
 	}
+
 	if (m_dev_path) {
 		free((void *)m_dev_path);
 	}
+
 	if (m_dev_class_path) {
 		free((void *)m_dev_class_path);
 	}
+
 	if (m_dev_instance_path) {
 		free((void *)m_dev_instance_path);
 	}
@@ -118,17 +128,22 @@ DevObj::~DevObj()
 int DevObj::init(void)
 {
 	DF_LOG_DEBUG("DevObj::init %s", m_name);
+
 	if (!isRegistered()) {
 		DF_LOG_DEBUG("DevObj::init registering %s", m_name);
 		int ret = DevMgr::registerDriver(this);
+
 		if (ret < 0) {
 			DF_LOG_DEBUG("DevObj::init register failed %s", m_name);
 			return ret;
 		}
+
 		m_driver_instance = ret;
+
 	} else {
 		DF_LOG_DEBUG("DevObj::init already registered %s", m_name);
 	}
+
 	return 0;
 }
 
@@ -148,29 +163,34 @@ int DevObj::start(void)
 	// Can't start if no interval specified
 	if (m_sample_interval_usecs == 0) {
 		return -3;
-	}
-	else {
+
+	} else {
 		WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
+
 		if (m_work_handle.isValid()) {
 			DF_LOG_DEBUG("DevObj::start schedule %s", m_name);
 			WorkMgr::schedule(m_work_handle);
-		}
-		else {
+
+		} else {
 			return -4;
 		}
 	}
+
 	return 0;
 }
 
-int DevObj::stop(void) {
+int DevObj::stop(void)
+{
 	DF_LOG_DEBUG("DevObj::stop %s", m_name);
+
 	if (m_work_handle.isValid()) {
 		WorkMgr::releaseWorkHandle(m_work_handle);
-	}
-	else {
+
+	} else {
 		// Driver wasn't running
 		return -1;
 	}
+
 	return 0;
 }
 
@@ -182,23 +202,23 @@ int DevObj::devIOCTL(unsigned long request, unsigned long arg)
 	switch (request) {
 
 	// If the driver is using a pub-sub model, enable/disable publish
-        case DEVIOCSPUBBLOCK:
-                m_pub_blocked = ((void *)arg != nullptr);
-                ret = 0;
-                break;
+	case DEVIOCSPUBBLOCK:
+		m_pub_blocked = ((void *)arg != nullptr);
+		ret = 0;
+		break;
 
 	// If the driver is using a pub-sub model, get publish state
-        case DEVIOCGPUBBLOCK:
+	case DEVIOCGPUBBLOCK:
 		ret = m_pub_blocked;
-                break;
+		break;
 
 	// Get the device ID
 	case DEVIOCGDEVICEID:
-                return (int)m_id.dev_id;
+		return (int)m_id.dev_id;
 
 	default:
-                break;
-        }
+		break;
+	}
 
 	return ret;
 }
@@ -229,6 +249,7 @@ int DevObj::addHandle(DevHandle &h)
 
 	if (!isRegistered()) {
 		ret = init();
+
 		if (ret < 0) {
 			DF_LOG_DEBUG("DevObj::addHandle init failed (%p)", &h);
 			goto exit;
@@ -239,11 +260,13 @@ int DevObj::addHandle(DevHandle &h)
 		// Start the driver if its not running
 		if (!m_work_handle.isValid() && m_sample_interval_usecs > 0) {
 			ret = start();
+
 			if (ret < 0) {
 				DF_LOG_DEBUG("DevObj::addHandle start failed (%p)", &h);
 			}
 		}
 	}
+
 	if (!m_handles.pushBack(&h)) {
 		DF_LOG_INFO("DevObj::addHandle failed memory allocation");
 		ret = -1;
@@ -262,16 +285,20 @@ int DevObj::removeHandle(DevHandle &h)
 	m_handle_lock.lock();
 	DFPointerList::Index idx = nullptr;
 	idx = m_handles.next(idx);
+
 	while (idx != nullptr) {
 		DevHandle *list_h = reinterpret_cast<DevHandle *>(m_handles.get(idx));
+
 		if (list_h == &h) {
 			idx = m_handles.erase(idx);
 
 			//Do not stop driver even when the last handle is closed
 			break;
 		}
+
 		idx = m_handles.next(idx);
 	}
+
 	m_handle_lock.unlock();
 	return m_handles.size();
 }

@@ -40,7 +40,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 uint64_t offsetTime(void);
 
@@ -55,7 +56,7 @@ uint64_t offsetTime(void);
 extern "C" {
 
 // declaration to make the compiler happy.  This symbol is part of the DSP static image.
-void HAP_debug(const char *msg, int level, const char *filename, int line);
+	void HAP_debug(const char *msg, int level, const char *filename, int line);
 
 };
 

@@ -41,15 +41,19 @@ bool DFListTest::verifyStructList(DFManagedList<testStr> &pl, const char *expect
 	DFPointerList::Index idx = nullptr;
 	idx = pl.next(idx);
 	unsigned int i = 0;
-	while(idx != nullptr) {
+
+	while (idx != nullptr) {
 		testStr *val = pl.get(idx);
+
 		if (val->msg[0] != expectedOrder[i]) {
 			DF_LOG_INFO("Expected %c got %c", expectedOrder[i], val->msg[0]);
 			passed = false;
 		}
+
 		idx = pl.next(idx);
 		++i;
 	}
+
 	return passed;
 }
 
@@ -59,15 +63,19 @@ bool DFListTest::verifyList(DFPointerList &pl, const char *expectedOrder)
 	DFPointerList::Index idx = nullptr;
 	idx = pl.next(idx);
 	unsigned int i = 0;
-	while(idx != nullptr) {
+
+	while (idx != nullptr) {
 		const char *val = static_cast<const char *>(pl.get(idx));
+
 		if (val[0] != expectedOrder[i]) {
 			DF_LOG_INFO("Expected %c got %c", expectedOrder[i], val[0]);
 			passed = false;
 		}
+
 		idx = pl.next(idx);
 		++i;
 	}
+
 	return passed;
 }
 
@@ -77,20 +85,25 @@ bool DFListTest::verifyUIntList(DFUIntList &pl, unsigned int check_list[4])
 	DFUIntList::Index idx = nullptr;
 	idx = pl.next(idx);
 	unsigned int i = 0;
-	while(idx != nullptr) {
+
+	while (idx != nullptr) {
 		unsigned int val;
 		bool ret = pl.get(idx, val);
+
 		if (ret == false) {
 			DF_LOG_INFO("get() failed");
 			passed = false;
 		}
+
 		if (val != check_list[i]) {
 			DF_LOG_INFO("Expected %c got %c", check_list[i], val);
 			passed = false;
 		}
+
 		idx = pl.next(idx);
 		++i;
 	}
+
 	return passed;
 }
 
@@ -121,9 +134,9 @@ void DFListTest::managedListTest()
 
 	// idx points to node containing msg3
 	idx = pl.erase(idx);
-	
+
 	pl.pushFront(msg0);
-	
+
 	reportResult("Verify next() pushFront() and erase()", verifyStructList(pl, "0124"));
 
 	pl.clear();
@@ -157,9 +170,9 @@ void DFListTest::unmanagedListTest()
 
 	// idx points to node containing msg3
 	idx = pl.erase(idx);
-	
+
 	pl.pushFront((void *)msg0);
-	
+
 	reportResult("Verify next() pushFront() and erase()", verifyList(pl, "0124"));
 
 	pl.clear();
@@ -194,9 +207,9 @@ void DFListTest::uintListTest()
 
 	// idx points to node containing msg3
 	idx = pl.erase(idx);
-	
+
 	pl.pushFront(val0);
-	
+
 	unsigned int check_list2[] = { 0, 1, 2, 4 };
 	reportResult("Verify next() pushFront() and erase()", verifyUIntList(pl, check_list2));
 

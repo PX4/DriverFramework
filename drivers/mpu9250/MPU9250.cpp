@@ -139,7 +139,8 @@
 
 using namespace DriverFramework;
 
-int MPU9250::mpu9250_init() {
+int MPU9250::mpu9250_init()
+{
 
 	/* Zero the struct */
 	m_synchronize.lock();
@@ -157,55 +158,71 @@ int MPU9250::mpu9250_init() {
 
 
 	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
+
 	if (result != 0) {
 		DF_LOG_ERR("reset failed");
 	}
+
 	usleep(1000);
 
 	result = _writeReg(MPUREG_PWR_MGMT_1, MPU_CLK_SEL_AUTO);
+
 	if (result != 0) {
 		DF_LOG_ERR("clock selection failed");
 	}
+
 	usleep(1000);
 
 	result = _writeReg(MPUREG_PWR_MGMT_2, 0);
+
 	if (result != 0) {
 		DF_LOG_ERR("clock selection failed");
 	}
+
 	usleep(1000);
 
 	result = _writeReg(MPUREG_FIFO_EN, BITS_FIFO_ENABLE_TEMP_OUT |
-					   BITS_FIFO_ENABLE_GYRO_XOUT |
-					   BITS_FIFO_ENABLE_GYRO_YOUT |
-					   BITS_FIFO_ENABLE_GYRO_ZOUT);
+			   BITS_FIFO_ENABLE_GYRO_XOUT |
+			   BITS_FIFO_ENABLE_GYRO_YOUT |
+			   BITS_FIFO_ENABLE_GYRO_ZOUT);
+
 	if (result != 0) {
 		DF_LOG_ERR("FIFO enable failed");
 	}
+
 	usleep(1000);
 
 	uint8_t samplerate_div = 10;
 	result = _writeReg(MPUREG_FIFO_EN, samplerate_div);
+
 	if (result != 0) {
 		DF_LOG_ERR("sample rate config failed");
 	}
+
 	usleep(1000);
 
 	result = _writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_41HZ);
+
 	if (result != 0) {
 		DF_LOG_ERR("DLPF config failed");
 	}
+
 	usleep(1000);
 
 	result = _writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS);
+
 	if (result != 0) {
 		DF_LOG_ERR("Gyro scale config failed");
 	}
+
 	usleep(1000);
 
 	result = _writeReg(MPUREG_ACCEL_CONFIG, BITS_ACCEL_CONFIG_16G);
+
 	if (result != 0) {
 		DF_LOG_ERR("Accel scale config failed");
 	}
+
 	usleep(1000);
 
 
@@ -218,6 +235,7 @@ int MPU9250::start()
 	/* Open the device path specified in the class initialization. */
 	// attempt to open device in start()
 	int result = SPIDevObj::start();
+
 	if (result != 0) {
 		DF_LOG_ERR("DevObj start failed");
 		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
@@ -226,6 +244,7 @@ int MPU9250::start()
 
 	/* Set the bus frequency for register get/set. */
 	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
+
 	if (result != 0) {
 		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
 	}
@@ -233,6 +252,7 @@ int MPU9250::start()
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
 	result = _readReg(MPUREG_WHOAMI, sensor_id);
+
 	if (result != 0) {
 		DF_LOG_ERR("Unable to communicate with the MPU9250 sensor");
 		goto exit;
@@ -248,6 +268,7 @@ int MPU9250::start()
 
 	/* Set the bus frequency for normal operation. */
 	result = _setBusFrequency(SPI_FREQUENCY_20MHZ);
+
 	if (result != 0) {
 		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
 	}
@@ -258,6 +279,7 @@ int MPU9250::start()
 	}
 
 	result = DevObj::start();
+
 	if (result != 0) {
 		DF_LOG_ERR("DevObj start failed");
 		return result;
@@ -265,6 +287,7 @@ int MPU9250::start()
 
 
 exit:
+
 	if (result != 0) {
 		devClose();
 	}
@@ -275,16 +298,19 @@ exit:
 int MPU9250::stop()
 {
 	int result = DevObj::stop();
+
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
 		return result;
 	}
 
 	result = devClose();
+
 	if (result != 0) {
 		DF_LOG_ERR("device close failed");
 		return result;
 	}
+
 	return 0;
 }
 
@@ -302,7 +328,7 @@ void MPU9250::_measure()
 	} report;
 #pragma pack(pop)
 
-	_bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t*)&report, sizeof(report));
+	_bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t *)&report, sizeof(report));
 
 	/* TODO: add ifdef for endianness */
 	report.accel_x = swap16(report.accel_x);
@@ -318,7 +344,7 @@ void MPU9250::_measure()
 	m_sensor_data.accel_m_s2_x = float(report.accel_x) * (MPU9250_ONE_G / 2048.0f);
 	m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
 	m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
-	m_sensor_data.temp_c = float(report.temp)/361.0f + 35.0f;
+	m_sensor_data.temp_c = float(report.temp) / 361.0f + 35.0f;
 	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) * GYRO_RAW_TO_RAD_S;
 	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) * GYRO_RAW_TO_RAD_S;
 	m_sensor_data.gyro_rad_s_z = float(report.gyro_z) * GYRO_RAW_TO_RAD_S;

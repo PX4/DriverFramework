@@ -40,14 +40,14 @@
 #include "DevIOCTL.h"
 
 #if defined(__RPI2)
-	#include <sys/ioctl.h>
-	#include <linux/types.h>
-	#include <alloca.h>
-	#include <linux/spi/spidev.h>
-	#include <cstdlib>
-	#include <cstring>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <alloca.h>
+#include <linux/spi/spidev.h>
+#include <cstdlib>
+#include <cstring>
 #elif defined(__QURT)
-	#include "dev_fs_lib_spi.h"
+#include "dev_fs_lib_spi.h"
 #endif
 
 using namespace DriverFramework;
@@ -62,6 +62,7 @@ SPIDevObj::~SPIDevObj()
 int SPIDevObj::start()
 {
 	m_fd = ::open(m_dev_path, 0);
+
 	if (m_fd < 0) {
 		DF_LOG_ERR("SPIDevObj start failed");
 		return m_fd;
@@ -72,13 +73,15 @@ int SPIDevObj::start()
 
 int SPIDevObj::stop()
 {
-	if (m_fd >=0) {
+	if (m_fd >= 0) {
 		int ret = ::close(m_fd);
+
 		if (ret < 0) {
 			DF_LOG_ERR("Error: SPIDevObj::stop failed on ::close()");
 			return ret;
 		}
 	}
+
 	return 0;
 }
 
@@ -86,9 +89,11 @@ int SPIDevObj::stop()
 int SPIDevObj::readReg(DevHandle &h, uint8_t address, uint8_t &val)
 {
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+
 	if (obj) {
 		return obj->_readReg(address, val);
 	}
+
 	return -1;
 }
 
@@ -115,9 +120,10 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 
 	int result = 0;
 	result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+
 	if (result != 2) {
-			DF_LOG_ERR("error: SPI combined read write failed: %d", result);
-			return -1;
+		DF_LOG_ERR("error: SPI combined read write failed: %d", result);
+		return -1;
 	}
 
 	val = read_buffer[1];
@@ -137,6 +143,7 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 	ioctl_write_read.read_buffer_length = 2;
 
 	int result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
+
 	if (result < 0) {
 		DF_LOG_ERR("error: SPI combined read write failed: %d", result);
 		return -1;
@@ -153,38 +160,47 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 int SPIDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t val)
 {
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+
 	if (obj) {
 		return obj->_writeReg(address, val);
 	}
+
 	return -1;
 }
 
 int SPIDevObj::writeRegVerified(DevHandle &h, uint8_t address, uint8_t val)
 {
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+
 	if (obj) {
 		int result;
 		uint8_t read_val = ~val;
 		int retries = 5;
-		while(retries) {
+
+		while (retries) {
 			result =  obj->_writeReg(address, val);
+
 			if (result < 0) {
 				--retries;
 				continue;
 			}
+
 			result = obj->_readReg(address, read_val);
+
 			if (result < 0 || read_val != val) {
 				--retries;
 				continue;
 			}
 		}
+
 		if (val == read_val) {
 			return 0;
-		}
-		else {
+
+		} else {
 			DF_LOG_ERR("error: SPI write verify failed: %d", errno);
 		}
 	}
+
 	return -1;
 }
 
@@ -226,6 +242,7 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 
 	/* Save the address of the register to read from in the write buffer for the combined write. */
 	int bytes_written = ::write(m_fd, (char *) write_buffer, 2);
+
 	if (bytes_written != 2) {
 		DF_LOG_ERR("Error: SPI write failed. Reported %d bytes written (%d)", bytes_written, errno);
 		return -1;
@@ -235,14 +252,16 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 #endif
 }
 
-int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int length)
+int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
 #if defined(__RPI2)
 	/* implement sensor interface via rpi2 spi */
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+
 	if (obj) {
 		return obj->_bulkRead(address, out_buffer, length);
 	}
+
 	return -1;
 
 #elif defined(__QURT)
@@ -259,13 +278,13 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 	ioctl_write_read.write_buffer = write_buffer;
 	ioctl_write_read.write_buffer_length = transfer_bytes;
 	result = h.ioctl(SPI_IOCTL_RDWR, (unsigned long)&ioctl_write_read);
-	if (result != transfer_bytes)
-	{
+
+	if (result != transfer_bytes) {
 		DF_LOG_ERR("bulkRead error %d (%d)", result, h.getError());
 		return result;
 	}
 
-	memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
+	memcpy(out_buffer, &read_buffer[1], transfer_bytes - 1);
 
 	return 0;
 #else
@@ -273,7 +292,7 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t* out_buffer, int 
 #endif
 }
 
-int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
+int SPIDevObj::_bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 {
 #if defined(__RPI2)
 	DF_LOG_DEBUG("_bulkRead: length = %d", length);
@@ -311,18 +330,17 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 	int result = 0;
 	result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
 
-	if (result != transfer_bytes)
-	{
+	if (result != transfer_bytes) {
 		DF_LOG_ERR("bulkRead error %d", result);
 		return result;
 	}
 
 	DF_LOG_DEBUG("_bulkRead: read_buffer = %u, %u, %u, %u, %u, %u, %u, %u, %u",
 		     read_buffer[1], read_buffer[2], read_buffer[3],
-			read_buffer[4], read_buffer[5], read_buffer[6],
-			read_buffer[7], read_buffer[8], read_buffer[9]);
+		     read_buffer[4], read_buffer[5], read_buffer[6],
+		     read_buffer[7], read_buffer[8], read_buffer[9]);
 
-	memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
+	memcpy(out_buffer, &read_buffer[1], transfer_bytes - 1);
 
 	return 0;
 
@@ -342,13 +360,13 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t* out_buffer, int length)
 	ioctl_write_read.write_buffer = write_buffer;
 	ioctl_write_read.write_buffer_length = transfer_bytes;
 	result = ::ioctl(m_fd, SPI_IOCTL_RDWR, &ioctl_write_read);
-	if (result != transfer_bytes)
-	{
+
+	if (result != transfer_bytes) {
 		DF_LOG_ERR("bulkRead error %d", result);
 		return result;
 	}
 
-	memcpy(out_buffer, &read_buffer[1], transfer_bytes-1);
+	memcpy(out_buffer, &read_buffer[1], transfer_bytes - 1);
 
 	return 0;
 #else
@@ -378,9 +396,11 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 #if defined(__RPI2)
 	/* implement sensor interface via rpi2 spi */
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
+
 	if (obj) {
 		return obj->_setBusFrequency(freq_hz);
 	}
+
 	return -1;
 
 #elif defined(__QURT)
@@ -395,32 +415,38 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 {
 #if defined(__RPI2)
+
 	/* implement sensor interface via rpi2 spi */
 	// RPI2 rounds down freq_hz to powers of 2
 	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
 	// in-reality 32Mbs is the upper limit of the SPI clock on RPI2.
 	switch (freq_hz) {
-		case SPI_FREQUENCY_1MHZ :
-			DF_LOG_INFO("SPI speed set to 1MHz.");
-			break;
-		case SPI_FREQUENCY_5MHZ :
-			DF_LOG_INFO("SPI speed set to 4MHz instead of 5MHz.");
-			break;
-		case SPI_FREQUENCY_10MHZ :
-			DF_LOG_INFO("SPI speed set to 8MHz instead of 10MHz.");
-			break;
-		case SPI_FREQUENCY_15MHZ :
-			DF_LOG_INFO("SPI speed set to 8MHz instead of 15MHz.");
-			break;
-		case SPI_FREQUENCY_20MHZ :
-			DF_LOG_INFO("SPI speed set to 16MHz instead of 20MHz.");
-			break;
-		default :
-			DF_LOG_INFO("SPI speed value not enum SPI_FREQUENCY.");
-			break;
+	case SPI_FREQUENCY_1MHZ :
+		DF_LOG_INFO("SPI speed set to 1MHz.");
+		break;
+
+	case SPI_FREQUENCY_5MHZ :
+		DF_LOG_INFO("SPI speed set to 4MHz instead of 5MHz.");
+		break;
+
+	case SPI_FREQUENCY_10MHZ :
+		DF_LOG_INFO("SPI speed set to 8MHz instead of 10MHz.");
+		break;
+
+	case SPI_FREQUENCY_15MHZ :
+		DF_LOG_INFO("SPI speed set to 8MHz instead of 15MHz.");
+		break;
+
+	case SPI_FREQUENCY_20MHZ :
+		DF_LOG_INFO("SPI speed set to 16MHz instead of 20MHz.");
+		break;
+
+	default :
+		DF_LOG_INFO("SPI speed value not enum SPI_FREQUENCY.");
+		break;
 	}
 
-	return ::ioctl (m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
+	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
 
 #elif defined(__QURT)
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;

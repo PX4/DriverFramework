@@ -73,13 +73,13 @@ int ImuTester::run()
 	// Open the IMU sensor
 	DevHandle h;
 	DevMgr::getHandle(IMU_DEVICE_PATH, h);
-	if (!h.isValid())
-	{
+
+	if (!h.isValid()) {
 		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
-			IMU_DEVICE_PATH, h.getError());
+			    IMU_DEVICE_PATH, h.getError());
 		m_done = true;
-	}
-	else {
+
+	} else {
 		m_done = false;
 	}
 
@@ -89,15 +89,17 @@ int ImuTester::run()
 		struct imu_sensor_data data;
 
 		ret = ImuSensor::getSensorData(h, data, true);
+
 		if (ret == 0) {
 			uint32_t count = data.read_counter;
 			DF_LOG_INFO("count: %d", count);
+
 			if (m_read_counter != count) {
 				m_read_counter = count;
 				ImuSensor::printImuValues(data);
 			}
-		}
-		else {
+
+		} else {
 			DF_LOG_INFO("error: unable to read the IMU sensor device.");
 		}
 
@@ -105,8 +107,8 @@ int ImuTester::run()
 			// Done test - PASSED
 			m_pass = TEST_PASS;
 			m_done = true;
-		}
-		else if (m_read_attempts > 1000) {
+
+		} else if (m_read_attempts > 1000) {
 			DF_LOG_INFO("error: unable to read the IMU sensor device.");
 			m_done = true;
 		}
@@ -120,6 +122,7 @@ int ImuTester::run()
 int do_test()
 {
 	int ret = Framework::initialize();
+
 	if (ret < 0) {
 		return ret;
 	}

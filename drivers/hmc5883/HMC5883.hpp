@@ -35,7 +35,8 @@
 
 #include "MagSensor.hpp"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 #define MAG_DEVICE_PATH "/dev/iic-2"
 
