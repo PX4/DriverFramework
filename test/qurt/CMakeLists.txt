@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-include(../../cmake_hexagon/qurt_app.cmake)
+include(bundle)
 include_directories(../../dspal/include)
 
 QURT_BUNDLE(APP_NAME df_testapp

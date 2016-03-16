@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-include(../../../../cmake_hexagon/qurt_app.cmake)
+include(bundle)
 
 QURT_BUNDLE(APP_NAME df_mag_test
 	APPS_SOURCES df_mag_test.cpp

@@ -38,6 +38,7 @@
 #include "SyncObjTest.hpp"
 #include "TimeTest.hpp"
 #include "DevMgrTest.hpp"
+#include "WorkMgrTest.hpp"
 #include "DFDiag.hpp"
 // Add additional framework test includes here
 
@@ -47,6 +48,7 @@ void DFFrameworkTest::_doTests()
 	SyncObjTest sync_test;
 	TimeTest time_test;
 	DevMgrTest devmgr_test;
+	WorkMgrTest workmgr_test;
 	// Add additional framework tests here
 
 	//DFDiag::listRawDevices();
@@ -55,5 +57,6 @@ void DFFrameworkTest::_doTests()
 	reportResult("Sync tests", sync_test.doTests());
 	reportResult("Time tests", time_test.doTests());
 	reportResult("DevMgr tests", devmgr_test.doTests());
+	reportResult("WorkMgr tests", workmgr_test.doTests());
 	// Add additional framework test do_test() calls here
 }

@@ -35,10 +35,17 @@
 
 #include "ImuSensor.hpp"
 
+
 namespace DriverFramework {
+
+// TODO: use define from some include for this
+#define	M_PI		3.14159265358979323846	/* pi */
 
 // update frequency 250 Hz
 #define MPU9250_MEASURE_INTERVAL_US 4000
+
+// -2000 to 2000 degrees/s, 16 bit signed register, deg to rad conversion
+#define GYRO_RAW_TO_RAD_S 	 (2000.0f / 32768.0f * M_PI / 180.0f)
 
 
 class MPU9250 : public ImuSensor

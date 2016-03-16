@@ -82,7 +82,7 @@ int HMC5883::hmc5883_init() {
 	/* Read the IDs of the HMC5883 sensor to confirm it's presence. */
 	result = _readReg(HMC5883_REG_ID_A, &sensor_id, sizeof(sensor_id));
 	if (result != 0) {
-		DF_LOG_ERR("error: unable to communicate with the hmc5883 pressure sensor");
+		DF_LOG_ERR("error: unable to communicate with the hmc5883 mag sensor");
 		return -EIO;
 	}
 	if (sensor_id != HMC5883_ID_A) {
@@ -92,7 +92,7 @@ int HMC5883::hmc5883_init() {
 
 	result = _readReg(HMC5883_REG_ID_B, &sensor_id, sizeof(sensor_id));
 	if (result != 0) {
-		DF_LOG_ERR("error: unable to communicate with the hmc5883 pressure sensor");
+		DF_LOG_ERR("error: unable to communicate with the hmc5883 mag sensor");
 		return -EIO;
 	}
 	if (sensor_id != HMC5883_ID_B) {
@@ -102,30 +102,13 @@ int HMC5883::hmc5883_init() {
 
 	result = _readReg(HMC5883_REG_ID_C, &sensor_id, sizeof(sensor_id));
 	if (result != 0) {
-		DF_LOG_ERR("error: unable to communicate with the hmc5883 pressure sensor");
+		DF_LOG_ERR("error: unable to communicate with the hmc5883 mag sensor");
 		return -EIO;
 	}
 	if (sensor_id != HMC5883_ID_C) {
 		DF_LOG_ERR("HMC5883 sensor ID_C returned 0x%x instead of 0x%x", sensor_id, HMC5883_ID_C);
 		return -1;
 	}
-
-	// TODO: use single measurement mode instead of continuous and remove this.
-	uint8_t mode = HMC5883_BITS_MODE_CONTINUOUS_MODE;
-	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
-	if (result != 0) {
-		// TODO: count it as an error and keep going
-		DF_LOG_ERR("error: setting sensor mode failed");
-	}
-
-	uint8_t config_a = HMC5883_BITS_CONFIG_A_CONTINUOUS_75HZ;
-	result = _writeReg(HMC5883_REG_CONFIG_A, &config_a, sizeof(config_a));
-	if (result != 0) {
-		DF_LOG_ERR("error: sensor configuration A failed");
-		return -EIO;
-	}
-	// For continuous mode, this flag is always true.
-	_measurement_requested = true;
 
 	uint8_t config_b = HMC5883_BITS_CONFIG_B_RANGE_1GA3;
 	result = _writeReg(HMC5883_REG_CONFIG_B, &config_b, sizeof(config_b));
@@ -156,7 +139,7 @@ int HMC5883::start()
 		goto exit;
 	}
 
-	/* Configure the I2C bus parameters for the pressure sensor. */
+	/* Configure the I2C bus parameters for the mag sensor. */
 	result = _setSlaveConfig(HMC5883_SLAVE_ADDRESS,
 				 HMC5883_BUS_FREQUENCY_IN_KHZ,
 				 HMC5883_TRANSFER_TIMEOUT_IN_USECS);
@@ -165,10 +148,10 @@ int HMC5883::start()
 		goto exit;
 	}
 
-	/* Initialize the pressure sensor for active and continuous operation. */
+	/* Initialize the mag sensor. */
 	result = hmc5883_init();
 	if (result != 0) {
-		DF_LOG_ERR("error: pressure sensor initialization failed, sensor read thread not started");
+		DF_LOG_ERR("error: mag sensor initialization failed, sensor read thread not started");
 		goto exit;
 	}
 
@@ -246,14 +229,14 @@ void HMC5883::_measure(void)
 		}
 	}
 
-	// TODO: enable this once I2C write is fixed on QURT
+
 	/* Request next measurement. */
-	//uint8_t mode = HMC5883_BITS_MODE_SINGLE_MODE;
-	//result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
-	//if (result != 0) {
-	//	// TODO: count it as an error and keep going
-	//	DF_LOG_ERR("error: setting sensor mode failed");
-	//}
+	uint8_t mode = HMC5883_BITS_MODE_SINGLE_MODE;
+	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
+	if (result != 0) {
+		// TODO: count it as an error and keep going
+		DF_LOG_ERR("error: setting sensor mode failed");
+	}
 
 	_measurement_requested = true;
 }

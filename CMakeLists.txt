@@ -39,6 +39,8 @@ set(version_patch 0)
 set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexagon")
+
 message("DF_TARGET = ${DF_TARGET}")
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")

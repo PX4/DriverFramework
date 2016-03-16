@@ -320,9 +320,9 @@ void MPU9250::_measure()
 	m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
 	m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
 	m_sensor_data.temp_c = float(report.temp)/361.0f + 35.0f;
-	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) / (32768.0f) * (2000.0f);
-	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) / (32768.0f) * (2000.0f);
-	m_sensor_data.gyro_rad_s_z = float(report.gyro_z) / (32768.0f) * (2000.0f);
+	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) * GYRO_RAW_TO_RAD_S;
+	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) * GYRO_RAW_TO_RAD_S;
+	m_sensor_data.gyro_rad_s_z = float(report.gyro_z) * GYRO_RAW_TO_RAD_S;
 
 	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
 	m_sensor_data.read_counter++;
