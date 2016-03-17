@@ -744,21 +744,26 @@ int WorkMgr::schedule(WorkHandle &wh)
 	g_lock->lock();
 	if (isValidHandle(wh)) {
 		WorkItem *item;
-		g_work_items->getAt(wh.m_handle, &item);
-		if (item->m_in_use) {
-			DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
-			wh.m_errno = EBUSY;
-			ret = -3;
-		}
-		else {
-			DF_LOG_DEBUG("WorkMgr::schedule - do schedule");
-			HRTWorkQueue::instance()->scheduleWorkItem(wh);
+		if (g_work_items->getAt(wh.m_handle, &item)) {
+			if (item->m_in_use) {
+				DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
+				wh.m_errno = EBUSY;
+				ret = -3;
+			}
+			else {
+				DF_LOG_INFO("WorkMgr::schedule - do schedule");
+				HRTWorkQueue::instance()->scheduleWorkItem(wh);
+			}
+		} else {
+			DF_LOG_ERR("couldn't find handle to schedule");
+			wh.m_errno = EBADF;
+			ret = -4;
 		}
 	}
 	else {
 		wh.m_errno = EBADF;
 		wh.m_handle = -1;
-		ret = -4;
+		ret = -5;
 	}
 	g_lock->unlock();
 	wh.m_errno = 0;
