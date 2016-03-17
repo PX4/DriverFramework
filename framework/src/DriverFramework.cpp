@@ -453,18 +453,23 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 	DFUIntList::Index idx = nullptr;
 	idx = m_work_list.next(idx);
 	while (idx != nullptr) {
-		unsigned int index;
-		m_work_list.get(idx, index);
+		// If we find it in the list at the current idx, let's go ahead and delete it.
+		unsigned index;
+		if (m_work_list.get(idx, index)) {
 
-		// remove unscheduled item
-		WorkItem *item;
-		if (!g_work_items->getAt(index, &item)) {
-			DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - invalid index");
-		}
-		else {
-			if (item->m_in_use == false) {
-				DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - 2");
-				idx = m_work_list.erase(idx);
+			if (index == (unsigned)wh.m_handle) {
+				// remove unscheduled item
+				WorkItem *item;
+				if (!g_work_items->getAt(index, &item)) {
+					DF_LOG_ERR("HRTWorkQueue::unscheduleWorkItem - invalid index");
+				}
+				else {
+					DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - 2");
+					item->m_in_use = false;
+					idx = m_work_list.erase(idx);
+					// We're only unscheduling one item, so we can bail out here.
+					break;
+				}
 			}
 		}
 		idx = m_work_list.next(idx);
