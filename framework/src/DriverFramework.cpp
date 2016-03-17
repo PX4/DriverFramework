@@ -647,10 +647,13 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 	// unschedule work and erase the handle if handle exists
 	if (isValidHandle(wh)) {
 		WorkItem *item;
-		g_work_items->getAt(wh.m_handle, &item);
-		if (item->m_in_use) {
-			DF_LOG_DEBUG("Unscheduled work (%p) (%u)", item, item->m_delay_usec);
-			HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+		if (g_work_items->getAt(wh.m_handle, &item)) {
+			if (item->m_in_use) {
+				DF_LOG_DEBUG("Unscheduled work (%p) (%u)", item, item->m_delay_usec);
+				HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+			}
+		} else {
+			DF_LOG_ERR("Could not unschedule work, couldn't match handle");
 		}
 	}
 	else {
