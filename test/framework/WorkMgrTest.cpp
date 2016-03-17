@@ -65,9 +65,11 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 		now = offsetTime(); // In usec
 		elapsedtime = now - starttime;
 
-		// Shouldn't make more than extra 10us
-		if (elapsedtime > ((uint64_t)delay_usec*3+50)) {
-			DF_LOG_ERR("Failed %uusec timeout * 3 (%" PRIu64 ")", delay_usec, elapsedtime);
+		// Shouldn't take more than extra 50us
+		uint64_t time_to_achieve = delay_usec*3 + 50;
+		if (elapsedtime > time_to_achieve) {
+			DF_LOG_ERR("Failed %u usec timeout * 3 (%" PRIu64 " > %" PRIu64 ")",
+				   delay_usec, elapsedtime, time_to_achieve);
 			return false;
 		}
 	}
