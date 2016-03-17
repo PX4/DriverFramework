@@ -73,7 +73,7 @@ public:
 		m_arg = arg;
 		m_queue_time = 0;
 		m_callback = callback;
-		m_delay_usec =delay_usec;
+		m_delay_usec = delay_usec;
 		m_in_use = false;
 
 		resetStats();
