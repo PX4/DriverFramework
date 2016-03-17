@@ -179,7 +179,8 @@ static SyncObj *g_lock = nullptr;
 // Static Functions
 //-----------------------------------------------------------------------
 
-bool WorkMgr::isValid(const WorkHandle &h)
+// TODO FIXME: this seems conflicting with WorkHandle::isValid()
+bool WorkMgr::isValidHandle(const WorkHandle &h)
 {
 	return ((h.m_handle >=0) && ((unsigned int)h.m_handle < g_work_items->size()));
 }
@@ -639,7 +640,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 	g_lock->lock();
 
 	// unschedule work and erase the handle if handle exists
-	if (isValid(wh)) {
+	if (isValidHandle(wh)) {
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
 		if (item->m_in_use) {
@@ -665,13 +666,13 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 		}
 
 		// If no free WorkItems, add one to the end
-		if (!isValid(wh)) {
+		if (!isValidHandle(wh)) {
 			g_work_items->pushBack(new WorkItem());
 			wh.m_handle = g_work_items->size()-1;
 		}
 	}
 
-	if (isValid(wh)) {
+	if (isValidHandle(wh)) {
 
 		// Re-use the WorkItem
 		WorkItem *item;
@@ -699,7 +700,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 
 	int ret = 0;
 	g_lock->lock();
-	if (isValid(wh)) {
+	if (isValidHandle(wh)) {
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
 		if (item->m_in_use) {
@@ -733,7 +734,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 	DF_LOG_DEBUG("WorkMgr::schedule - checks ok");
 	int ret = 0;
 	g_lock->lock();
-	if (isValid(wh)) {
+	if (isValidHandle(wh)) {
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
 		if (item->m_in_use) {

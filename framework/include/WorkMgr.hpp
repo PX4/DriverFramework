@@ -81,7 +81,7 @@ public:
 private:
 	friend class Framework;
 
-	static bool isValid(const WorkHandle &h);
+	static bool isValidHandle(const WorkHandle &h);
 	static int initialize(void);
 	static void finalize(void);
 };
