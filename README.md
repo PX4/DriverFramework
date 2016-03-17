@@ -1,6 +1,6 @@
 # DriverFramework
 
-Driver framework for POSIX based userspace drivers. 
+Driver framework for POSIX based userspace drivers.
 
 ## Overview
 
@@ -17,7 +17,7 @@ The main classes are:
 	* WorkMgr: Used by drivers to:
 		- schedule periodic tasks
 		- create and destroy WorkHandles
- 
+
 	* DevObj: The base class of all drivers
 
 The framework provides two intermediate driver classes as a base for new drivers:
@@ -41,13 +41,13 @@ If the exit condition is an async event and you need to block the calling thread
 ```
 DriverFramework::waitForShutdown();
 ```
-This will block until DriverFramework::shutdown() is called from another thread; 
+This will block until DriverFramework::shutdown() is called from another thread;
 
 
 ### Driver Initialization
 
 When the driver is initialized, it will register with the framework and provide an instance
-the base class path. 
+the base class path.
 
 For instance, if the driver was created with:
 
@@ -131,3 +131,12 @@ if (ret < 0) {
 ```
 Errors can be checked by testing for errors after a
 
+
+### Testing
+
+To run the unit tests build it and run the test app:
+
+```
+make
+build_linux/test/df_testapp
+```
