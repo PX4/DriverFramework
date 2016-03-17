@@ -69,7 +69,8 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 		elapsedtime = now - starttime;
 
 		// Shouldn't take more than extra 50us
-		uint64_t time_to_achieve = delay_usec*3 + 50;
+		uint64_t time_to_achieve = delay_usec * 3 + 50;
+
 		if (elapsedtime > time_to_achieve) {
 			DF_LOG_ERR("Failed %u usec timeout * 3 (%" PRIu64 " > %" PRIu64 ")",
 				   delay_usec, elapsedtime, time_to_achieve);
@@ -108,12 +109,15 @@ bool WorkMgrTest::verifySchedule()
 	if (!verifyDelay(h, delay_usec, &arg)) {
 		return false;
 	}
-	for (uint32_t i=10; i<300010; i+=10000) {
-		delay_usec=i;
+
+	for (uint32_t i = 10; i < 300010; i += 10000) {
+		delay_usec = i;
 		int ret = WorkMgr::releaseWorkHandle(h);
+
 		if (ret != 0) {
 			DF_LOG_ERR("releaseWorkHandle failed with ret %d", ret);
 		}
+
 		WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
 
 		if (!h.isValid()) {

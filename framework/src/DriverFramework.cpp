@@ -480,15 +480,17 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 	while (idx != nullptr) {
 		// If we find it in the list at the current idx, let's go ahead and delete it.
 		unsigned index;
+
 		if (m_work_list.get(idx, index)) {
 
 			if (index == (unsigned)wh.m_handle) {
 				// remove unscheduled item
 				WorkItem *item;
+
 				if (!g_work_items->getAt(index, &item)) {
 					DF_LOG_ERR("HRTWorkQueue::unscheduleWorkItem - invalid index");
-				}
-				else {
+
+				} else {
 					DF_LOG_DEBUG("HRTWorkQueue::unscheduleWorkItem - 2");
 					item->m_in_use = false;
 					idx = m_work_list.erase(idx);
@@ -690,11 +692,13 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 	// unschedule work and erase the handle if handle exists
 	if (isValidHandle(wh)) {
 		WorkItem *item;
+
 		if (g_work_items->getAt(wh.m_handle, &item)) {
 			if (item->m_in_use) {
 				DF_LOG_DEBUG("Unscheduled work (%p) (%u)", item, item->m_delay_usec);
 				HRTWorkQueue::instance()->unscheduleWorkItem(wh);
 			}
+
 		} else {
 			DF_LOG_ERR("Could not unschedule work, couldn't match handle");
 		}
@@ -755,6 +759,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 
 	int ret = 0;
 	g_lock->lock();
+
 	if (isValidHandle(wh)) {
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
@@ -788,18 +793,21 @@ int WorkMgr::schedule(WorkHandle &wh)
 	DF_LOG_DEBUG("WorkMgr::schedule - checks ok");
 	int ret = 0;
 	g_lock->lock();
+
 	if (isValidHandle(wh)) {
 		WorkItem *item;
+
 		if (g_work_items->getAt(wh.m_handle, &item)) {
 			if (item->m_in_use) {
 				DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
 				wh.m_errno = EBUSY;
 				ret = -3;
-			}
-			else {
+
+			} else {
 				DF_LOG_DEBUG("WorkMgr::schedule - do schedule");
 				HRTWorkQueue::instance()->scheduleWorkItem(wh);
 			}
+
 		} else {
 			DF_LOG_ERR("couldn't find handle to schedule");
 			wh.m_errno = EBADF;
