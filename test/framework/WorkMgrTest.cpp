@@ -99,7 +99,10 @@ bool WorkMgrTest::verifySchedule()
 	}
 	for (uint32_t i=10; i<300010; i+=10000) {
 		delay_usec=i;
-		WorkMgr::releaseWorkHandle(h);
+		int ret = WorkMgr::releaseWorkHandle(h);
+		if (ret != 0) {
+			DF_LOG_ERR("releaseWorkHandle failed with ret %d", ret);
+		}
 		WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
 		if (!h.isValid()) {
 			DF_LOG_ERR("getWorkHandle failed for delay of %u", delay_usec);
