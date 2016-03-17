@@ -711,11 +711,8 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 	if (isValidHandle(wh)) {
 		WorkItem *item;
 		g_work_items->getAt(wh.m_handle, &item);
-		if (item->m_in_use) {
-			item->m_in_use = false;
-			HRTWorkQueue::instance()->unscheduleWorkItem(wh);
-			wh.m_handle = -1;
-		}
+		HRTWorkQueue::instance()->unscheduleWorkItem(wh);
+		wh.m_handle = -1;
 		wh.m_errno = 0;
 	}
 	else {
