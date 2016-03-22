@@ -128,7 +128,6 @@ int BMP280::loadCalibration()
 
 int BMP280::bmp280_init()
 {
-
 	/* Zero the struct */
 	m_synchronize.lock();
 

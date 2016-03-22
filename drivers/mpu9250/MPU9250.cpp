@@ -36,6 +36,7 @@
 #include "DriverFramework.hpp"
 #include "MPU9250.hpp"
 
+
 #define MPUREG_WHOAMI			0x75
 #define MPUREG_SMPLRT_DIV		0x19
 #define MPUREG_CONFIG			0x1A
@@ -131,8 +132,6 @@
 #define BIT_RAW_RDY_EN			0x01
 #define BIT_INT_ANYRD_2CLEAR		0x10
 
-#define MPU_WHOAMI_9250			0x71
-
 #define MPU9250_ONE_G					9.80665f
 
 
@@ -141,7 +140,6 @@ using namespace DriverFramework;
 
 int MPU9250::mpu9250_init()
 {
-
 	/* Zero the struct */
 	m_synchronize.lock();
 	m_sensor_data.accel_m_s2_x = 0.0f;

@@ -43,6 +43,11 @@ namespace DriverFramework
 // 150 Hz (supported in single measurment mode is up to 160 Hz
 #define HMC5883_MEASURE_INTERVAL_US (1000000/150)
 
+// TODO: include some common header file (currently in drv_sensor.h).
+#define DRV_DF_DEVTYPE_HMC5883 0x43
+
+#define HMC5883_SLAVE_ADDRESS		(0x1e)
+
 
 class HMC5883 : public MagSensor
 {
@@ -50,7 +55,10 @@ public:
 	HMC5883(const char *device_path) :
 		MagSensor(device_path, HMC5883_MEASURE_INTERVAL_US),
 		_measurement_requested(false)
-	{}
+	{
+		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_HMC5883;
+		m_id.dev_id_s.address = HMC5883_SLAVE_ADDRESS;
+	}
 
 	// @return 0 on success, -errno on failure
 	virtual int start();

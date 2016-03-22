@@ -38,7 +38,6 @@
 #include "dev_fs_lib_i2c.h"
 #endif
 
-#define HMC5883_SLAVE_ADDRESS		(0x1e)
 // TODO: go to 400 eventually
 #define HMC5883_BUS_FREQUENCY_IN_KHZ	(100)
 // TODO: no idea what to use here

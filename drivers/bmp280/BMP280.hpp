@@ -59,19 +59,27 @@ struct bmp280_sensor_calibration {
 // update frequency is 50 Hz (44.4-51.3Hz ) at 8x oversampling
 #define BMP280_MEASURE_INTERVAL_US 20000
 
-#define BMP280_SLAVE_ADDRESS 0b1110110       /* 7-bit slave address */
 #define BMP280_BUS_FREQUENCY_IN_KHZ 400
 #define BMP280_TRANSFER_TIMEOUT_IN_USECS 9000
 
 #define BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES 6
 #define BMP280_MAX_LEN_CALIB_VALUES 26
 
+// TODO: include some common header file (currently in drv_sensor.h).
+#define DRV_DF_DEVTYPE_BMP280 0x42
+
+#define BMP280_SLAVE_ADDRESS 0b1110110       /* 7-bit slave address */
+
+
 class BMP280 : public BaroSensor
 {
 public:
 	BMP280(const char *device_path) :
 		BaroSensor(device_path, BMP280_MEASURE_INTERVAL_US)
-	{}
+	{
+		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_BMP280;
+		m_id.dev_id_s.address = BMP280_SLAVE_ADDRESS;
+	}
 
 	// @return 0 on success, -errno on failure
 	virtual int start();

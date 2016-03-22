@@ -48,13 +48,22 @@ namespace DriverFramework
 // -2000 to 2000 degrees/s, 16 bit signed register, deg to rad conversion
 #define GYRO_RAW_TO_RAD_S 	 (2000.0f / 32768.0f * M_PI / 180.0f)
 
+// TODO: include some common header file (currently in drv_sensor.h).
+#define DRV_DF_DEVTYPE_MPU9250 0x41
+
+#define MPU_WHOAMI_9250			0x71
+
 
 class MPU9250 : public ImuSensor
 {
 public:
 	MPU9250(const char *device_path) :
 		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US)
-	{}
+	{
+		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
+		// TODO: does the WHOAMI make sense as an address?
+		m_id.dev_id_s.address = MPU_WHOAMI_9250;
+	}
 
 	// @return 0 on success, -errno on failure
 	virtual int start();
