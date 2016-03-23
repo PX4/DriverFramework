@@ -435,6 +435,7 @@ int HRTWorkQueue::initialize(void)
 		DF_LOG_ERR("failed to set stack size of %lu bytes", stacksize);
 		return -5;
 	}
+
 #endif
 
 	// Create high priority worker thread
