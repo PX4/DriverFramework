@@ -426,14 +426,16 @@ int HRTWorkQueue::initialize(void)
 
 	DF_LOG_DEBUG("setRealtimeSched success");
 
+#ifdef __PX4_QURT
 	// Try to set a stack size. This stack size is later used in _measure() calls
-	// in the sensor drivers.
+	// in the sensor drivers, at least on QURT.
 	const size_t stacksize = 2048;
 
 	if (pthread_attr_setstacksize(&attr, stacksize) != 0) {
 		DF_LOG_ERR("failed to set stack size of %d bytes", stacksize);
 		return -5;
 	}
+#endif
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
