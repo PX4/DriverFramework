@@ -190,8 +190,13 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-	uint8_t samplerate_div = 10;
-	result = _writeReg(MPUREG_FIFO_EN, samplerate_div);
+	/*
+	 * A samplerate_divider of 0 should give 1000Hz:
+	 *
+	 * sample_rate = internal_sample_rate / (1+samplerate_divider)
+	 */
+	uint8_t samplerate_divider = 0;
+	result = _writeReg(MPUREG_FIFO_EN, samplerate_divider);
 
 	if (result != 0) {
 		DF_LOG_ERR("sample rate config failed");
