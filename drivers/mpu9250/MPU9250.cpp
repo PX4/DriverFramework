@@ -110,6 +110,8 @@
 #define BITS_FS_1000DPS			0x10
 #define BITS_FS_2000DPS			0x18
 #define BITS_FS_MASK			0x18
+// This is FCHOICE_B which is the inverse of FCHOICE
+#define BITS_BW_3600HZ			0x02
 
 #define BITS_DLPF_CFG_250HZ		0x00
 #define BITS_DLPF_CFG_184HZ		0x01
@@ -129,10 +131,13 @@
 
 #define BITS_ACCEL_CONFIG_16G		0x18
 
+// This is ACCEL_FCHOICE_B which is the inverse of ACCEL_FCHOICE
+#define BITS_ACCEL_CONFIG2_BW_1130HZ	0x04
+
 #define BIT_RAW_RDY_EN			0x01
 #define BIT_INT_ANYRD_2CLEAR		0x10
 
-#define MPU9250_ONE_G					9.80665f
+#define MPU9250_ONE_G			9.80665f
 
 
 
@@ -179,7 +184,8 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-	result = _writeReg(MPUREG_FIFO_EN, BITS_FIFO_ENABLE_TEMP_OUT |
+	result = _writeReg(MPUREG_FIFO_EN,
+			   BITS_FIFO_ENABLE_TEMP_OUT |
 			   BITS_FIFO_ENABLE_GYRO_XOUT |
 			   BITS_FIFO_ENABLE_GYRO_YOUT |
 			   BITS_FIFO_ENABLE_GYRO_ZOUT);
@@ -194,25 +200,30 @@ int MPU9250::mpu9250_init()
 	 * A samplerate_divider of 0 should give 1000Hz:
 	 *
 	 * sample_rate = internal_sample_rate / (1+samplerate_divider)
+	 *
+	 * This is only used when FCHOICE is 0b11, FCHOICE_B (inverted) 0x00,
+	 * therefore commented out.
 	 */
-	uint8_t samplerate_divider = 0;
-	result = _writeReg(MPUREG_FIFO_EN, samplerate_divider);
+	//uint8_t samplerate_divider = 0;
+	//result = _writeReg(MPUREG_FIFO_EN, samplerate_divider);
 
-	if (result != 0) {
-		DF_LOG_ERR("sample rate config failed");
-	}
+	//if (result != 0) {
+	//	DF_LOG_ERR("sample rate config failed");
+	//}
 
-	usleep(1000);
+	//usleep(1000);
 
-	result = _writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_41HZ);
+	//result = _writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_41HZ);
 
-	if (result != 0) {
-		DF_LOG_ERR("DLPF config failed");
-	}
+	//if (result != 0) {
+	//	DF_LOG_ERR("DLPF config failed");
+	//}
 
-	usleep(1000);
+	//usleep(1000);
 
-	result = _writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS);
+	result = _writeReg(MPUREG_GYRO_CONFIG,
+			   BITS_FS_2000DPS |
+			   BITS_BW_3600HZ);
 
 	if (result != 0) {
 		DF_LOG_ERR("Gyro scale config failed");
@@ -220,10 +231,20 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-	result = _writeReg(MPUREG_ACCEL_CONFIG, BITS_ACCEL_CONFIG_16G);
+	result = _writeReg(MPUREG_ACCEL_CONFIG,
+			   BITS_ACCEL_CONFIG_16G);
 
 	if (result != 0) {
 		DF_LOG_ERR("Accel scale config failed");
+	}
+
+	usleep(1000);
+
+	result = _writeReg(MPUREG_ACCEL_CONFIG2,
+			   BITS_ACCEL_CONFIG2_BW_1130HZ);
+
+	if (result != 0) {
+		DF_LOG_ERR("Accel scale config2 failed");
 	}
 
 	usleep(1000);
