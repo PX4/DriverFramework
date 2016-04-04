@@ -90,6 +90,9 @@ protected:
 	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
 	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
 
+	// read from a register without ioctl
+	int _simple_read(uint8_t *out_buffer, int length);
+
 	int _setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_khz,
 			    uint32_t transfer_timeout_usec);
 

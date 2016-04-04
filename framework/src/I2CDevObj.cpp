@@ -136,6 +136,33 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 #endif
 }
 
+// read from a register without ioctl
+int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
+{
+
+	if (m_fd == 0) {
+		DF_LOG_ERR("error: i2c bus is not yet opened");
+		return -1;
+	}
+
+#ifdef __QURT
+	int bytes_read = 0;
+
+	bytes_read = ::read(m_fd, out_buffer, length);
+
+	if (bytes_read != length) {
+		DF_LOG_ERR(
+			"error: read register reports a read of %d bytes, but attempted to set %d bytes",
+			bytes_read, length);
+		return -1;
+	}
+
+	return 0;
+#else
+	return -1;
+#endif
+}
+
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
 	uint8_t write_buffer[length + 1];
