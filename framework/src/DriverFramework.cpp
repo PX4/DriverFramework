@@ -206,7 +206,13 @@ uint64_t DriverFramework::offsetTime(void)
 {
 	struct timespec ts = {};
 
+#ifdef __PX4_POSIX_EAGLE
+	// Snapdragon Linux side: If the  CLOCK_MONOTONIC is used for
+	// pthread_cond_timedwait it returns immediately and doesn't work.
+	(void)clockGetRealtime(&ts);
+#else
 	(void)clockGetMonotonic(&ts);
+#endif
 
 	pthread_mutex_lock(&g_timestart_lock);
 
