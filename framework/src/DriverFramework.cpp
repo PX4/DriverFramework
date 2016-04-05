@@ -444,7 +444,7 @@ int HRTWorkQueue::initialize(void)
 
 	DF_LOG_DEBUG("setRealtimeSched success");
 
-#ifdef __PX4_QURT
+#ifdef __QURT
 	// Try to set a stack size. This stack size is later used in _measure() calls
 	// in the sensor drivers, at least on QURT.
 	const size_t stacksize = 2048;
@@ -630,7 +630,7 @@ void HRTWorkQueue::process(void)
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now + next);
 
-#ifdef __PX4_QURT
+#ifdef __QURT
 		uint64_t now_later = offsetTime();
 		int64_t diff = (int64_t)(now + next) - (int64_t)now_later;
 
@@ -640,7 +640,7 @@ void HRTWorkQueue::process(void)
 			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 ")", diff);
 			// Wait until next expiry or until a new item is rescheduled
 			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
-#ifdef __PX4_QURT
+#ifdef __QURT
 		}
 
 #endif
