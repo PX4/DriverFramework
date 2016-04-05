@@ -206,13 +206,7 @@ uint64_t DriverFramework::offsetTime(void)
 {
 	struct timespec ts = {};
 
-#ifdef __PX4_POSIX_EAGLE
-	// Snapdragon Linux side: If the  CLOCK_MONOTONIC is used for
-	// pthread_cond_timedwait it returns immediately and doesn't work.
-	(void)clockGetRealtime(&ts);
-#else
 	(void)clockGetMonotonic(&ts);
-#endif
 
 	pthread_mutex_lock(&g_timestart_lock);
 
@@ -424,10 +418,27 @@ int HRTWorkQueue::initialize(void)
 
 	DF_LOG_DEBUG("pthread_mutex_init success");
 
+#ifndef __PX4_QURT
+	// QURT supposedly always uses CLOCK_MONOTONIC.
+	pthread_condattr_t condattr;
+	pthread_condattr_init(&condattr);
+
+	// Configure the pthread_cond_timedwait to use the monotonic clock
+	// because we don't want time skews to influence the scheduling.
+	if (0 != pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC)) {
+		return -4;
+	}
+
+	if (0 != pthread_cond_init(&g_reschedule_cond, &condattr)) {
+		return -5;
+	}
+
+#endif
+
 	pthread_attr_t attr;
 
 	if (setRealtimeSched(attr)) {
-		return -4;
+		return -6;
 	}
 
 	DF_LOG_DEBUG("setRealtimeSched success");
@@ -439,14 +450,14 @@ int HRTWorkQueue::initialize(void)
 
 	if (pthread_attr_setstacksize(&attr, stacksize) != 0) {
 		DF_LOG_ERR("failed to set stack size of %lu bytes", stacksize);
-		return -5;
+		return -7;
 	}
 
 #endif
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
-		return -6;
+		return -8;
 	}
 
 	DF_LOG_DEBUG("pthread_create success");
