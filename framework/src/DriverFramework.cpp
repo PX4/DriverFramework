@@ -418,8 +418,9 @@ int HRTWorkQueue::initialize(void)
 
 	DF_LOG_DEBUG("pthread_mutex_init success");
 
-#ifndef __PX4_QURT
+#if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__))
 	// QURT supposedly always uses CLOCK_MONOTONIC.
+	// Also CLOCK_MONOTONIC is not available on Mac.
 	pthread_condattr_t condattr;
 	pthread_condattr_init(&condattr);
 
