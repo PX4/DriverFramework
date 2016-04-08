@@ -37,7 +37,7 @@ include_directories(../../framework/include)
 
 get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 df_add_library(df_${drivername}
-	isl29501.cpp
+	isl.cpp
 	)
 
 # TODO add tests

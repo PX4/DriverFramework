@@ -33,7 +33,7 @@
 
 #include <string.h>
 #include "DriverFramework.hpp"
-#include "isl29501.hpp"
+#include "isl.hpp"
 #define _USE_MATH_DEFINES
 #include <math.h>
 #ifdef __QURT
