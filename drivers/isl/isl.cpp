@@ -245,7 +245,6 @@ void ISL::_measure(void)
 {
 	float distance;
 	write_reg(0xB0, 0x49);
-	usleep(100*1000);
 	uint16_t data_msb, data_lsb, prec;
 	uint16_t offset;
 	uint8_t inter, data_invalid;

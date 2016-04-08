@@ -44,8 +44,7 @@
 #define ISL_MIN_DISTANCE (0.20f)
 #define ISL_MAX_DISTANCE (14.00f)
 
-// TODO: no idea what to use here
-#define ISL_MEASURE_INTERVAL_US (1000000/150)
+#define ISL_MEASURE_INTERVAL_US 100000
 
 #define ISL_SLAVE_ADDRESS		(0x57)
 
