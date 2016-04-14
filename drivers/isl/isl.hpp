@@ -65,7 +65,8 @@ class ISL : public I2CDevObj
 public:
 	ISL(const char *device_path) :
 		I2CDevObj("RangeFinder", device_path, ISL_CLASS_PATH, ISL_MEASURE_INTERVAL_US),
-		_detected(false)
+		_detected(false),
+		_read_failure(false)
 	{
 		set_slave_addr(ISL_SLAVE_ADDRESS);
 	}
@@ -97,6 +98,7 @@ private:
 	int isl_init();
 	int _detect();
 	bool _detected;
+	bool _read_failure;
 	int slave_addr;
 };
 

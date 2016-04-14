@@ -181,7 +181,10 @@ int ISL::write_reg(uint8_t address, uint8_t data)
 uint8_t ISL::read_reg(uint8_t address)
 {
 	uint8_t ret = 0;
-	_readReg(address, &ret, sizeof(ret));
+	if(_readReg(address, &ret, sizeof(ret)) == -1) {
+		_read_failure = true;
+		DF_LOG_ERR("Read Failure");
+	}
 	return ret;
 }
 
@@ -299,7 +302,10 @@ void ISL::_measure(void)
 	}
 	m_sensor_data.temperature = float(temperature);
 	m_sensor_data.dist = distance;
-	_publish(m_sensor_data);
+	if(!_read_failure) {
+		_publish(m_sensor_data);
+	}
+	_read_failure = false;
 }
 
 void ISL::set_slave_addr(uint8_t slave)
