@@ -63,21 +63,14 @@ int ISL::start()
 	}
 
 	/* Configure the I2C bus parameters for the sensor. */
-	result = _setSlaveConfig(slave_addr,
-				 ISL_BUS_FREQUENCY_IN_KHZ,
-				 ISL_TRANSFER_TIMEOUT_IN_USECS);
-
-	if (result != 0) {
-		DF_LOG_ERR("I2C slave configuration failed");
+	slave_addr = _detect();
+	if(slave_addr == 0) {
+		_detected = true;
+	} else {
+		DF_LOG_ERR("Unable to connect to the device: %s", m_dev_path);
 		goto exit;
 	}
 
-	result = DevObj::start();
-
-	if (result != 0) {
-		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
-	}
 	init_params();
 exit:
 
@@ -241,8 +234,39 @@ int ISL::calibration(void)
 	return 0;
 }
 
+int ISL::_detect()
+{
+	uint8_t dev_id;
+	int result;
+	for(uint8_t i = 0; i <= 3; i++) {
+		result = _setSlaveConfig(slave_addr,
+			 ISL_BUS_FREQUENCY_IN_KHZ,
+			 ISL_TRANSFER_TIMEOUT_IN_USECS);
+		if (result != 0) {
+			slave_addr++;
+			continue;
+		}
+		result = DevObj::start();
+		if (result == 0) {
+			dev_id = read_reg(0x00);
+			if(dev_id == 0x0A) {
+				DF_LOG_INFO("Detected ISL sensor @ 0x%x",slave_addr);
+				return 0;
+			}
+		}
+		slave_addr++;
+		DevObj::stop();
+	}
+
+	return -1;
+}
+
 void ISL::_measure(void)
 {
+/*	if(!_detected) {
+		return;
+	}
+*/
 	float distance;
 	write_reg(0xB0, 0x49);
 	uint16_t data_msb, data_lsb, prec;
@@ -258,6 +282,10 @@ void ISL::_measure(void)
 
 	data_lsb = read_reg(0xd2);
 	data_msb = read_reg(0xd1);
+	if(!inter) {
+		DF_LOG_ERR("Bad Distance Data Flags: 0x%x 0x%x", data_invalid, inter);
+		return;
+	}
 	prec = read_reg(0xd4);
 	prec |= ((uint16_t)read_reg(0xd3)) << 8;
 	uint8_t temperature;
@@ -266,7 +294,9 @@ void ISL::_measure(void)
 	float phase = (distance / 33.3f ) * M_PI * 2.0f;
     distance += (1.1637*pow(phase,3) - 3.8654*pow(phase,2) + 1.3796*phase - 0.0436);
 	//DF_LOG_ERR("distance: %f offset: 0x%x ", distance,offset);
-
+	if(distance < 0) {
+		distance = 0;
+	}
 	m_sensor_data.temperature = float(temperature);
 	m_sensor_data.dist = distance;
 	_publish(m_sensor_data);

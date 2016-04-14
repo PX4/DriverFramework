@@ -46,7 +46,7 @@
 
 #define ISL_MEASURE_INTERVAL_US 100000
 
-#define ISL_SLAVE_ADDRESS		(0x57)
+#define ISL_SLAVE_ADDRESS		(0x54)
 
 // up to 100kHz
 #define ISL_BUS_FREQUENCY_IN_KHZ	(400)
@@ -64,7 +64,8 @@ class ISL : public I2CDevObj
 {
 public:
 	ISL(const char *device_path) :
-		I2CDevObj("RangeFinder", device_path, ISL_CLASS_PATH, ISL_MEASURE_INTERVAL_US)
+		I2CDevObj("RangeFinder", device_path, ISL_CLASS_PATH, ISL_MEASURE_INTERVAL_US),
+		_detected(false)
 	{
 		set_slave_addr(ISL_SLAVE_ADDRESS);
 	}
@@ -94,7 +95,8 @@ protected:
 private:
 	// returns 0 on success, -errno on failure
 	int isl_init();
-
+	int _detect();
+	bool _detected;
 	int slave_addr;
 };
 
