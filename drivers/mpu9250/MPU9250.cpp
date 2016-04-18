@@ -205,6 +205,8 @@ int MPU9250::mpu9250_init()
 		DF_LOG_ERR("User ctrl config failed");
 	}
 
+	usleep(1000);
+
 	result = _writeReg(MPUREG_FIFO_EN,
 			   BITS_FIFO_ENABLE_TEMP_OUT |
 			   BITS_FIFO_ENABLE_GYRO_XOUT |
@@ -237,7 +239,7 @@ int MPU9250::mpu9250_init()
 
 	result = _writeReg(MPUREG_CONFIG,
 			   BITS_DLPF_CFG_250HZ |
-			   BITS_CONFIG_FIFO_MODE_STOP);
+			   BITS_CONFIG_FIFO_MODE_OVERWRITE);
 
 	if (result != 0) {
 		DF_LOG_ERR("config failed");
@@ -380,6 +382,25 @@ int MPU9250::get_fifo_count()
 
 void MPU9250::_measure()
 {
+
+	uint8_t int_status = 0;
+	_readReg(MPUREG_INT_STATUS, int_status);
+	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
+		DF_LOG_INFO("overflow");
+
+		int result = _writeReg(MPUREG_USER_CTRL,
+				   BITS_USER_CTRL_FIFO_RST |
+				   BITS_USER_CTRL_FIFO_EN);
+
+		if (result != 0) {
+			DF_LOG_ERR("FIFO reset failed");
+		}
+
+		// TODO: count overflow
+
+		return;
+	}
+
 #pragma pack(push, 1)
 	struct int_status_report {
 		int16_t		accel_x;
@@ -444,6 +465,7 @@ void MPU9250::_measure()
 
 			m_sensor_data.temp_c = float(report->temp) / 361.0f + 35.0f;
 
+			// TODO: make this check better, discard data and count error.
 			const bool temp_wrong = (m_sensor_data.temp_c < 20.0f || m_sensor_data.temp_c > 60.0f);
 			if (temp_wrong) {
 				DF_LOG_INFO("Temp wrong: %.2f, i: %d (%d)",
