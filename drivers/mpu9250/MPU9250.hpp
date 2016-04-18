@@ -81,6 +81,8 @@ private:
 
 	// @return the number of FIFO bytes to collect
 	int get_fifo_count();
+
+	void reset_fifo();
 };
 
 }; // namespace DriverFramework

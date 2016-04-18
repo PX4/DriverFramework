@@ -380,21 +380,24 @@ int MPU9250::get_fifo_count()
 	}
 }
 
+void MPU9250::reset_fifo()
+{
+	int result = _writeReg(MPUREG_USER_CTRL,
+			       BITS_USER_CTRL_FIFO_RST |
+			       BITS_USER_CTRL_FIFO_EN);
+
+	if (result != 0) {
+		DF_LOG_ERR("FIFO reset failed");
+	}
+}
+
 void MPU9250::_measure()
 {
-
 	uint8_t int_status = 0;
 	_readReg(MPUREG_INT_STATUS, int_status);
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
 		DF_LOG_INFO("overflow");
-
-		int result = _writeReg(MPUREG_USER_CTRL,
-				   BITS_USER_CTRL_FIFO_RST |
-				   BITS_USER_CTRL_FIFO_EN);
-
-		if (result != 0) {
-			DF_LOG_ERR("FIFO reset failed");
-		}
+		reset_fifo();
 
 		// TODO: count overflow
 
@@ -417,9 +420,7 @@ void MPU9250::_measure()
 	// Get FIFO byte count to read and floor it to the report size.
 	int bytes_to_read = get_fifo_count() / sizeof(int_status_report) * sizeof(int_status_report);
 
-	// The max to fit in the read buffer of 512 bytes is:
-	// 13 packets of 38 bytes (including mag) = 494 bytes.
-	const unsigned buf_len = 26*14; //13 * sizeof(int_status_report);
+	const unsigned buf_len = 26 * sizeof(int_status_report);
 	uint8_t fifo_read_buf[buf_len];
 
 	if (bytes_to_read <= 0) {
@@ -456,24 +457,39 @@ void MPU9250::_measure()
 			report->gyro_y = swap16(report->gyro_y);
 			report->gyro_z = swap16(report->gyro_z);
 
+			const float temp_c = float(report->temp) / 361.0f + 35.0f;
+
+			static float last_temp_c = 0.0f;
+			static bool temp_initialized = false;
+
+			if (!temp_initialized) {
+				// Assume that the temperature should be in a sane range of -40 to 85 deg C which is
+				// the specified temperature range, at least to initialize.
+				if (temp_c > -40.0f && temp_c < 85.0f) {
+
+					// Initialize the temperature logic.
+					last_temp_c = temp_c;
+					temp_initialized = true;
+				}
+
+			} else {
+				// Once initialized, check for a temperature change of more than 2 degrees which
+				// points to a FIFO corruption.
+				if (fabs(temp_c - last_temp_c) > 2.0f) {
+					DF_LOG_ERR("FIFO corrupt, reset");
+					reset_fifo();
+					// TODO: track this error
+					return;
+				}
+				last_temp_c = temp_c;
+			}
+
 			m_synchronize.lock();
 
 			m_sensor_data.accel_m_s2_x = float(report->accel_x) * (MPU9250_ONE_G / 2048.0f);
-
 			m_sensor_data.accel_m_s2_y = float(report->accel_y) * (MPU9250_ONE_G / 2048.0f);
 			m_sensor_data.accel_m_s2_z = float(report->accel_z) * (MPU9250_ONE_G / 2048.0f);
-
-			m_sensor_data.temp_c = float(report->temp) / 361.0f + 35.0f;
-
-			// TODO: make this check better, discard data and count error.
-			const bool temp_wrong = (m_sensor_data.temp_c < 20.0f || m_sensor_data.temp_c > 60.0f);
-			if (temp_wrong) {
-				DF_LOG_INFO("Temp wrong: %.2f, i: %d (%d)",
-					    m_sensor_data.temp_c,
-					    i,
-					    bytes_to_read);
-			}
-
+			m_sensor_data.temp_c = temp_c;
 			m_sensor_data.gyro_rad_s_x = float(report->gyro_x) * GYRO_RAW_TO_RAD_S;
 			m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 			m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
