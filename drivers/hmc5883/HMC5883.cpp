@@ -38,10 +38,10 @@
 #include "dev_fs_lib_i2c.h"
 #endif
 
-// TODO: go to 400 eventually
-#define HMC5883_BUS_FREQUENCY_IN_KHZ	(100)
-// TODO: no idea what to use here
-#define HMC5883_TRANSFER_TIMEOUT_IN_USECS (9000)
+
+#define HMC5883_BUS_FREQUENCY_IN_KHZ	(400)
+// Found through trial and error, a timeout of 100 us seems to fail.
+#define HMC5883_TRANSFER_TIMEOUT_IN_USECS (500)
 
 #define HMC5883_REG_ID_A		(0x0a)
 #define HMC5883_REG_ID_B		(0x0b)
