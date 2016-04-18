@@ -629,21 +629,10 @@ void HRTWorkQueue::process(void)
 
 		// pthread_cond_timedwait uses absolute time
 		ts = offsetTimeToAbsoluteTime(now + next);
+		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 ")", diff);
+		// Wait until next expiry or until a new item is rescheduled
+		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 
-#ifdef __QURT
-		uint64_t now_later = offsetTime();
-		int64_t diff = (int64_t)(now + next) - (int64_t)now_later;
-
-		// TODO FIXME: sometimes timeouts < 100 us seem to hang, therefore this workaround
-		if (diff > 100) {
-#endif
-			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 ")", diff);
-			// Wait until next expiry or until a new item is rescheduled
-			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
-#ifdef __QURT
-		}
-
-#endif
 		hrtUnlock();
 	}
 }
