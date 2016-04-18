@@ -348,6 +348,9 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 	int result = 0;
 	int transfer_bytes = 1 + length; // first byte is address
 
+	// XXX NOTE: The write and read buffer need to be of the same length.
+	//           If the write buffer is chosen with only 1 byte length,
+	//           we see the ioctl randomly getting stuck.
 	struct dspal_spi_ioctl_read_write ioctl_write_read;
 	uint8_t write_buffer[transfer_bytes];
 	uint8_t read_buffer[transfer_bytes];
