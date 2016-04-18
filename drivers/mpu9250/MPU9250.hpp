@@ -78,6 +78,9 @@ protected:
 private:
 	// @returns 0 on success, -errno on failure
 	int mpu9250_init();
+
+	// @return the number of FIFO bytes to collect
+	int get_fifo_count();
 };
 
 }; // namespace DriverFramework

@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include <stdint.h>
+#include <string.h>
 #include "math.h"
 #include "DriverFramework.hpp"
 #include "MPU9250.hpp"
@@ -102,6 +103,12 @@
 #define BIT_H_RESET			0x80
 #define MPU_CLK_SEL_AUTO		0x01
 
+#define BITS_USER_CTRL_FIFO_EN		0x40
+#define BITS_USER_CTRL_FIFO_RST		0x04
+
+#define BITS_CONFIG_FIFO_MODE_OVERWRITE	0x00
+#define BITS_CONFIG_FIFO_MODE_STOP	0x40
+
 #define BITS_GYRO_ST_X			0x80
 #define BITS_GYRO_ST_Y			0x40
 #define BITS_GYRO_ST_Z			0x20
@@ -112,6 +119,8 @@
 #define BITS_FS_MASK			0x18
 // This is FCHOICE_B which is the inverse of FCHOICE
 #define BITS_BW_3600HZ			0x02
+// The FCHOICE bits are the same for all Bandwidths below 3600 Hz.
+#define BITS_BW_LT3600HZ		0x00
 
 #define BITS_DLPF_CFG_250HZ		0x00
 #define BITS_DLPF_CFG_184HZ		0x01
@@ -132,12 +141,16 @@
 #define BITS_ACCEL_CONFIG_16G		0x18
 
 // This is ACCEL_FCHOICE_B which is the inverse of ACCEL_FCHOICE
-#define BITS_ACCEL_CONFIG2_BW_1130HZ	0x04
+#define BITS_ACCEL_CONFIG2_BW_1130HZ	0x08
 
 #define BIT_RAW_RDY_EN			0x01
 #define BIT_INT_ANYRD_2CLEAR		0x10
 
+#define BITS_INT_STATUS_FIFO_OVERFLOW	0x10
+
 #define MPU9250_ONE_G			9.80665f
+
+#define MIN(_x, _y) (_x) > (_y) ? (_y) : (_x)
 
 
 
@@ -184,11 +197,20 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
+	result = _writeReg(MPUREG_USER_CTRL,
+			   BITS_USER_CTRL_FIFO_RST |
+			   BITS_USER_CTRL_FIFO_EN);
+
+	if (result != 0) {
+		DF_LOG_ERR("User ctrl config failed");
+	}
+
 	result = _writeReg(MPUREG_FIFO_EN,
 			   BITS_FIFO_ENABLE_TEMP_OUT |
 			   BITS_FIFO_ENABLE_GYRO_XOUT |
 			   BITS_FIFO_ENABLE_GYRO_YOUT |
-			   BITS_FIFO_ENABLE_GYRO_ZOUT);
+			   BITS_FIFO_ENABLE_GYRO_ZOUT |
+			   BITS_FIFO_ENABLE_ACCEL);
 
 	if (result != 0) {
 		DF_LOG_ERR("FIFO enable failed");
@@ -213,17 +235,19 @@ int MPU9250::mpu9250_init()
 
 	//usleep(1000);
 
-	//result = _writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_41HZ);
+	result = _writeReg(MPUREG_CONFIG,
+			   BITS_DLPF_CFG_250HZ |
+			   BITS_CONFIG_FIFO_MODE_STOP);
 
-	//if (result != 0) {
-	//	DF_LOG_ERR("DLPF config failed");
-	//}
+	if (result != 0) {
+		DF_LOG_ERR("config failed");
+	}
 
-	//usleep(1000);
+	usleep(1000);
 
 	result = _writeReg(MPUREG_GYRO_CONFIG,
 			   BITS_FS_2000DPS |
-			   BITS_BW_3600HZ);
+			   BITS_BW_LT3600HZ);
 
 	if (result != 0) {
 		DF_LOG_ERR("Gyro scale config failed");
@@ -338,6 +362,22 @@ int MPU9250::stop()
 	return 0;
 }
 
+int MPU9250::get_fifo_count()
+{
+	int16_t num_bytes = 0x0;
+
+	int ret = _bulkRead(MPUREG_FIFO_COUNTH, (uint8_t *)&num_bytes, sizeof(num_bytes));
+	if (ret == 0) {
+
+		/* TODO: add ifdef for endianness */
+		num_bytes = swap16(num_bytes);
+
+		return num_bytes;
+	} else {
+		return ret;
+	}
+}
+
 void MPU9250::_measure()
 {
 #pragma pack(push, 1)
@@ -349,37 +389,84 @@ void MPU9250::_measure()
 		int16_t		gyro_x;
 		int16_t		gyro_y;
 		int16_t		gyro_z;
-	} report;
+		//uint8_t		ext_data[24];
+	};
 #pragma pack(pop)
 
-	_bulkRead(MPUREG_ACCEL_XOUT_H, (uint8_t *)&report, sizeof(report));
+	// Get FIFO byte count to read and floor it to the report size.
+	int bytes_to_read = get_fifo_count() / sizeof(int_status_report) * sizeof(int_status_report);
 
-	/* TODO: add ifdef for endianness */
-	report.accel_x = swap16(report.accel_x);
-	report.accel_y = swap16(report.accel_y);
-	report.accel_z = swap16(report.accel_z);
-	report.temp = swap16(report.temp);
-	report.gyro_x = swap16(report.gyro_x);
-	report.gyro_y = swap16(report.gyro_y);
-	report.gyro_z = swap16(report.gyro_z);
+	// The max to fit in the read buffer of 512 bytes is:
+	// 13 packets of 38 bytes (including mag) = 494 bytes.
+	const unsigned buf_len = 26*14; //13 * sizeof(int_status_report);
+	uint8_t fifo_read_buf[buf_len];
 
-	m_synchronize.lock();
+	if (bytes_to_read <= 0) {
+		// TODO: increase error counter
+		return;
+	}
 
-	m_sensor_data.accel_m_s2_x = float(report.accel_x) * (MPU9250_ONE_G / 2048.0f);
-	m_sensor_data.accel_m_s2_y = float(report.accel_y) * (MPU9250_ONE_G / 2048.0f);
-	m_sensor_data.accel_m_s2_z = float(report.accel_z) * (MPU9250_ONE_G / 2048.0f);
-	m_sensor_data.temp_c = float(report.temp) / 361.0f + 35.0f;
-	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) * GYRO_RAW_TO_RAD_S;
-	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) * GYRO_RAW_TO_RAD_S;
-	m_sensor_data.gyro_rad_s_z = float(report.gyro_z) * GYRO_RAW_TO_RAD_S;
+	unsigned bytes_done = 0;
+	while (bytes_done < bytes_to_read) {
 
-	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-	m_sensor_data.read_counter++;
+		//DF_LOG_INFO("bytes done: %d, to read: %d", bytes_done, bytes_to_read);
 
-	_publish(m_sensor_data);
+		// XXX DEBUG: always just read one report. To debug ioctl that gets stuck.
+		const unsigned read_len = MIN(bytes_to_read-bytes_done, buf_len);
+		//const unsigned read_len = sizeof(int_status_report);
 
-	m_synchronize.signal();
-	m_synchronize.unlock();
+		memset(fifo_read_buf, 0x0, buf_len);
+		_bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+
+		// Go through buffer, and publish after every report that is complete.
+		// XXX: currently we lose ~ 1/8 packets because _bulkRead is off-by-one which
+		//      we need to discard the last read packet because the last byte is
+		//	unknown.
+		for (unsigned i = 0; i+1+sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
+
+			int_status_report *report = (int_status_report*)(&fifo_read_buf[i+1]);
+
+			/* TODO: add ifdef for endianness */
+			report->accel_x = swap16(report->accel_x);
+			report->accel_y = swap16(report->accel_y);
+			report->accel_z = swap16(report->accel_z);
+			report->temp = swap16(report->temp);
+			report->gyro_x = swap16(report->gyro_x);
+			report->gyro_y = swap16(report->gyro_y);
+			report->gyro_z = swap16(report->gyro_z);
+
+			m_synchronize.lock();
+
+			m_sensor_data.accel_m_s2_x = float(report->accel_x) * (MPU9250_ONE_G / 2048.0f);
+
+			m_sensor_data.accel_m_s2_y = float(report->accel_y) * (MPU9250_ONE_G / 2048.0f);
+			m_sensor_data.accel_m_s2_z = float(report->accel_z) * (MPU9250_ONE_G / 2048.0f);
+
+			m_sensor_data.temp_c = float(report->temp) / 361.0f + 35.0f;
+
+			const bool temp_wrong = (m_sensor_data.temp_c < 20.0f || m_sensor_data.temp_c > 60.0f);
+			if (temp_wrong) {
+				DF_LOG_INFO("Temp wrong: %.2f, i: %d (%d)",
+					    m_sensor_data.temp_c,
+					    i,
+					    bytes_to_read);
+			}
+
+			m_sensor_data.gyro_rad_s_x = float(report->gyro_x) * GYRO_RAW_TO_RAD_S;
+			m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
+			m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
+
+			m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+			m_sensor_data.read_counter++;
+
+			_publish(m_sensor_data);
+
+			m_synchronize.signal();
+			m_synchronize.unlock();
+		}
+
+		bytes_done += read_len;
+	}
 }
 
 int MPU9250::_publish(struct imu_sensor_data &data)
