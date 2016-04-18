@@ -447,7 +447,7 @@ int HRTWorkQueue::initialize(void)
 #ifdef __QURT
 	// Try to set a stack size. This stack size is later used in _measure() calls
 	// in the sensor drivers, at least on QURT.
-	const size_t stacksize = 2048;
+	const size_t stacksize = 3072;
 
 	if (pthread_attr_setstacksize(&attr, stacksize) != 0) {
 		DF_LOG_ERR("failed to set stack size of %lu bytes", stacksize);
