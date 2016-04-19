@@ -420,7 +420,7 @@ void MPU9250::_measure()
 	// Get FIFO byte count to read and floor it to the report size.
 	int bytes_to_read = get_fifo_count() / sizeof(int_status_report) * sizeof(int_status_report);
 
-	const unsigned buf_len = 26 * sizeof(int_status_report);
+	const unsigned buf_len = 52 * sizeof(int_status_report);
 	uint8_t fifo_read_buf[buf_len];
 
 	if (bytes_to_read <= 0) {
