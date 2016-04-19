@@ -367,6 +367,7 @@ int MPU9250::get_fifo_count()
 		return num_bytes;
 
 	} else {
+		DF_LOG_ERR("FIFO count read failed");
 		return ret;
 	}
 }
@@ -392,7 +393,7 @@ void MPU9250::_measure()
 	_readReg(MPUREG_INT_STATUS, int_status);
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
-		DF_LOG_INFO("overflow");
+		DF_LOG_ERR("overflow");
 		reset_fifo();
 
 		// TODO: count overflow
@@ -416,6 +417,11 @@ void MPU9250::_measure()
 	// Get FIFO byte count to read and floor it to the report size.
 	int bytes_to_read = get_fifo_count() / sizeof(int_status_report) * sizeof(int_status_report);
 
+	if (bytes_to_read < 0) {
+		// TODO: count error
+		return;
+	}
+
 	// The FIFO buffer on the MPU is 512 bytes according to the datasheet, so let's use
 	// 36*14 = 504.
 	const unsigned buf_len = 36 * sizeof(int_status_report);
@@ -426,7 +432,7 @@ void MPU9250::_measure()
 		return;
 	}
 
-	const unsigned read_len = MIN(bytes_to_read, buf_len);
+	const unsigned read_len = MIN((unsigned)bytes_to_read, buf_len);
 
 	memset(fifo_read_buf, 0x0, buf_len);
 
@@ -478,7 +484,7 @@ void MPU9250::_measure()
 			// Once initialized, check for a temperature change of more than 2 degrees which
 			// points to a FIFO corruption.
 			if (fabs(temp_c - last_temp_c) > 2.0f) {
-				DF_LOG_INFO("FIFO corrupt");
+				DF_LOG_ERR("FIFO corrupt");
 				reset_fifo();
 				// TODO: track this error
 				return;
