@@ -358,12 +358,14 @@ int MPU9250::get_fifo_count()
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	int ret = _bulkRead(MPUREG_FIFO_COUNTH, (uint8_t *)&num_bytes, sizeof(num_bytes));
+
 	if (ret == 0) {
 
 		/* TODO: add ifdef for endianness */
 		num_bytes = swap16(num_bytes);
 
 		return num_bytes;
+
 	} else {
 		return ret;
 	}
@@ -388,6 +390,7 @@ void MPU9250::_measure()
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	uint8_t int_status = 0;
 	_readReg(MPUREG_INT_STATUS, int_status);
+
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
 		DF_LOG_INFO("overflow");
 		reset_fifo();
@@ -440,9 +443,9 @@ void MPU9250::_measure()
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
 	_bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 
-	for (unsigned i = 0; i+sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
+	for (unsigned i = 0; i + sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
 
-		int_status_report *report = (int_status_report*)(&fifo_read_buf[i]);
+		int_status_report *report = (int_status_report *)(&fifo_read_buf[i]);
 
 		/* TODO: add ifdef for endianness */
 		report->accel_x = swap16(report->accel_x);
@@ -480,6 +483,7 @@ void MPU9250::_measure()
 				// TODO: track this error
 				return;
 			}
+
 			last_temp_c = temp_c;
 		}
 
