@@ -310,13 +310,6 @@ int MPU9250::start()
 
 	result = mpu9250_init();
 
-	/* Set the bus frequency for normal operation. */
-	result = _setBusFrequency(SPI_FREQUENCY_20MHZ);
-
-	if (result != 0) {
-		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
-	}
-
 	if (result != 0) {
 		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
 		goto exit;
@@ -362,6 +355,8 @@ int MPU9250::get_fifo_count()
 {
 	int16_t num_bytes = 0x0;
 
+	// Use 1 MHz for normal registers.
+	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	int ret = _bulkRead(MPUREG_FIFO_COUNTH, (uint8_t *)&num_bytes, sizeof(num_bytes));
 	if (ret == 0) {
 
@@ -376,6 +371,8 @@ int MPU9250::get_fifo_count()
 
 void MPU9250::reset_fifo()
 {
+	// Use 1 MHz for normal registers.
+	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	int result = _writeReg(MPUREG_USER_CTRL,
 			       BITS_USER_CTRL_FIFO_RST |
 			       BITS_USER_CTRL_FIFO_EN);
@@ -387,6 +384,8 @@ void MPU9250::reset_fifo()
 
 void MPU9250::_measure()
 {
+	// Use 1 MHz for normal registers.
+	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	uint8_t int_status = 0;
 	_readReg(MPUREG_INT_STATUS, int_status);
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
@@ -414,90 +413,93 @@ void MPU9250::_measure()
 	// Get FIFO byte count to read and floor it to the report size.
 	int bytes_to_read = get_fifo_count() / sizeof(int_status_report) * sizeof(int_status_report);
 
-	const unsigned buf_len = 52 * sizeof(int_status_report);
+	// The FIFO buffer on the MPU is 512 bytes according to the datasheet, so let's use
+	// 36*14 = 504.
+	const unsigned buf_len = 36 * sizeof(int_status_report);
 	uint8_t fifo_read_buf[buf_len];
 
 	if (bytes_to_read <= 0) {
-		// TODO: increase error counter
+		// TODO: increase error counter if there is nothing to read.
 		return;
 	}
 
-	unsigned bytes_done = 0;
-	while (bytes_done < bytes_to_read) {
+	const unsigned read_len = MIN(bytes_to_read, buf_len);
 
-		//DF_LOG_INFO("bytes done: %d, to read: %d", bytes_done, bytes_to_read);
+	memset(fifo_read_buf, 0x0, buf_len);
 
-		// XXX DEBUG: always just read one report. To debug ioctl that gets stuck.
-		const unsigned read_len = MIN(bytes_to_read-bytes_done, buf_len);
-		//const unsigned read_len = sizeof(int_status_report);
+	// According to the protocol specs, all sensor and interrupt registers may be read at 20 MHz.
+	// It is unclear what rate the FIFO register can be read at.
+	// If the FIFO buffer was read at 20 MHz, two effects were seen:
+	// - The buffer is off-by-one. So the report "starts" at &fifo_read_buf[i+1].
+	// - Also, the FIFO buffer seemed to prone to random corruption (or shifting), unless
+	//   all other sensors ran very smooth. (E.g. Changing the bus speed of the HMC5883 driver from
+	//   400 kHz to 100 kHz could cause corruption because this driver wouldn't run as regularly.
+	//
+	// Luckily 10 MHz seems to work fine.
 
-		memset(fifo_read_buf, 0x0, buf_len);
-		_bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+	_setBusFrequency(SPI_FREQUENCY_10MHZ);
+	_bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 
-		// Go through buffer, and publish after every report that is complete.
-		// XXX: currently we lose ~ 1/8 packets because _bulkRead is off-by-one which
-		//      we need to discard the last read packet because the last byte is
-		//	unknown.
-		for (unsigned i = 0; i+1+sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
+	for (unsigned i = 0; i+sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
 
-			int_status_report *report = (int_status_report*)(&fifo_read_buf[i+1]);
+		int_status_report *report = (int_status_report*)(&fifo_read_buf[i]);
 
-			/* TODO: add ifdef for endianness */
-			report->accel_x = swap16(report->accel_x);
-			report->accel_y = swap16(report->accel_y);
-			report->accel_z = swap16(report->accel_z);
-			report->temp = swap16(report->temp);
-			report->gyro_x = swap16(report->gyro_x);
-			report->gyro_y = swap16(report->gyro_y);
-			report->gyro_z = swap16(report->gyro_z);
+		/* TODO: add ifdef for endianness */
+		report->accel_x = swap16(report->accel_x);
+		report->accel_y = swap16(report->accel_y);
+		report->accel_z = swap16(report->accel_z);
+		report->temp = swap16(report->temp);
+		report->gyro_x = swap16(report->gyro_x);
+		report->gyro_y = swap16(report->gyro_y);
+		report->gyro_z = swap16(report->gyro_z);
 
-			const float temp_c = float(report->temp) / 361.0f + 35.0f;
+		const float temp_c = float(report->temp) / 361.0f + 35.0f;
 
-			static float last_temp_c = 0.0f;
-			static bool temp_initialized = false;
+		// Use the temperature field to try to detect if we (ever) fall out of sync with
+		// the FIFO buffer. If the temperature changes insane amounts, reset the FIFO logic
+		// and return early.
+		static float last_temp_c = 0.0f;
+		static bool temp_initialized = false;
 
-			if (!temp_initialized) {
-				// Assume that the temperature should be in a sane range of -40 to 85 deg C which is
-				// the specified temperature range, at least to initialize.
-				if (temp_c > -40.0f && temp_c < 85.0f) {
+		if (!temp_initialized) {
+			// Assume that the temperature should be in a sane range of -40 to 85 deg C which is
+			// the specified temperature range, at least to initialize.
+			if (temp_c > -40.0f && temp_c < 85.0f) {
 
-					// Initialize the temperature logic.
-					last_temp_c = temp_c;
-					temp_initialized = true;
-				}
-
-			} else {
-				// Once initialized, check for a temperature change of more than 2 degrees which
-				// points to a FIFO corruption.
-				if (fabs(temp_c - last_temp_c) > 2.0f) {
-					DF_LOG_ERR("FIFO corrupt, reset");
-					reset_fifo();
-					// TODO: track this error
-					return;
-				}
+				// Initialize the temperature logic.
 				last_temp_c = temp_c;
+				temp_initialized = true;
 			}
 
-			m_synchronize.lock();
-
-			m_sensor_data.accel_m_s2_x = float(report->accel_x) * (MPU9250_ONE_G / 2048.0f);
-			m_sensor_data.accel_m_s2_y = float(report->accel_y) * (MPU9250_ONE_G / 2048.0f);
-			m_sensor_data.accel_m_s2_z = float(report->accel_z) * (MPU9250_ONE_G / 2048.0f);
-			m_sensor_data.temp_c = temp_c;
-			m_sensor_data.gyro_rad_s_x = float(report->gyro_x) * GYRO_RAW_TO_RAD_S;
-			m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
-			m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
-
-			m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-			m_sensor_data.read_counter++;
-
-			_publish(m_sensor_data);
-
-			m_synchronize.signal();
-			m_synchronize.unlock();
+		} else {
+			// Once initialized, check for a temperature change of more than 2 degrees which
+			// points to a FIFO corruption.
+			if (fabs(temp_c - last_temp_c) > 2.0f) {
+				DF_LOG_INFO("FIFO corrupt");
+				reset_fifo();
+				// TODO: track this error
+				return;
+			}
+			last_temp_c = temp_c;
 		}
 
-		bytes_done += read_len;
+		m_synchronize.lock();
+
+		m_sensor_data.accel_m_s2_x = float(report->accel_x) * (MPU9250_ONE_G / 2048.0f);
+		m_sensor_data.accel_m_s2_y = float(report->accel_y) * (MPU9250_ONE_G / 2048.0f);
+		m_sensor_data.accel_m_s2_z = float(report->accel_z) * (MPU9250_ONE_G / 2048.0f);
+		m_sensor_data.temp_c = temp_c;
+		m_sensor_data.gyro_rad_s_x = float(report->gyro_x) * GYRO_RAW_TO_RAD_S;
+		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
+		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
+
+		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+		m_sensor_data.read_counter++;
+
+		_publish(m_sensor_data);
+
+		m_synchronize.signal();
+		m_synchronize.unlock();
 	}
 }
 
