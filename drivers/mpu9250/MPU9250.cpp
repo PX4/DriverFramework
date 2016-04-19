@@ -173,18 +173,12 @@ int MPU9250::mpu9250_init()
 	m_synchronize.unlock();
 
 
-	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
+	int result = _writeReg(MPUREG_PWR_MGMT_1,
+			       BIT_H_RESET |
+			       MPU_CLK_SEL_AUTO);
 
 	if (result != 0) {
 		DF_LOG_ERR("reset failed");
-	}
-
-	usleep(1000);
-
-	result = _writeReg(MPUREG_PWR_MGMT_1, MPU_CLK_SEL_AUTO);
-
-	if (result != 0) {
-		DF_LOG_ERR("clock selection failed");
 	}
 
 	usleep(1000);
