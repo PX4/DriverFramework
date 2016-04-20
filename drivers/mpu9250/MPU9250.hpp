@@ -58,7 +58,9 @@ class MPU9250 : public ImuSensor
 {
 public:
 	MPU9250(const char *device_path) :
-		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US)
+		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US),
+		_last_temp_c(0.0f),
+		_temp_initialized(false)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
 		// TODO: does the WHOAMI make sense as an address?
@@ -83,6 +85,9 @@ private:
 	int get_fifo_count();
 
 	void reset_fifo();
+
+	float _last_temp_c;
+	bool _temp_initialized;
 };
 
 }; // namespace DriverFramework

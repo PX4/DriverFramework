@@ -477,30 +477,27 @@ void MPU9250::_measure()
 		// Use the temperature field to try to detect if we (ever) fall out of sync with
 		// the FIFO buffer. If the temperature changes insane amounts, reset the FIFO logic
 		// and return early.
-		static float last_temp_c = 0.0f;
-		static bool temp_initialized = false;
-
-		if (!temp_initialized) {
+		if (!_temp_initialized) {
 			// Assume that the temperature should be in a sane range of -40 to 85 deg C which is
 			// the specified temperature range, at least to initialize.
 			if (temp_c > -40.0f && temp_c < 85.0f) {
 
 				// Initialize the temperature logic.
-				last_temp_c = temp_c;
-				temp_initialized = true;
+				_last_temp_c = temp_c;
+				_temp_initialized = true;
 			}
 
 		} else {
 			// Once initialized, check for a temperature change of more than 2 degrees which
 			// points to a FIFO corruption.
-			if (fabs(temp_c - last_temp_c) > 2.0f) {
+			if (fabs(temp_c - _last_temp_c) > 2.0f) {
 				DF_LOG_ERR("FIFO corrupt");
 				reset_fifo();
 				// TODO: track this error
 				return;
 			}
 
-			last_temp_c = temp_c;
+			_last_temp_c = temp_c;
 		}
 
 		m_synchronize.lock();
