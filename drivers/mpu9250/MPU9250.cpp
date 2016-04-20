@@ -390,7 +390,12 @@ void MPU9250::_measure()
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	uint8_t int_status = 0;
-	_readReg(MPUREG_INT_STATUS, int_status);
+	int result = _readReg(MPUREG_INT_STATUS, int_status);
+
+	if (result != 0) {
+		// TODO: log error
+		return;
+	}
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
 		DF_LOG_ERR("overflow");
@@ -447,7 +452,12 @@ void MPU9250::_measure()
 	// Luckily 10 MHz seems to work fine.
 
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
-	_bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+
+	if (result != 0) {
+		// TODO: increase error counter.
+		return;
+	}
 
 	for (unsigned i = 0; i + sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
 
