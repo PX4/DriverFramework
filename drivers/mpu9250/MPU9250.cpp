@@ -407,7 +407,7 @@ void MPU9250::_measure()
 	}
 
 #pragma pack(push, 1)
-	struct int_status_report {
+	struct fifo_packet {
 		int16_t		accel_x;
 		int16_t		accel_y;
 		int16_t		accel_z;
@@ -420,7 +420,7 @@ void MPU9250::_measure()
 #pragma pack(pop)
 
 	// Get FIFO byte count to read and floor it to the report size.
-	int bytes_to_read = get_fifo_count() / sizeof(int_status_report) * sizeof(int_status_report);
+	int bytes_to_read = get_fifo_count() / sizeof(fifo_packet) * sizeof(fifo_packet);
 
 	if (bytes_to_read < 0) {
 		// TODO: count error
@@ -429,7 +429,7 @@ void MPU9250::_measure()
 
 	// The FIFO buffer on the MPU is 512 bytes according to the datasheet, so let's use
 	// 36*14 = 504.
-	const unsigned buf_len = 36 * sizeof(int_status_report);
+	const unsigned buf_len = 36 * sizeof(fifo_packet);
 	uint8_t fifo_read_buf[buf_len];
 
 	if (bytes_to_read <= 0) {
@@ -459,9 +459,9 @@ void MPU9250::_measure()
 		return;
 	}
 
-	for (unsigned i = 0; i + sizeof(int_status_report) < read_len; i += sizeof(int_status_report)) {
+	for (unsigned i = 0; i + sizeof(fifo_packet) < read_len; i += sizeof(fifo_packet)) {
 
-		int_status_report *report = (int_status_report *)(&fifo_read_buf[i]);
+		fifo_packet *report = (fifo_packet *)(&fifo_read_buf[i]);
 
 		/* TODO: add ifdef for endianness */
 		report->accel_x = swap16(report->accel_x);
