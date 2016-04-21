@@ -49,17 +49,14 @@
 #define TRONE_MIN_DISTANCE (0.20f)
 #define TRONE_MAX_DISTANCE (14.00f)
 
-#define TRONE_CONVERSION_INTERVAL 50000 /* 50ms */
-
-// TODO: no idea what to use here
 #define TRONE_MEASURE_INTERVAL_US (1000000/150)
 
 #define TRONE_SLAVE_ADDRESS		(0x30)
 
 // up to 100kHz
 #define TRONE_BUS_FREQUENCY_IN_KHZ	(100)
-// TODO: no idea what to use here
-#define TRONE_TRANSFER_TIMEOUT_IN_USECS (9000)
+// fails for values below 200
+#define TRONE_TRANSFER_TIMEOUT_IN_USECS (500)
 
 namespace DriverFramework
 {
