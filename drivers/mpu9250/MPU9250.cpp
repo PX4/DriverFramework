@@ -473,9 +473,9 @@ void MPU9250::_measure()
 		return;
 	}
 
-	for (unsigned i = 0; i < read_len/sizeof(fifo_packet); ++i) {
+	for (unsigned i = 0; i < read_len / sizeof(fifo_packet); ++i) {
 
-		fifo_packet *report = (fifo_packet *)(&fifo_read_buf[i*sizeof(fifo_packet)]);
+		fifo_packet *report = (fifo_packet *)(&fifo_read_buf[i * sizeof(fifo_packet)]);
 
 		/* TODO: add ifdef for endianness */
 		report->accel_x = swap16(report->accel_x);
@@ -530,7 +530,7 @@ void MPU9250::_measure()
 
 		// A FIFO sample is created at 8kHz, which means the interval between samples is 125 us.
 		// The last read FIFO sample at i+1 has an offset of 0.
-		m_sensor_data.time_offset_us = -((read_len/sizeof(fifo_packet)) - (i+1)) * 125;
+		m_sensor_data.time_offset_us = -((read_len / sizeof(fifo_packet)) - (i + 1)) * 125;
 
 		_publish(m_sensor_data);
 
