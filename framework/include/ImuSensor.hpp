@@ -62,9 +62,11 @@ struct imu_sensor_data {
 	float		gyro_rad_s_y;
 	float		gyro_rad_s_z;
 	float		temp_c;
-	uint64_t	last_read_time_usec;
 	uint64_t	read_counter;
 	uint64_t	error_counter;
+	uint64_t	fifo_overflow_counter;
+	uint64_t	fifo_corrupt_counter;
+	int32_t		time_offset_us;
 };
 
 class ImuSensor : public SPIDevObj

@@ -160,18 +160,22 @@ int MPU9250::mpu9250_init()
 {
 	/* Zero the struct */
 	m_synchronize.lock();
+
 	m_sensor_data.accel_m_s2_x = 0.0f;
 	m_sensor_data.accel_m_s2_y = 0.0f;
 	m_sensor_data.accel_m_s2_z = 0.0f;
-	m_sensor_data.temp_c = 0.0f;
 	m_sensor_data.gyro_rad_s_x = 0.0f;
 	m_sensor_data.gyro_rad_s_y = 0.0f;
 	m_sensor_data.gyro_rad_s_z = 0.0f;
+	m_sensor_data.temp_c = 0.0f;
 
-	m_sensor_data.last_read_time_usec = 0;
 	m_sensor_data.read_counter = 0;
-	m_synchronize.unlock();
+	m_sensor_data.error_counter = 0;
+	m_sensor_data.fifo_overflow_counter = 0;
+	m_sensor_data.fifo_corrupt_counter = 0;
+	m_sensor_data.time_offset_us = 0;
 
+	m_synchronize.unlock();
 
 	int result = _writeReg(MPUREG_PWR_MGMT_1,
 			       BIT_H_RESET |
@@ -393,7 +397,9 @@ void MPU9250::_measure()
 	int result = _readReg(MPUREG_INT_STATUS, int_status);
 
 	if (result != 0) {
-		// TODO: log error
+		m_synchronize.lock();
+		++m_sensor_data.error_counter;
+		m_synchronize.unlock();
 		return;
 	}
 
@@ -401,7 +407,9 @@ void MPU9250::_measure()
 		DF_LOG_ERR("overflow");
 		reset_fifo();
 
-		// TODO: count overflow
+		m_synchronize.lock();
+		++m_sensor_data.fifo_overflow_counter;
+		m_synchronize.unlock();
 
 		return;
 	}
@@ -423,7 +431,9 @@ void MPU9250::_measure()
 	int bytes_to_read = get_fifo_count() / sizeof(fifo_packet) * sizeof(fifo_packet);
 
 	if (bytes_to_read < 0) {
-		// TODO: count error
+		m_synchronize.lock();
+		++m_sensor_data.error_counter;
+		m_synchronize.unlock();
 		return;
 	}
 
@@ -433,7 +443,9 @@ void MPU9250::_measure()
 	uint8_t fifo_read_buf[buf_len];
 
 	if (bytes_to_read <= 0) {
-		// TODO: increase error counter if there is nothing to read.
+		m_synchronize.lock();
+		++m_sensor_data.error_counter;
+		m_synchronize.unlock();
 		return;
 	}
 
@@ -455,13 +467,15 @@ void MPU9250::_measure()
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 
 	if (result != 0) {
-		// TODO: increase error counter.
+		m_synchronize.lock();
+		++m_sensor_data.error_counter;
+		m_synchronize.unlock();
 		return;
 	}
 
-	for (unsigned i = 0; i + sizeof(fifo_packet) < read_len; i += sizeof(fifo_packet)) {
+	for (unsigned i = 0; i < read_len/sizeof(fifo_packet); ++i) {
 
-		fifo_packet *report = (fifo_packet *)(&fifo_read_buf[i]);
+		fifo_packet *report = (fifo_packet *)(&fifo_read_buf[i*sizeof(fifo_packet)]);
 
 		/* TODO: add ifdef for endianness */
 		report->accel_x = swap16(report->accel_x);
@@ -493,7 +507,9 @@ void MPU9250::_measure()
 			if (fabs(temp_c - _last_temp_c) > 2.0f) {
 				DF_LOG_ERR("FIFO corrupt");
 				reset_fifo();
-				// TODO: track this error
+				m_synchronize.lock();
+				++m_sensor_data.fifo_corrupt_counter;
+				m_synchronize.unlock();
 				return;
 			}
 
@@ -510,8 +526,11 @@ void MPU9250::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
-		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-		m_sensor_data.read_counter++;
+		++m_sensor_data.read_counter;
+
+		// A FIFO sample is created at 8kHz, which means the interval between samples is 125 us.
+		// The last read FIFO sample at i+1 has an offset of 0.
+		m_sensor_data.time_offset_us = -((read_len/sizeof(fifo_packet)) - (i+1)) * 125;
 
 		_publish(m_sensor_data);
 
