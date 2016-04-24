@@ -173,6 +173,9 @@ int MPU9250::mpu9250_init()
 	m_sensor_data.error_counter = 0;
 	m_sensor_data.fifo_overflow_counter = 0;
 	m_sensor_data.fifo_corrupt_counter = 0;
+	m_sensor_data.gyro_range_exceeded_counter = 0;
+	m_sensor_data.accel_range_exceeded_counter = 0;
+
 	m_sensor_data.time_offset_us = 0;
 
 	m_synchronize.unlock();
@@ -485,6 +488,26 @@ void MPU9250::_measure()
 		report->gyro_x = swap16(report->gyro_x);
 		report->gyro_y = swap16(report->gyro_y);
 		report->gyro_z = swap16(report->gyro_z);
+
+		// Check if the full accel range of the accel has been used. If this occurs, it is
+		// either a spike due to a crash/landing or a sign that the vibrations levels
+		// measured are excessive.
+		if (report->accel_x == INT16_MIN || report->accel_x == INT16_MAX ||
+		    report->accel_y == INT16_MIN || report->accel_y == INT16_MAX ||
+		    report->accel_z == INT16_MIN || report->accel_z == INT16_MAX) {
+			m_synchronize.lock();
+			++m_sensor_data.accel_range_exceeded_counter;
+			m_synchronize.unlock();
+		}
+
+		// Also check the full gyro range, however, this is very unlikely to happen.
+		if (report->gyro_x == INT16_MIN || report->gyro_x == INT16_MAX ||
+		    report->gyro_y == INT16_MIN || report->gyro_y == INT16_MAX ||
+		    report->gyro_z == INT16_MIN || report->gyro_z == INT16_MAX) {
+			m_synchronize.lock();
+			++m_sensor_data.gyro_range_exceeded_counter;
+			m_synchronize.unlock();
+		}
 
 		const float temp_c = float(report->temp) / 361.0f + 35.0f;
 
