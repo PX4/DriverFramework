@@ -65,9 +65,9 @@ struct imu_sensor_data {
 	uint64_t	read_counter;
 	uint64_t	error_counter;
 	uint64_t	fifo_overflow_counter;
-	uint64_t	fifo_corrupt_counter;
-	uint64_t	gyro_range_exceeded_counter;
-	uint64_t	accel_range_exceeded_counter;
+	uint64_t	fifo_corruption_counter;
+	uint64_t	gyro_range_hit_counter;
+	uint64_t	accel_range_hit_counter;
 	int32_t		time_offset_us;
 };
 

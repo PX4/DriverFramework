@@ -172,9 +172,9 @@ int MPU9250::mpu9250_init()
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
 	m_sensor_data.fifo_overflow_counter = 0;
-	m_sensor_data.fifo_corrupt_counter = 0;
-	m_sensor_data.gyro_range_exceeded_counter = 0;
-	m_sensor_data.accel_range_exceeded_counter = 0;
+	m_sensor_data.fifo_corruption_counter = 0;
+	m_sensor_data.gyro_range_hit_counter = 0;
+	m_sensor_data.accel_range_hit_counter = 0;
 
 	m_sensor_data.time_offset_us = 0;
 
@@ -496,7 +496,7 @@ void MPU9250::_measure()
 		    report->accel_y == INT16_MIN || report->accel_y == INT16_MAX ||
 		    report->accel_z == INT16_MIN || report->accel_z == INT16_MAX) {
 			m_synchronize.lock();
-			++m_sensor_data.accel_range_exceeded_counter;
+			++m_sensor_data.accel_range_hit_counter;
 			m_synchronize.unlock();
 		}
 
@@ -505,7 +505,7 @@ void MPU9250::_measure()
 		    report->gyro_y == INT16_MIN || report->gyro_y == INT16_MAX ||
 		    report->gyro_z == INT16_MIN || report->gyro_z == INT16_MAX) {
 			m_synchronize.lock();
-			++m_sensor_data.gyro_range_exceeded_counter;
+			++m_sensor_data.gyro_range_hit_counter;
 			m_synchronize.unlock();
 		}
 
@@ -531,7 +531,7 @@ void MPU9250::_measure()
 				DF_LOG_ERR("FIFO corrupt");
 				reset_fifo();
 				m_synchronize.lock();
-				++m_sensor_data.fifo_corrupt_counter;
+				++m_sensor_data.fifo_corruption_counter;
 				m_synchronize.unlock();
 				return;
 			}
