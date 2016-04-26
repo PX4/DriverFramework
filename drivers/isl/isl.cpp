@@ -45,6 +45,7 @@
 #define REF_DIST 1.0f
 using namespace DriverFramework;
 
+//Open connection and initialise ISL distance sensor
 int ISL::start()
 {
 
@@ -63,8 +64,8 @@ int ISL::start()
 	}
 
 	/* Configure the I2C bus parameters for the sensor. */
-	slave_addr = _detect();
-	if(slave_addr == 0) {
+	_slave_addr = _detect();
+	if(_slave_addr == 0) {
 		_detected = true;
 	} else {
 		DF_LOG_ERR("Unable to connect to the device: %s", m_dev_path);
@@ -84,6 +85,7 @@ exit:
 	return result;
 }
 
+// Configure ISL Sensor
 int ISL::init_params()
 {
   write_reg(0x01, 0x00); //Master Control
@@ -163,21 +165,25 @@ int ISL::init_params()
   write_reg(0x36, 0x00); //Ambient Coeff 1
   write_reg(0x3B, 0x00); //Ambient Coeff 2
   unsigned char sample_delay_reg = read_reg(0x10); // Sample Len
-  isl_sample_delay = calc_sample_delay(sample_delay_reg);
+  _isl_sample_delay = calc_sample_delay(sample_delay_reg);
   return 0;
 }
 
+//Calculate sample period as per value received from Sensor
+//calculations based on information provided by intersil
 int ISL::calc_sample_delay(unsigned char value)
 {
   float d = 0.0711 * pow(2, value);
   return (int) d + 1;
 }
 
+//Register write function call for I2C bus
 int ISL::write_reg(uint8_t address, uint8_t data)
 {
 	return _writeReg(address, &data, sizeof(data));
 }
 
+//Register read function call for I2C bus
 uint8_t ISL::read_reg(uint8_t address)
 {
 	uint8_t ret = 0;
@@ -188,6 +194,7 @@ uint8_t ISL::read_reg(uint8_t address)
 	return ret;
 }
 
+//Stop ISL distance sensor driver
 int ISL::stop()
 {
 	int result = DevObj::stop();
@@ -210,6 +217,10 @@ int ISL::stop()
 	return 0;
 }
 
+//ISL sensor calibration routine:
+//User is required to put sensor at REF_DIST and run this routine to get
+//calibration value.
+//TODO: Make the calculated offset persistent using px4 param system
 int ISL::calibration(void)
 {
 	uint16_t raw_data;
@@ -237,84 +248,103 @@ int ISL::calibration(void)
 	return 0;
 }
 
+//Routine to scan through I2C bus for ISL sensor
 int ISL::_detect()
 {
 	uint8_t dev_id;
 	int result;
 	for(uint8_t i = 0; i <= 3; i++) {
-		result = _setSlaveConfig(slave_addr,
+		result = _setSlaveConfig(_slave_addr,
 			 ISL_BUS_FREQUENCY_IN_KHZ,
 			 ISL_TRANSFER_TIMEOUT_IN_USECS);
 		if (result != 0) {
-			slave_addr++;
+			_slave_addr++;
 			continue;
 		}
 		result = DevObj::start();
 		if (result == 0) {
 			dev_id = read_reg(0x00);
 			if(dev_id == 0x0A) {
-				DF_LOG_INFO("Detected ISL sensor @ 0x%x",slave_addr);
+				_detected = true;
+				DF_LOG_INFO("Detected ISL sensor @ 0x%x",_slave_addr);
 				return 0;
 			}
 		}
-		slave_addr++;
+		_slave_addr++;
 		DevObj::stop();
 	}
 
 	return -1;
 }
 
+// read distance data from ISL sensor
 void ISL::_measure(void)
 {
-/*	if(!_detected) {
+	if(!_detected) {
 		return;
 	}
-*/
+
 	float distance;
+	//setup for reading sensor
 	write_reg(0xB0, 0x49);
 	uint16_t data_msb, data_lsb, prec;
 	uint16_t offset;
 	uint8_t inter, data_invalid;
 
+	//read data ready flag
 	inter = read_reg(0x69);
 
+	//read sensor offset
 	offset = read_reg(0x30);
 	offset |= (read_reg(0x2f)<<8);
 
+	//read data validity
 	data_invalid = read_reg(0xd0);
 
+	//read corrected data
 	data_lsb = read_reg(0xd2);
 	data_msb = read_reg(0xd1);
+
+	//check if data was ready
 	if(!inter) {
 		DF_LOG_ERR("Bad Distance Data Flags: 0x%x 0x%x", data_invalid, inter);
 		return;
 	}
+	//read quality of data
+	//TODO: send this data to EKF for processing
 	prec = read_reg(0xd4);
 	prec |= ((uint16_t)read_reg(0xd3)) << 8;
+	//read temperature of sensor
+	//TODO: do temperature correction
 	uint8_t temperature;
 	temperature = read_reg(0xe2);
+	//convert distance data to meters
 	distance = ((data_msb<<8) + data_lsb)/2000.0f;
+	//correct distance from errors due to phase-distance inconsistency
 	float phase = (distance / 33.3f ) * M_PI * 2.0f;
     distance += (1.1637*pow(phase,3) - 3.8654*pow(phase,2) + 1.3796*phase - 0.0436);
-	//DF_LOG_ERR("distance: %f offset: 0x%x ", distance,offset);
+	DF_LOG_ERR("distance: %f offset: 0x%x ", distance,offset);
 	if(distance < 0) {
 		distance = 0;
 	}
+	//pack data into structure
 	m_sensor_data.temperature = float(temperature);
 	m_sensor_data.dist = distance;
+	//do not publish data if any of the reads failed
 	if(!_read_failure) {
 		_publish(m_sensor_data);
 	}
 	_read_failure = false;
 }
 
+//set slave address of the ISL senso
 void ISL::set_slave_addr(uint8_t slave)
 {
-	slave_addr = slave;
+	_slave_addr = slave;
 }
 
 int ISL::_publish(struct range_sensor_data &data)
 {
-	// TBD
+	// declared in wrapper
 	return -1;
 }

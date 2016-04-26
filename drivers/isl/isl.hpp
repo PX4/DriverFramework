@@ -48,10 +48,9 @@
 
 #define ISL_SLAVE_ADDRESS		(0x54)
 
-// up to 100kHz
 #define ISL_BUS_FREQUENCY_IN_KHZ	(400)
 
-#define ISL_TRANSFER_TIMEOUT_IN_USECS (9000)
+#define ISL_TRANSFER_TIMEOUT_IN_USECS (500)
 
 namespace DriverFramework
 {
@@ -92,14 +91,13 @@ protected:
 	virtual int _publish(struct range_sensor_data &data);
 
 	struct range_sensor_data		m_sensor_data;
-	uint32_t isl_sample_delay;
+	uint32_t _isl_sample_delay;
 private:
 	// returns 0 on success, -errno on failure
-	int isl_init();
 	int _detect();
 	bool _detected;
 	bool _read_failure;
-	int slave_addr;
+	int _slave_addr;
 };
 
-}; // namespace DriverFramework
+} // namespace DriverFramework
