@@ -39,8 +39,8 @@
 #ifdef __QURT
 #include "dev_fs_lib_i2c.h"
 #endif
-#ifndef M_PI
-#define M_PI 3.14159265358979323846f
+#ifndef M_PI_F
+#define M_PI_F 3.14159265358979323846f
 #endif
 #define REF_DIST 1.0f
 using namespace DriverFramework;
@@ -321,7 +321,7 @@ void ISL29501::_measure(void)
 	//convert distance data to meters
 	distance = ((data_msb<<8) + data_lsb)/2000.0f;
 	//correct distance from errors due to phase-distance inconsistency
-	float phase = (distance / 33.3f ) * M_PI * 2.0f;
+	float phase = (distance / 33.3f ) * M_PI_F * 2.0f;
     distance += (1.1637*pow(phase,3) - 3.8654*pow(phase,2) + 1.3796*phase - 0.0436);
 	DF_LOG_ERR("distance: %f offset: 0x%x ", distance,offset);
 	if(distance < 0) {
