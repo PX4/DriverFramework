@@ -59,10 +59,10 @@ struct range_sensor_data {
 	float temperature;
 };
 
-class ISL : public I2CDevObj
+class ISL29501 : public I2CDevObj
 {
 public:
-	ISL(const char *device_path) :
+	ISL29501(const char *device_path) :
 		I2CDevObj("RangeFinder", device_path, ISL_CLASS_PATH, ISL_MEASURE_INTERVAL_US),
 		_detected(false),
 		_read_failure(false)

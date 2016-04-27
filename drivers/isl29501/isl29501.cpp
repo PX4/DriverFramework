@@ -33,7 +33,7 @@
 
 #include <string.h>
 #include "DriverFramework.hpp"
-#include "isl.hpp"
+#include "isl29501.hpp"
 #define _USE_MATH_DEFINES
 #include <math.h>
 #ifdef __QURT
@@ -46,7 +46,7 @@
 using namespace DriverFramework;
 
 //Open connection and initialise ISL distance sensor
-int ISL::start()
+int ISL29501::start()
 {
 
 	int result = devOpen(0);
@@ -86,7 +86,7 @@ exit:
 }
 
 // Configure ISL Sensor
-int ISL::init_params()
+int ISL29501::init_params()
 {
   write_reg(0x01, 0x00); //Master Control
   write_reg(0x10, 0x07); //Sample Len
@@ -171,20 +171,20 @@ int ISL::init_params()
 
 //Calculate sample period as per value received from Sensor
 //calculations based on information provided by intersil
-int ISL::calc_sample_delay(unsigned char value)
+int ISL29501::calc_sample_delay(unsigned char value)
 {
   float d = 0.0711 * pow(2, value);
   return (int) d + 1;
 }
 
 //Register write function call for I2C bus
-int ISL::write_reg(uint8_t address, uint8_t data)
+int ISL29501::write_reg(uint8_t address, uint8_t data)
 {
 	return _writeReg(address, &data, sizeof(data));
 }
 
 //Register read function call for I2C bus
-uint8_t ISL::read_reg(uint8_t address)
+uint8_t ISL29501::read_reg(uint8_t address)
 {
 	uint8_t ret = 0;
 	if(_readReg(address, &ret, sizeof(ret)) == -1) {
@@ -195,7 +195,7 @@ uint8_t ISL::read_reg(uint8_t address)
 }
 
 //Stop ISL distance sensor driver
-int ISL::stop()
+int ISL29501::stop()
 {
 	int result = DevObj::stop();
 
@@ -221,7 +221,7 @@ int ISL::stop()
 //User is required to put sensor at REF_DIST and run this routine to get
 //calibration value.
 //TODO: Make the calculated offset persistent using px4 param system
-int ISL::calibration(void)
+int ISL29501::calibration(void)
 {
 	uint16_t raw_data;
 	float raw_avg = 0;
@@ -249,7 +249,7 @@ int ISL::calibration(void)
 }
 
 //Routine to scan through I2C bus for ISL sensor
-int ISL::_detect()
+int ISL29501::_detect()
 {
 	uint8_t dev_id;
 	int result;
@@ -278,7 +278,7 @@ int ISL::_detect()
 }
 
 // read distance data from ISL sensor
-void ISL::_measure(void)
+void ISL29501::_measure(void)
 {
 	if(!_detected) {
 		return;
@@ -338,12 +338,12 @@ void ISL::_measure(void)
 }
 
 //set slave address of the ISL senso
-void ISL::set_slave_addr(uint8_t slave)
+void ISL29501::set_slave_addr(uint8_t slave)
 {
 	_slave_addr = slave;
 }
 
-int ISL::_publish(struct range_sensor_data &data)
+int ISL29501::_publish(struct range_sensor_data &data)
 {
 	// declared in wrapper
 	return -1;
