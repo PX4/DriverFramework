@@ -30,18 +30,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
+if("${DF_TARGET}" STREQUAL "do_not_use_df_driver_framework")
+else()
+	include(../../cmake/df_add_library.cmake)
 
-include(../../cmake/df_add_library.cmake)
-
-if("${DF_TARGET}" STREQUAL "nuttx")
-	add_library(df_driver_framework
-		DriverFramework_NuttX.cpp
-		DevMgr_Nuttx.cpp
-		DFList.cpp
-		SyncObj.cpp
-		Time.cpp
+	if("${DF_TARGET}" STREQUAL "nuttx")
+		add_library(df_driver_framework
+			DriverFramework_NuttX.cpp
+			DevMgr_Nuttx.cpp
+			DFList.cpp
+			SyncObj.cpp
+			Time.cpp
 		)
-	add_dependencies(df_driver_framework platforms__nuttx)
+		add_dependencies(df_driver_framework platforms__nuttx)
 else()
 	df_add_library(df_driver_framework
 		DriverFramework.cpp
@@ -54,6 +55,6 @@ else()
 		I2CDevObj.cpp
 		SPIDevObj.cpp
 		)
+    endif()
 endif()
-
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
