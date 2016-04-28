@@ -491,7 +491,7 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 	DF_LOG_DEBUG("HRTWorkQueue::scheduleWorkItem (%p)", &wh);
 	// Handle is known to be valid
 	hrtLock();
-	WorkItem *item;
+	WorkItem *item = nullptr;
 	g_work_items->getAt(wh.m_handle, &item);
 	item->m_queue_time = offsetTime();
 	item->m_in_use = true;
@@ -515,7 +515,7 @@ void HRTWorkQueue::unscheduleWorkItem(WorkHandle &wh)
 
 			if (index == (unsigned)wh.m_handle) {
 				// remove unscheduled item
-				WorkItem *item;
+				WorkItem *item = nullptr;
 
 				if (!g_work_items->getAt(index, &item)) {
 					DF_LOG_ERR("HRTWorkQueue::unscheduleWorkItem - invalid index");
@@ -546,7 +546,7 @@ void HRTWorkQueue::clearAll()
 	while (idx != nullptr) {
 		unsigned int index;
 		m_work_list.get(idx, index);
-		WorkItem *item;
+		WorkItem *item = nullptr;
 		g_work_items->getAt(index, &item);
 		item->m_in_use = false;
 		idx = m_work_list.erase(idx);
@@ -591,7 +591,7 @@ void HRTWorkQueue::process(void)
 			m_work_list.get(idx, index);
 
 			if (index < g_work_items->size()) {
-				WorkItem *item;
+				WorkItem *item = nullptr;
 				g_work_items->getAt(index, &item);
 				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
@@ -721,7 +721,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 
 	// unschedule work and erase the handle if handle exists
 	if (isValidHandle(wh)) {
-		WorkItem *item;
+		WorkItem *item = nullptr;
 
 		if (g_work_items->getAt(wh.m_handle, &item)) {
 			if (item->m_in_use) {
