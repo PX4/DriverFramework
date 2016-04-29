@@ -39,9 +39,6 @@
 #ifdef __QURT
 #include "dev_fs_lib_i2c.h"
 #endif
-#ifndef M_PI_F
-#define M_PI_F 3.14159265358979323846f
-#endif
 #define REF_DIST 1.0f
 using namespace DriverFramework;
 

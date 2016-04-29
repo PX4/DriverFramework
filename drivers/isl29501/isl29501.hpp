@@ -35,6 +35,10 @@
 
 #include "I2CDevObj.hpp"
 
+#ifndef M_PI_F
+#define M_PI_F 3.14159265358979323846f
+#endif
+
 /* Configuration Constants */
 
 #define ISL_DEVICE_PATH   "/dev/iic-9"  // J15

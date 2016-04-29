@@ -39,6 +39,10 @@
 namespace DriverFramework
 {
 
+#ifndef M_PI_F
+#define M_PI_F 3.14159265358979323846f
+#endif
+
 // update frequency 1000 Hz
 #define MPU9250_MEASURE_INTERVAL_US 1000
 
