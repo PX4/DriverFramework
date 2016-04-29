@@ -527,7 +527,7 @@ void MPU9250::_measure()
 		} else {
 			// Once initialized, check for a temperature change of more than 2 degrees which
 			// points to a FIFO corruption.
-			if (fabs(temp_c - _last_temp_c) > 2.0f) {
+			if (fabsf(temp_c - _last_temp_c) > 2.0f) {
 				DF_LOG_ERR("FIFO corrupt");
 				reset_fifo();
 				m_synchronize.lock();
