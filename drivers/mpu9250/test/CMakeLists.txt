@@ -31,9 +31,7 @@
 #
 ############################################################################
 
-include_directories(
-	..
-	)
+include_directories(..)
 
 if("${DF_TARGET}" STREQUAL "qurt")
 	add_subdirectory(qurt)
@@ -49,4 +47,5 @@ else()
 		${df_link_libs}
 		)
 endif()
+
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

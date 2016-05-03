@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-include(../../cmake/df_add_library.cmake)
+include(../../cmake/df_common.cmake)
 
 if("${DF_TARGET}" STREQUAL "nuttx")
 	add_library(df_driver_framework

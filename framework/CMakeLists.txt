@@ -1,19 +1,20 @@
+############################################################################
 #
-# Copyright (C) 2015 Mark Charlebois. All rights reserved.
+# Copyright (c) 2015 Mark Charlebois. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright
-#	notice, this list of conditions and the following disclaimer.
+#    notice, this list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright
-#	notice, this list of conditions and the following disclaimer in
-#	the documentation and/or other materials provided with the
-#	distribution.
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
 # 3. Neither the name PX4 nor the names of its contributors may be
-#	used to endorse or promote products derived from this software
-#	without specific prior written permission.
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -28,13 +29,21 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
+############################################################################
 
+add_subdirectory(src)
 
-function (df_add_library df_library_name)
-	set(args "${ARGN}")
-	add_library (${df_library_name} ${args})
+# Use this directory as the PX4 module
+if(COMMAND px4_add_module)
+	px4_add_module(
+		MODULE lib__DriverFramework__framework
+		SRCS
+			px4/df_dummy.cpp
+		DEPENDS
+			platforms__common
+		)
 
-	if ("${DF_TARGET}" STREQUAL "qurt")
-		set_property(TARGET ${df_library_name} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-	endif()
-endfunction ()
+	target_link_libraries(lib__DriverFramework__framework df_driver_framework)
+endif()
+
+# vim: set noet fenc=utf-8 ff=unix ft=cmake :

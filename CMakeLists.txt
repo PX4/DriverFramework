@@ -41,8 +41,6 @@ set(package-contact "charlebm@gmail.com")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexagon")
 
-message("DF_TARGET = ${DF_TARGET}")
-
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 message("Enabling Thread Sanitizer")
 
@@ -67,8 +65,10 @@ endif()
 # Enable this directory's flags:
 set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
-set(df_link_libs CACHE STRING
-	"DF_LINK_LIBS")
+set(df_link_libs CACHE STRING "DF_LINK_LIBS")
+
+# set DF_TARGET
+include(cmake/df_common.cmake)
 
 if (NOT "${DF_TARGET}" STREQUAL "qurt")
 
@@ -89,19 +89,15 @@ include_directories(
 	os/qurt/include
 	)
 
-set(DF_TARGET "linux" CACHE STRING "desired target")
-
 # Add framework library
 add_subdirectory(framework/src)
 
-if(NOT "${DF_TARGET}" STREQUAL "nuttx")
-	# Add driver libraries
-	add_subdirectory(drivers)
+# Add driver libraries
+add_subdirectory(drivers)
 
-	if("${DF_ENABLE_TESTS}" STREQUAL "1")
-		# Add unit test
-		add_subdirectory(test)
-	endif()
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
+	# Add unit test
+	add_subdirectory(test)
 endif()
 
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")

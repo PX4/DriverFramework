@@ -34,6 +34,7 @@
 include(bundle)
 
 QURT_BUNDLE(APP_NAME df_imu_test
+	IDL_FILE df_imu_test.idl
 	APPS_SOURCES df_imu_test.cpp
 	DSP_SOURCES
 		df_imu_test_dsp.cpp
