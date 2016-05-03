@@ -29,6 +29,23 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+# Set DF_TARGET from OS and add any other platform detection logic
+
+if ("${DF_TARGET}" STREQUAL "")
+	if ("${OS}" STREQUAL "")
+		message(FATAL_ERROR "OS not defined")
+	endif()
+
+	if("${OS}" STREQUAL "posix")
+		if (APPLE)
+			set(DF_TARGET darwin)
+		else()
+			set(DF_TARGET linux)
+		endif()
+	else()
+		set(DF_TARGET ${OS})
+	endif()
+endif()
 
 function (df_add_library df_library_name)
 	set(args "${ARGN}")

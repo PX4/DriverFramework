@@ -34,7 +34,8 @@
 include(bundle)
 
 QURT_BUNDLE(APP_NAME df_pressure_test
-	APPS_SOURCES df_pressure_test.cpp
+	IDL_FILE df_pressure_test.idl
+	APPS_SOURCES df_pressure_test.c
 	DSP_SOURCES
 		df_pressure_test_dsp.cpp
 		../test.cpp

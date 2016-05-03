@@ -34,6 +34,7 @@
 include(bundle)
 
 QURT_BUNDLE(APP_NAME df_imu_test
+	IDL_FILE df_imu_test.idl
 	APPS_SOURCES df_imu_test.cpp
 	DSP_SOURCES
 		df_imu_test_dsp.cpp
@@ -42,7 +43,7 @@ QURT_BUNDLE(APP_NAME df_imu_test
 		df_driver_framework
 		df_mpu9250 
 		${df_link_libs}
-	APPS_COMPILER arm-linux-gnueabihf-gcc
+	APPS_COMPILER arm-linux-gnueabihf-gcc-4.8
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

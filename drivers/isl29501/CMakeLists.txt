@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-include(../../cmake/df_add_library.cmake)
+include(../../cmake/df_common.cmake)
 
 include_directories(../../framework/include)
 

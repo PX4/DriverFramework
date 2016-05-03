@@ -35,7 +35,7 @@ include(bundle)
 include_directories(../../dspal/include)
 
 QURT_BUNDLE(APP_NAME df_testapp
-	APPS_SOURCES df_testapp.cpp 
+	APPS_SOURCES df_testapp.c
 	DSP_SOURCES
 		df_testapp_dsp.cpp
 		../test.cpp
