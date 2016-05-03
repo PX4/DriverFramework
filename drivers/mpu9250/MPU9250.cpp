@@ -176,7 +176,7 @@ int MPU9250::mpu9250_init()
 	m_sensor_data.gyro_range_hit_counter = 0;
 	m_sensor_data.accel_range_hit_counter = 0;
 
-	m_sensor_data.time_offset_us = 0;
+	m_sensor_data.is_last_fifo_sample = false;
 
 	m_synchronize.unlock();
 
@@ -549,11 +549,10 @@ void MPU9250::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
-		++m_sensor_data.read_counter;
+		// Flag if this is the last sample, and _publish() should wrap up the data it has received.
+		m_sensor_data.is_last_fifo_sample = ((i + 1) == (read_len / sizeof(fifo_packet)));
 
-		// A FIFO sample is created at 8kHz, which means the interval between samples is 125 us.
-		// The last read FIFO sample at i+1 has an offset of 0.
-		m_sensor_data.time_offset_us = -((read_len / sizeof(fifo_packet)) - (i + 1)) * 125;
+		++m_sensor_data.read_counter;
 
 		_publish(m_sensor_data);
 
