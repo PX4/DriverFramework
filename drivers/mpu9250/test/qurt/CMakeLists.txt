@@ -43,7 +43,7 @@ QURT_BUNDLE(APP_NAME df_imu_test
 		df_driver_framework
 		df_mpu9250 
 		${df_link_libs}
-	APPS_COMPILER arm-linux-gnueabihf-gcc-4.8
+	APPS_COMPILER arm-linux-gnueabihf-gcc
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

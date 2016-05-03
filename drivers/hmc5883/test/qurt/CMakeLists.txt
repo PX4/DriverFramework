@@ -34,6 +34,7 @@
 include(bundle)
 
 QURT_BUNDLE(APP_NAME df_mag_test
+	IDL_FILE df_mag_test.idl
 	APPS_SOURCES df_mag_test.c
 	DSP_SOURCES
 		df_mag_test_dsp.cpp
