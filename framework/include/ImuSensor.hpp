@@ -68,6 +68,7 @@ struct imu_sensor_data {
 	uint64_t	fifo_corruption_counter;
 	uint64_t	gyro_range_hit_counter;
 	uint64_t	accel_range_hit_counter;
+	unsigned	fifo_sample_interval_us;
 	bool		is_last_fifo_sample;
 };
 
