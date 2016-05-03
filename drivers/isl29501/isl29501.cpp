@@ -336,7 +336,7 @@ void ISL29501::_measure(void)
 	distance = ((data_msb << 8) + data_lsb) / 2000.0f;
 	//correct distance from errors due to phase-distance inconsistency
 	float phase = (distance / 33.3f) * M_PI_F * 2.0f;
-	distance += (1.1637f * phase*phase*phase - 3.8654f * phase*phase + 1.3796f * phase - 0.0436f);
+	distance += (1.1637f * phase * phase * phase - 3.8654f * phase * phase + 1.3796f * phase - 0.0436f);
 	DF_LOG_DEBUG("distance: %f offset: 0x%x ", (double)distance, offset);
 
 	if (distance < 0) {
