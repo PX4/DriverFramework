@@ -586,13 +586,13 @@ void HRTWorkQueue::process(void)
 
 		while ((!m_exit_requested) && (idx != nullptr)) {
 			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
-			now = offsetTime();
 			unsigned int index;
 			m_work_list.get(idx, index);
 
 			if (index < g_work_items->size()) {
 				WorkItem *item = nullptr;
 				g_work_items->getAt(index, &item);
+				now = offsetTime();
 				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
 
@@ -602,7 +602,7 @@ void HRTWorkQueue::process(void)
 					item->updateStats(now);
 
 					// reschedule work
-					item->m_queue_time = offsetTime();
+					item->m_queue_time += item->m_delay_usec;
 					item->m_in_use = true;
 
 					void *tmpptr = item->m_arg;
