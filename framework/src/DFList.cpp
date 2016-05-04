@@ -57,11 +57,11 @@ DFPointerList::DFPointerList() :
 DFPointerList::~DFPointerList()
 {
 	m_sync.lock();
-	Index next = m_head;
+	Index next_del = m_head;
 
-	while (next != nullptr) {
-		Index curr = next;
-		next = curr->m_next;
+	while (next_del != nullptr) {
+		Index curr = next_del;
+		next_del = curr->m_next;
 		delete curr;
 	}
 
@@ -127,11 +127,11 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 	m_sync.lock();
 
 	if (idx != nullptr && idx == m_head) {
-		Index next = m_head->m_next;
+		Index next_erase = m_head->m_next;
 		delete m_head;
-		m_head = next;
+		m_head = next_erase;
 
-		if (next == nullptr) {
+		if (next_erase == nullptr) {
 			m_end = nullptr;
 		}
 
@@ -141,22 +141,22 @@ DFPointerList::Index DFPointerList::erase(Index idx)
 
 	} else {
 		for (Index curr = m_head; curr->m_next != nullptr;) {
-			Index next = curr->m_next;
+			Index next_erase = curr->m_next;
 
-			if (idx == next) {
-				curr->m_next = next->m_next;
+			if (idx == next_erase) {
+				curr->m_next = next_erase->m_next;
 
-				if (next == m_end) {
+				if (next_erase == m_end) {
 					m_end = curr;
 				}
 
-				delete next;
+				delete next_erase;
 				--m_size;
 				m_sync.unlock();
 				return curr->m_next;
 			}
 
-			curr = next;
+			curr = next_erase;
 		}
 	}
 
@@ -180,9 +180,9 @@ void DFPointerList::clear()
 bool DFPointerList::empty()
 {
 	m_sync.lock();
-	bool empty = (m_head == nullptr);
+	bool is_empty = (m_head == nullptr);
 	m_sync.unlock();
-	return empty;
+	return is_empty;
 }
 
 DFPointerList::Index DFPointerList::next(Index &idx)
@@ -235,11 +235,11 @@ DFUIntList::DFUIntList() :
 DFUIntList::~DFUIntList()
 {
 	m_sync.lock();
-	Index next = m_head;
+	Index next_del = m_head;
 
-	while (next != nullptr) {
-		Index curr = next;
-		next = curr->m_next;
+	while (next_del != nullptr) {
+		Index curr = next_del;
+		next_del = curr->m_next;
 		delete curr;
 	}
 
@@ -352,9 +352,9 @@ void DFUIntList::clear()
 bool DFUIntList::empty()
 {
 	m_sync.lock();
-	bool empty = (m_head == nullptr);
+	bool is_empty = (m_head == nullptr);
 	m_sync.unlock();
-	return empty;
+	return is_empty;
 }
 
 DFUIntList::Index DFUIntList::next(Index &idx)
