@@ -569,7 +569,6 @@ void HRTWorkQueue::process(void)
 	DF_LOG_DEBUG("HRTWorkQueue::process");
 	uint64_t next;
 	uint64_t elapsed;
-	uint64_t remaining;
 	timespec ts;
 	uint64_t now;
 
