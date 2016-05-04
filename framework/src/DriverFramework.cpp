@@ -590,7 +590,7 @@ void HRTWorkQueue::process(void)
 			m_work_list.get(idx, index);
 
 			if (index < g_work_items->size()) {
-				WorkItem *item;
+				WorkItem *item = nullptr;
 				g_work_items->getAt(index, &item);
 				now = offsetTime();
 				elapsed = now - item->m_queue_time;
