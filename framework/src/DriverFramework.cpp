@@ -569,7 +569,6 @@ void HRTWorkQueue::process(void)
 	DF_LOG_DEBUG("HRTWorkQueue::process");
 	uint64_t next;
 	uint64_t elapsed;
-	uint64_t remaining;
 	timespec ts;
 	uint64_t now;
 
@@ -577,22 +576,22 @@ void HRTWorkQueue::process(void)
 		DF_LOG_DEBUG("HRTWorkQueue::process In while");
 		hrtLock();
 
-		// Wake up every 10 sec if nothing scheduled
-		next = 10000000;
-
 		DFUIntList::Index idx = nullptr;
 		idx = m_work_list.next(idx);
 		now = offsetTime();
 
+		// Wake up every 10 sec if nothing scheduled
+		next = now + 10000000;
+
 		while ((!m_exit_requested) && (idx != nullptr)) {
 			DF_LOG_DEBUG("HRTWorkQueue::process work exists");
-			now = offsetTime();
 			unsigned int index;
 			m_work_list.get(idx, index);
 
 			if (index < g_work_items->size()) {
 				WorkItem *item = nullptr;
 				g_work_items->getAt(index, &item);
+				now = offsetTime();
 				elapsed = now - item->m_queue_time;
 				//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
 
@@ -602,7 +601,7 @@ void HRTWorkQueue::process(void)
 					item->updateStats(now);
 
 					// reschedule work
-					item->m_queue_time = offsetTime();
+					item->m_queue_time += item->m_delay_usec;
 					item->m_in_use = true;
 
 					void *tmpptr = item->m_arg;
@@ -610,28 +609,26 @@ void HRTWorkQueue::process(void)
 					item->m_callback(tmpptr);
 					hrtLock();
 
-					// Start again from the top to get rescheduled work
-					idx = nullptr;
-					idx = m_work_list.next(idx);
-
-				} else {
-					remaining = item->m_delay_usec - elapsed;
-
-					if (remaining < next) {
-						next = remaining;
-					}
-
-					// try the next in the list
-					idx = m_work_list.next(idx);
 				}
+
+				// Get next scheduling time
+				uint64_t cur_next = item->m_queue_time + item->m_delay_usec;
+
+				if (cur_next < next) {
+					next = cur_next;
+				}
+
+				idx = m_work_list.next(idx);
 			}
 		}
 
-		// pthread_cond_timedwait uses absolute time
-		ts = offsetTimeToAbsoluteTime(now + next);
-		DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 ")", diff);
-		// Wait until next expiry or until a new item is rescheduled
-		pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
+		if (next > offsetTime()) {
+			// pthread_cond_timedwait uses absolute time
+			ts = offsetTimeToAbsoluteTime(next);
+			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 ")", next - offsetTime());
+			// Wait until next expiry or until a new item is rescheduled
+			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
+		}
 
 		hrtUnlock();
 	}
