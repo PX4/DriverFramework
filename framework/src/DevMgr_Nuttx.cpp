@@ -135,8 +135,8 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 
 	if (ret > 0) {
 		// build the out_set
-		size_t i = 0;
-		DFPointerList::Index it = nullptr;
+		i = 0;
+		it = nullptr;
 		it = in_set.next(it);
 
 		while (it != nullptr) {
