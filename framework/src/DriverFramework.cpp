@@ -177,7 +177,7 @@ static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
 
 static WorkItems *g_work_items = nullptr;
 
-static SyncObj *g_lock = nullptr;
+static SyncObj *g_lock_df = nullptr;
 
 //-----------------------------------------------------------------------
 // Static Functions
@@ -361,9 +361,53 @@ void WorkItem::dumpStats()
 *************************************************************************/
 HRTWorkQueue *HRTWorkQueue::m_instance = NULL;
 
+#include <unistd.h>
+#include <sys/syscall.h>   /* For SYS_xxx definitions */
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static void show_sched_settings()
+{
+	int policy;
+	struct sched_param param;
+
+	int ret = pthread_getschedparam(pthread_self(), &policy, &param);
+	if (ret != 0) {
+		DF_LOG_ERR("pthread_getschedparam failed (%d)", ret);
+	}
+
+	DF_LOG_INFO("pthread info: policy=%s priority=%d",
+		(policy == SCHED_OTHER) ? "SCHED_OTHER" :
+		(policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+		(policy == SCHED_RR)    ? "SCHED_RR" :
+		"UNKNOWN",
+		param.sched_priority);
+}
+
+static int setRealtimeSched()
+{
+	int policy = SCHED_FIFO;
+	sched_param param;
+
+	param.sched_priority = 10;
+
+	int ret = pthread_setschedparam(pthread_self(), policy, &param);
+
+	show_sched_settings();
+
+	return ret;
+}
+
 void *HRTWorkQueue::process_trampoline(void *arg)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::process_trampoline");
+
+	int ret = setRealtimeSched();
+	if (ret != 0) {
+		DF_LOG_ERR("setRealtimeSched failed");
+	}
+
+	DF_LOG_INFO("process_trampoline %d", ret);
 
 	if (m_instance) {
 		m_instance->process();
@@ -375,22 +419,6 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 HRTWorkQueue *HRTWorkQueue::instance(void)
 {
 	return m_instance;
-}
-
-static int setRealtimeSched(pthread_attr_t &attr)
-{
-	sched_param param;
-
-	int ret = pthread_attr_init(&attr);
-	ret = (!ret) ? ret : pthread_attr_getschedparam(&attr, &param);
-
-#ifndef __QURT
-	param.sched_priority = sched_get_priority_max(SCHED_FIFO);
-
-	ret = (!ret) ? ret : pthread_attr_setschedparam(&attr, &param);
-	ret = (!ret) ? ret : pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-#endif
-	return ret;
 }
 
 int HRTWorkQueue::initialize(void)
@@ -437,12 +465,12 @@ int HRTWorkQueue::initialize(void)
 #endif
 
 	pthread_attr_t attr;
+	int ret = pthread_attr_init(&attr);
 
-	if (setRealtimeSched(attr)) {
+	if (ret != 0) {
+		DF_LOG_ERR("pthread_attr_init failed");
 		return -6;
 	}
-
-	DF_LOG_DEBUG("setRealtimeSched success");
 
 #ifdef __QURT
 	// Try to set a stack size. This stack size is later used in _measure() calls
@@ -622,10 +650,13 @@ void HRTWorkQueue::process(void)
 			}
 		}
 
-		if (next > offsetTime()) {
+		uint64_t TUNING_ADJUSTMENT = 150;
+
+		if (next-TUNING_ADJUSTMENT > offsetTime()) {
 			// pthread_cond_timedwait uses absolute time
-			ts = offsetTimeToAbsoluteTime(next);
-			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 ")", next - offsetTime());
+			ts = offsetTimeToAbsoluteTime(next-TUNING_ADJUSTMENT);
+
+			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", next - offsetTime());
 			// Wait until next expiry or until a new item is rescheduled
 			pthread_cond_timedwait(&g_reschedule_cond, &g_hrt_lock, &ts);
 		}
@@ -651,22 +682,22 @@ int WorkMgr::initialize()
 {
 	DF_LOG_DEBUG("WorkMgr::initialize");
 
-	if (g_lock) {
+	if (g_lock_df) {
 		// Already initialized
 		return 0;
 	}
 
-	g_lock = new SyncObj();
+	g_lock_df = new SyncObj();
 
-	if (g_lock == nullptr) {
+	if (g_lock_df == nullptr) {
 		return -1;
 	}
 
 	g_work_items = new WorkItems;
 
 	if (g_work_items == nullptr) {
-		delete g_lock;
-		g_lock = nullptr;
+		delete g_lock_df;
+		g_lock_df = nullptr;
 		return -2;
 	}
 
@@ -677,11 +708,11 @@ void WorkMgr::finalize()
 {
 	DF_LOG_DEBUG("WorkMgr::finalize");
 
-	if (!g_lock) {
+	if (!g_lock_df) {
 		return;
 	}
 
-	g_lock->lock();
+	g_lock_df->lock();
 	DFPointerList::Index idx = nullptr;
 	idx = g_work_items->next(idx);
 
@@ -699,22 +730,22 @@ void WorkMgr::finalize()
 	g_work_items->clear();
 	delete g_work_items;
 	g_work_items = nullptr;
-	g_lock->unlock();
-	delete g_lock;
-	g_lock = nullptr;
+	g_lock_df->unlock();
+	delete g_lock_df;
+	g_lock_df = nullptr;
 }
 
 void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::getWorkHandle");
 
-	if (!g_lock) {
+	if (!g_lock_df) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = -1;
 		return;
 	}
 
-	g_lock->lock();
+	g_lock_df->lock();
 
 	// unschedule work and erase the handle if handle exists
 	if (isValidHandle(wh)) {
@@ -765,7 +796,7 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 		item->set(cb, arg, delay_usec);
 	}
 
-	g_lock->unlock();
+	g_lock_df->unlock();
 	wh.m_errno = 0;
 }
 
@@ -773,7 +804,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::releaseWorkHandle");
 
-	if (g_lock == nullptr) {
+	if (g_lock_df == nullptr) {
 		wh.m_errno = ESRCH;
 		wh.m_handle = -1;
 		return -1;
@@ -785,7 +816,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 	}
 
 	int ret = 0;
-	g_lock->lock();
+	g_lock_df->lock();
 
 	if (isValidHandle(wh)) {
 		WorkItem *item;
@@ -799,7 +830,7 @@ int WorkMgr::releaseWorkHandle(WorkHandle &wh)
 		ret = -1;
 	}
 
-	g_lock->unlock();
+	g_lock_df->unlock();
 	return ret;
 }
 
@@ -807,7 +838,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::schedule");
 
-	if (g_lock == nullptr) {
+	if (g_lock_df == nullptr) {
 		wh.m_errno = ESRCH;
 		return -1;
 	}
@@ -819,7 +850,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 
 	DF_LOG_DEBUG("WorkMgr::schedule - checks ok");
 	int ret = 0;
-	g_lock->lock();
+	g_lock_df->lock();
 
 	if (isValidHandle(wh)) {
 		WorkItem *item;
@@ -847,7 +878,7 @@ int WorkMgr::schedule(WorkHandle &wh)
 		ret = -5;
 	}
 
-	g_lock->unlock();
+	g_lock_df->unlock();
 	wh.m_errno = 0;
 	return ret;
 }

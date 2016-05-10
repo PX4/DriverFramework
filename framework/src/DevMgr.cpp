@@ -46,7 +46,7 @@
 
 using namespace DriverFramework;
 
-static SyncObj *g_lock = nullptr;
+static SyncObj *g_lock_dev_mgr = nullptr;
 
 bool DevMgr::m_initialized = false;
 
@@ -75,9 +75,9 @@ static DFPointerList g_wait_list;
 
 int DevMgr::initialize(void)
 {
-	g_lock = new SyncObj();
+	g_lock_dev_mgr = new SyncObj();
 
-	if (g_lock == nullptr) {
+	if (g_lock_dev_mgr == nullptr) {
 		return -3;
 	}
 
@@ -87,16 +87,16 @@ int DevMgr::initialize(void)
 
 void DevMgr::finalize(void)
 {
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	m_initialized = false;
 
 	g_driver_list.clear();
 
 	g_wait_list.clear();
 
-	g_lock->unlock();
-	delete g_lock;
-	g_lock = nullptr;
+	g_lock_dev_mgr->unlock();
+	delete g_lock_dev_mgr;
+	g_lock_dev_mgr = nullptr;
 }
 
 #if DRIVER_MAX_INSTANCES > 9
@@ -112,7 +112,7 @@ int DevMgr::registerDriver(DevObj *obj)
 	}
 
 	bool registered = false;
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	int ret = 0;
 
 	if (obj->m_dev_class_path != nullptr) {
@@ -159,7 +159,7 @@ int DevMgr::registerDriver(DevObj *obj)
 		DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_path);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 	return ret;
 }
 
@@ -167,11 +167,11 @@ void DevMgr::unregisterDriver(DevObj *obj)
 {
 	DF_LOG_DEBUG("DevMgr::unregisterDriver %s", obj->m_name);
 
-	if (!g_lock) {
+	if (!g_lock_dev_mgr) {
 		return;
 	}
 
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	DFPointerList::Index idx = nullptr;
 	idx = g_driver_list.next(idx);
 
@@ -186,12 +186,12 @@ void DevMgr::unregisterDriver(DevObj *obj)
 		idx = g_driver_list.next(idx);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 }
 
 DevObj *DevMgr::getDevObjByID(union DeviceId id)
 {
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	DFPointerList::Index idx = nullptr;
 	idx = g_driver_list.next(idx);
 
@@ -205,13 +205,13 @@ DevObj *DevMgr::getDevObjByID(union DeviceId id)
 		idx = g_driver_list.next(idx);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 	return (idx != nullptr) ? reinterpret_cast<DevObj *>(g_driver_list.get(idx)) : nullptr;
 }
 
 DevObj *DevMgr::_getDevObjByHandle(DevHandle &h)
 {
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	DFPointerList::Index idx = nullptr;
 	idx = g_driver_list.next(idx);
 
@@ -225,7 +225,7 @@ DevObj *DevMgr::_getDevObjByHandle(DevHandle &h)
 		idx = g_driver_list.next(idx);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 	return (idx == nullptr) ? nullptr : reinterpret_cast<DevObj *>(g_driver_list.get(idx));
 }
 
@@ -238,7 +238,7 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 
 	h.m_errno = EBADF;
 
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	DFPointerList::Index idx = nullptr;
 	idx = g_driver_list.next(idx);
 
@@ -250,9 +250,9 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 		    (list_obj->m_dev_instance_path && (strcmp(dev_path, list_obj->m_dev_instance_path) == 0))) {
 
 			// Device is registered
-			g_lock->unlock();
+			g_lock_dev_mgr->unlock();
 			list_obj->addHandle(h);
-			g_lock->lock();
+			g_lock_dev_mgr->lock();
 			h.m_handle = list_obj;
 			h.m_errno = 0;
 			break;
@@ -261,7 +261,7 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 		idx = g_driver_list.next(idx);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 }
 
 void DevMgr::releaseHandle(DevHandle &h)
@@ -285,7 +285,7 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **instancename)
 {
 	unsigned int i = 0;
 	int ret = -1;
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 
 	// First go through actual dev names
 	DFPointerList::Index idx = nullptr;
@@ -304,7 +304,7 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **instancename)
 		++i;
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 	return ret;
 }
 
@@ -312,16 +312,16 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 {
 	WaitList wl(in_set, out_set);
 
-	g_lock->lock();	  // HERE M7
+	g_lock_dev_mgr->lock();	  // HERE M7
 	wl.m_lock.lock(); // HERE M11
 	g_wait_list.pushFront(&wl);
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 
 	int ret = wl.m_lock.waitOnSignal(timeout_ms);
 	wl.m_lock.unlock();
 
 	// Remove the List item
-	g_lock->lock();
+	g_lock_dev_mgr->lock();
 	DFPointerList::Index idx = nullptr;
 	idx = g_wait_list.next(idx);
 
@@ -336,14 +336,14 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 		idx = g_wait_list.next(idx);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 
 	return ret;
 }
 
 void  DevMgr::updateNotify(DevObj &obj)
 {
-	g_lock->lock(); // HERE M7
+	g_lock_dev_mgr->lock(); // HERE M7
 	DFPointerList::Index idx = nullptr;
 	idx = g_wait_list.next(idx);
 
@@ -375,7 +375,7 @@ void  DevMgr::updateNotify(DevObj &obj)
 		idx = g_wait_list.next(idx);
 	}
 
-	g_lock->unlock();
+	g_lock_dev_mgr->unlock();
 }
 
 //------------------------------------------------------------------------

@@ -71,7 +71,10 @@ DFPointerList::~DFPointerList()
 
 unsigned int DFPointerList::size()
 {
-	return m_size;
+	m_sync.lock();
+	unsigned int rv = m_size;
+	m_sync.unlock();
+	return rv;
 }
 
 bool DFPointerList::pushBack(void *item)
