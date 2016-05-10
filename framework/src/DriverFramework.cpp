@@ -71,11 +71,13 @@ public:
 
 	void set(WorkCallback callback, void *arg, uint32_t delay_usec)
 	{
+		m_sync.lock();
 		m_arg = arg;
 		m_queue_time = 0;
 		m_callback = callback;
 		m_delay_usec = delay_usec;
 		m_in_use = false;
+		m_sync.unlock();
 
 		resetStats();
 	}
@@ -94,6 +96,10 @@ public:
 	unsigned long 	m_count;
 
 	bool		m_in_use = false;
+
+private:
+	SyncObj		m_sync;
+	
 };
 
 class HRTWorkQueue : public DisableCopy
@@ -206,7 +212,7 @@ uint64_t DriverFramework::offsetTime(void)
 {
 	struct timespec ts = {};
 
-	(void)clockGetMonotonic(&ts);
+	ts = absoluteTimeInFuture(0);
 
 	pthread_mutex_lock(&g_timestart_lock);
 
@@ -318,6 +324,7 @@ void Framework::waitForShutdown()
 *************************************************************************/
 void WorkItem::updateStats(unsigned int cur_usec)
 {
+	m_sync.lock();
 	unsigned long delay_usec = (m_last == ~0x0UL) ? (cur_usec - m_queue_time) : (cur_usec - m_last);
 
 	if (delay_usec < m_min) {
@@ -339,21 +346,26 @@ void WorkItem::updateStats(unsigned int cur_usec)
 	}
 
 #endif
+	m_sync.unlock();
 }
 
 void WorkItem::resetStats()
 {
+	m_sync.lock();
 	m_last = ~(unsigned long)0;
 	m_min = ~(unsigned long)0;
 	m_max = 0;
 	m_total = 0;
 	m_count = 0;
+	m_sync.unlock();
 }
 
 void WorkItem::dumpStats()
 {
+	m_sync.lock();
 	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu",
 		     m_callback, m_count, m_total / m_count, m_min, m_max);
+	m_sync.unlock();
 }
 
 /*************************************************************************

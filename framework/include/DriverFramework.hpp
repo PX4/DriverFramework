@@ -60,7 +60,7 @@ namespace DriverFramework
  *
  * @return 0 if successful, nonzero else
  */
-int clockGetRealtime(struct timespec *ts);
+int absoluteTime(struct timespec *ts);
 
 // convert offset time to absolute time
 struct timespec absoluteTimeInFuture(uint64_t time_ms);

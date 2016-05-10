@@ -49,6 +49,8 @@ protected:
 
 private:
 	bool verifyOffsetTime(void);
+	bool verifyAbsoluteTime(void);
+	bool verifyAbsoluteTimeInFuture(void);
 };
 
 

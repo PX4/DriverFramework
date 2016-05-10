@@ -64,11 +64,12 @@ using namespace DriverFramework;
 // Global Functions
 //-----------------------------------------------------------------------
 
-int DriverFramework::clockGetRealtime(struct timespec *ts)
+int DriverFramework::absoluteTime(struct timespec *ts)
 {
-	return clock_gettime(CLOCK_REALTIME, ts);
+	return clock_gettime(CLOCK_MONOTONIC, ts);
 }
 
+#if 0
 #ifdef __PX4_NUTTX
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
@@ -84,12 +85,13 @@ int DriverFramework::clockGetMonotonic(struct timespec *ts)
 	return clock_gettime(CLOCK_MONOTONIC, ts);
 #endif
 }
+#endif
 
 timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
 {
 	struct timespec ts;
 
-	clockGetMonotonic(&ts);
+	(void)absoluteTime(&ts);
 
 	uint64_t nsecs = ts.tv_nsec + time_ms * 1000000;
 	uint64_t secs = (nsecs / 1000000000);

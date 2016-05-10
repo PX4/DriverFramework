@@ -46,25 +46,26 @@ void SyncObjTest::_doTests()
 	so.unlock();
 	reportResult("Simple lock/unlock", passed);
 
-#if 0
 	uint64_t now = offsetTime();
-	int rv = so.waitOnSignal(1);
+	unsigned long wait_in_ms = 1;
+	so.lock();
+	int rv = so.waitOnSignal(wait_in_ms);
+	so.unlock();
 	uint64_t after = offsetTime();
-	uint64_t delta = after - now;
+	uint64_t delta_usec = after - now;
 
 	if (rv != ETIMEDOUT) {
-		DF_LOG_INFO("waitSignal() did not return ETIMEDOUT");
+		DF_LOG_ERR("waitSignal() did not return ETIMEDOUT");
 		passed = false;
 	}
 
-	bool dtime_ok = (delta > 1000) && (delta < 1200);
+	bool dtime_ok = (delta_usec > wait_in_ms*1000) && (delta_usec < wait_in_ms*1200);
 
 	if (!dtime_ok) {
-		DF_LOG_INFO("waitSignal() timeout of 1ms was %" PRIu64 "us", delta);
+		DF_LOG_ERR("waitSignal() timeout of 1ms was %" PRIu64 "us", delta_usec);
 		passed = false;
 	}
 
 	reportResult("waitSignal() timeout", passed && dtime_ok);
-#endif
 }
 
