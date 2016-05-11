@@ -87,8 +87,6 @@ public:
 	// This function must be called before any of the functions below
 	static int initialize(void);
 
-	static int useClockMonotonic();
-
 	// Terminate the driver framework
 	static void shutdown(void);
 
