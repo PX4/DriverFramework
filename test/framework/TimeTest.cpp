@@ -88,9 +88,8 @@ bool TimeTest::verifyAbsoluteTime()
 	int64_t msecs = delta.tv_sec * 1000 + delta.tv_nsec/1000000 - seconds * 1000;
 
 	// sleep should be accurate withing 50ms
-	DF_LOG_INFO("sleep(2) took %ldsec %ldms",seconds, msecs);
 	if (seconds != 2 || msecs > 50) {
-		DF_LOG_ERR("sleep(2) took %ldsec %ldms",seconds, msecs);
+		DF_LOG_ERR("sleep(2) took %" PRId64 "sec %" PRId64 "ms",seconds, msecs);
 		return false;
 	}
 	return true;
@@ -112,9 +111,8 @@ bool TimeTest::verifyAbsoluteTimeInFuture()
 	int64_t msecs = delta.tv_sec * 1000 + delta.tv_nsec/1000000 - seconds * 1000;
 
 	// sleep should be accurate withing 50ms
-	DF_LOG_INFO("sleep(2) took an extra %ldsec %ldms",seconds, msecs);
 	if (seconds != 0 || msecs > 50) {
-		DF_LOG_ERR("sleep(2) took an extra %ldsec %ldms",seconds, msecs);
+		DF_LOG_ERR("sleep(2) took an extra %" PRId64 "sec %" PRId64 "ms",seconds, msecs);
 		return false;
 	}
 	return true;
