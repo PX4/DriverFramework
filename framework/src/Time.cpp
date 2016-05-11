@@ -64,40 +64,33 @@ using namespace DriverFramework;
 // Global Functions
 //-----------------------------------------------------------------------
 
-int DriverFramework::absoluteTime(struct timespec *ts)
-{
-	return clock_gettime(CLOCK_MONOTONIC, ts);
-}
-
-#if 0
 #ifdef __PX4_NUTTX
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
 #endif
 #endif
-int DriverFramework::clockGetMonotonic(struct timespec *ts)
+int DriverFramework::absoluteTime(struct timespec &ts)
 {
 #if defined(__APPLE__) && defined(__MACH__)
 #define CLOCK_REALTIME 0
 	// CLOCK_MONOTONIC not available on Mac
-	return clock_gettime(CLOCK_REALTIME, ts);
+	return clock_gettime(CLOCK_REALTIME, &ts);
 #else
-	return clock_gettime(CLOCK_MONOTONIC, ts);
+	return clock_gettime(CLOCK_MONOTONIC, &ts);
 #endif
 }
-#endif
 
-timespec DriverFramework::absoluteTimeInFuture(uint64_t time_ms)
+int DriverFramework::absoluteTimeInFuture(uint64_t time_ms, struct timespec &ts)
 {
-	struct timespec ts;
+	int ret = absoluteTime(ts);
 
-	(void)absoluteTime(&ts);
+	if (ret == 0) {
+		uint64_t nsecs = ts.tv_nsec + time_ms * 1000000;
+		uint64_t secs = (nsecs / 1000000000);
 
-	uint64_t nsecs = ts.tv_nsec + time_ms * 1000000;
-	uint64_t secs = (nsecs / 1000000000);
+		ts.tv_sec += secs;
+		ts.tv_nsec = nsecs - secs * 1000000000;
+	}
 
-	ts.tv_sec += secs;
-	ts.tv_nsec = nsecs - secs * 1000000000;
-
-	return ts;
+	return ret;
 }

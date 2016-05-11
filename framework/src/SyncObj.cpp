@@ -47,7 +47,21 @@ SyncObj::SyncObj()
 {
 	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
 	initMutex(m_lock);
-	pthread_cond_init(&m_new_data_cond, NULL);
+
+	pthread_condattr_t condattr;
+	pthread_condattr_init(&condattr);
+
+// QURT always uses CLOCK_MONOTONIC.
+// CLOCK_MONOTONIC is not available on OSX.
+#if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__))
+	// Configure the pthread_cond_timedwait to use the monotonic clock
+	// because we don't want time skews to influence the scheduling.
+	if (0 != pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC)) {
+		DF_LOG_ERR("ERROR: Failed to initialize m_new_data_cond attr");
+	}
+#endif
+
+	pthread_cond_init(&m_new_data_cond, &condattr);
 }
 
 SyncObj::~SyncObj()
@@ -66,14 +80,17 @@ void SyncObj::unlock()
 	pthread_mutex_unlock(&m_lock);
 }
 
+// waitOnSignal must be called inside a lock()
+// of this object
 int SyncObj::waitOnSignal(unsigned long timeout_ms)
 {
 	int ret;
 	DEBUG("wait %p\n", &m_new_data_cond);
 
 	if (timeout_ms) {
-		struct timespec ts = absoluteTimeInFuture(timeout_ms);
-		ret = pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
+		struct timespec ts;
+		ret = absoluteTimeInFuture(timeout_ms, ts);
+		ret = ret ? ret : pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
 
 	} else {
 		ret = pthread_cond_wait(&m_new_data_cond, &m_lock);
@@ -82,6 +99,8 @@ int SyncObj::waitOnSignal(unsigned long timeout_ms)
 	return ret;
 }
 
+// signal must be called inside a lock()
+// of this object
 void SyncObj::signal(void)
 {
 	DEBUG("signal %p\n", &m_new_data_cond);

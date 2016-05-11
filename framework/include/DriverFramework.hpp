@@ -60,10 +60,10 @@ namespace DriverFramework
  *
  * @return 0 if successful, nonzero else
  */
-int absoluteTime(struct timespec *ts);
+int absoluteTime(struct timespec &ts);
 
 // convert offset time to absolute time
-struct timespec absoluteTimeInFuture(uint64_t time_ms);
+int absoluteTimeInFuture(uint64_t time_ms, struct timespec &ts);
 
 /**
  * Get the absolute time off the system monotonic clock
@@ -72,7 +72,7 @@ struct timespec absoluteTimeInFuture(uint64_t time_ms);
  *
  * @return 0 if successful, nonzero else
  */
-int clockGetMonotonic(struct timespec *ts);
+int clockGetMonotonic(struct timespec &ts);
 
 
 #ifdef DF_ENABLE_BACKTRACE
@@ -86,6 +86,8 @@ public:
 	// Initialize the driver framework
 	// This function must be called before any of the functions below
 	static int initialize(void);
+
+	static int useClockMonotonic();
 
 	// Terminate the driver framework
 	static void shutdown(void);

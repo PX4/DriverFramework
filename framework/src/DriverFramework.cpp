@@ -178,8 +178,8 @@ static pthread_t g_tid;
 static pthread_mutex_t g_framework_exit;
 static pthread_mutex_t g_hrt_lock;
 static pthread_mutex_t g_timestart_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_reschedule_cond = PTHREAD_COND_INITIALIZER;
-static pthread_cond_t g_framework_cond = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t g_reschedule_cond;
+static pthread_cond_t g_framework_cond;
 
 static WorkItems *g_work_items = nullptr;
 
@@ -212,7 +212,11 @@ uint64_t DriverFramework::offsetTime(void)
 {
 	struct timespec ts = {};
 
-	ts = absoluteTimeInFuture(0);
+	int ret = absoluteTime(ts);
+	if (ret != 0) {
+		DF_LOG_ERR("ERROR: absoluteTime returned (%d)", ret);
+		return 0;
+	}
 
 	pthread_mutex_lock(&g_timestart_lock);
 
@@ -306,6 +310,23 @@ int Framework::initialize()
 
 	if (ret < 0) {
 		return ret - 30;
+	}
+
+	pthread_condattr_t condattr;
+	pthread_condattr_init(&condattr);
+
+// QURT always uses CLOCK_MONOTONIC.
+// CLOCK_MONOTONIC is not available on OSX.
+#if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__))
+	// Configure the pthread_cond_timedwait to use the monotonic clock
+	// because we don't want time skews to influence the scheduling.
+	if (0 != pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC)) {
+		return -1;
+	}
+#endif
+
+	if (0 != pthread_cond_init(&g_framework_cond, &condattr)) {
+		return -40;
 	}
 
 	return 0;
@@ -416,7 +437,7 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 
 	int ret = setRealtimeSched();
 	if (ret != 0) {
-		DF_LOG_ERR("setRealtimeSched failed");
+		DF_LOG_ERR("WARNING: setRealtimeSched failed (not run as root?)");
 	}
 
 	DF_LOG_INFO("process_trampoline %d", ret);
@@ -458,23 +479,22 @@ int HRTWorkQueue::initialize(void)
 
 	DF_LOG_DEBUG("pthread_mutex_init success");
 
-#if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__))
-	// QURT supposedly always uses CLOCK_MONOTONIC.
-	// Also CLOCK_MONOTONIC is not available on Mac.
 	pthread_condattr_t condattr;
 	pthread_condattr_init(&condattr);
 
+// QURT always uses CLOCK_MONOTONIC.
+// CLOCK_MONOTONIC is not available on OSX.
+#if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__))
 	// Configure the pthread_cond_timedwait to use the monotonic clock
 	// because we don't want time skews to influence the scheduling.
 	if (0 != pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC)) {
-		return -4;
+		return -1;
 	}
+#endif
 
 	if (0 != pthread_cond_init(&g_reschedule_cond, &condattr)) {
-		return -5;
+		return -2;
 	}
-
-#endif
 
 	pthread_attr_t attr;
 	int ret = pthread_attr_init(&attr);

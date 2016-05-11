@@ -68,7 +68,7 @@ bool TimeTest::verifyAbsoluteTime()
 {
 	struct timespec ts, ts2;
 
-	int rv = absoluteTime(&ts);
+	int rv = absoluteTime(ts);
 	if (rv) {
 		DF_LOG_ERR("absoluteTime failed (%d)",rv);
 		return false;
@@ -76,7 +76,7 @@ bool TimeTest::verifyAbsoluteTime()
 
 	sleep(2);
 
-	rv = absoluteTime(&ts2);
+	rv = absoluteTime(ts2);
 	if (rv) {
 		DF_LOG_ERR("absoluteTime failed (%d)",rv);
 		return false;
@@ -100,11 +100,11 @@ bool TimeTest::verifyAbsoluteTimeInFuture()
 {
 	struct timespec ts, ts2;
 
-	ts = absoluteTimeInFuture(2000);
+	(void)absoluteTimeInFuture(2000, ts);
 
 	sleep(2);
 
-	(void)absoluteTime(&ts2);
+	(void)absoluteTime(ts2);
 
 	struct timespec delta = { ts2.tv_sec - ts.tv_sec, ts2.tv_nsec - ts.tv_nsec };
 
