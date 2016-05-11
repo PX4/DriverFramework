@@ -86,7 +86,7 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 		// Shouldn't take more than extra 50us
 		uint64_t time_to_achieve = delay_usec * (i+1) + 100;
 
-		DF_LOG_INFO("Delay: %uusec Expected: %lu Actual: %lu Delta: %ldusec",
+		DF_LOG_INFO("Delay: %uusec Expected: %" PRIu64 " Actual: %" PRIu64 " Delta: %ldusec",
 			delay_usec * (i+1), starttime + delay_usec * (i+1), cb_times[i],
 			(long)(cb_times[i]-starttime-(delay_usec * (i+1))));
 
