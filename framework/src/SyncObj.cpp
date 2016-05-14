@@ -38,8 +38,8 @@
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
 
-//#define DEBUG(FMT, ...)
-#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
+#define DEBUG(FMT, ...)
+//#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
 
 using namespace DriverFramework;
 
@@ -62,6 +62,9 @@ SyncObj::SyncObj()
 #endif
 
 	pthread_cond_init(&m_new_data_cond, &condattr);
+	if ((void *)this == (void *)0x15475a0) {
+		backtrace();
+	}
 }
 
 SyncObj::~SyncObj()
@@ -85,7 +88,7 @@ void SyncObj::unlock()
 int SyncObj::waitOnSignal(unsigned long timeout_ms)
 {
 	int ret;
-	DEBUG("wait %p\n", &m_new_data_cond);
+	DEBUG("wait %p %lu\n", &m_new_data_cond, timeout_ms);
 
 	if (timeout_ms) {
 		struct timespec ts;

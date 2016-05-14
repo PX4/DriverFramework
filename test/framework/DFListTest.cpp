@@ -219,8 +219,12 @@ void DFListTest::uintListTest()
 
 void DFListTest::_doTests()
 {
+	DF_LOG_INFO("---------------A--------------");
 	unmanagedListTest();
+	DF_LOG_INFO("---------------B--------------");
 	managedListTest();
+	DF_LOG_INFO("---------------C--------------");
 	uintListTest();
+	DF_LOG_INFO("---------------D--------------");
 }
 

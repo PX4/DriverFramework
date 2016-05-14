@@ -38,6 +38,7 @@
 
 static void setNotify(void *arg)
 {
+	DF_LOG_INFO("setNotify");
 	DevObj *p = reinterpret_cast<DevObj *>(arg);
 
 	DevMgr::updateNotify(*p);
@@ -101,14 +102,15 @@ bool DevMgrTest::verifyUpdateNotify()
 	DevMgr::getHandle(devname, h);
 
 	if (!h.isValid()) {
-		DF_LOG_INFO("Failed to open %s (%d)", devname, h.getError());
+		DF_LOG_ERR("Failed to open %s (%d)", devname, h.getError());
 		return false;
 	}
+	DF_LOG_INFO("TEST 1");
 
 	TestDriver *p = DevMgr::getDevObjByHandle<TestDriver>(h);
 
 	if (p == nullptr) {
-		DF_LOG_INFO("Failed to get dev obj from handle");
+		DF_LOG_ERR("Failed to get dev obj from handle");
 		return false;
 	}
 
@@ -116,12 +118,26 @@ bool DevMgrTest::verifyUpdateNotify()
 	WorkHandle wh;
 	WorkMgr::getWorkHandle(setNotify, p, 10, wh);
 
+	if (!wh.isValid()) {
+		DF_LOG_ERR("getWorkHandle failed");
+		return false;
+	}
+	DF_LOG_INFO("TEST 2");
+
+	int ret = WorkMgr::schedule(wh);
+	if (ret != 0) {
+		DF_LOG_ERR("schedule failed %d", ret);
+		return false;
+	}
+	DF_LOG_INFO("TEST 3");
+
 	UpdateList in_set, out_set;
 
 	in_set.pushBack(&h);
 
 	// Blocking read
-	int ret = DevMgr::waitForUpdate(in_set, out_set, 0);
+	ret = DevMgr::waitForUpdate(in_set, out_set, 0);
+	DF_LOG_INFO("TEST 4");
 
 	if (ret != 0 && out_set.size() != 1) {
 		DF_LOG_INFO("Failed to set handle error");

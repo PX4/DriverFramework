@@ -45,6 +45,8 @@ if("${DF_TARGET}" STREQUAL "nuttx")
 else()
 	df_add_library(df_driver_framework
 		DriverFramework.cpp
+		WorkMgr.cpp
+		WorkItems.cpp
 		DevMgr.cpp
 		DevObj.cpp
 		SyncObj.cpp
