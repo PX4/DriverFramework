@@ -75,7 +75,7 @@ class WorkMgr
 public:
 	// Interface functions
 	static void getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle &handle);
-	static int releaseWorkHandle(WorkHandle &handle);
+	static void releaseWorkHandle(WorkHandle &handle);
 	static int schedule(WorkHandle &handle);
 	static void setError(WorkHandle &h, int error);
 
@@ -85,6 +85,8 @@ private:
 	static bool isValidHandle(const WorkHandle &h);
 	static int initialize(void);
 	static void finalize(void);
+
+	static bool m_initialized;
 };
 
 };

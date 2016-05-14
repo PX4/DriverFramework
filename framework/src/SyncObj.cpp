@@ -38,8 +38,8 @@
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
 
-#define DEBUG(FMT, ...)
-//#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
+//#define DEBUG(FMT, ...)
+#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
 
 using namespace DriverFramework;
 
@@ -70,13 +70,13 @@ SyncObj::~SyncObj()
 
 void SyncObj::lock()
 {
-	DEBUG("Lock %p\n", this);
+	DEBUG("%p lock\n", this);
 	pthread_mutex_lock(&m_lock);
 }
 
 void SyncObj::unlock()
 {
-	DEBUG("unock %p\n", this);
+	DEBUG("%p unlock\n", this);
 	pthread_mutex_unlock(&m_lock);
 }
 
