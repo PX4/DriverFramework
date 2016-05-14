@@ -426,47 +426,11 @@ void HRTWorkQueue::process(void)
 	}
 };
 
-
-int WorkItems::schedule(unsigned int index)
+// This has to be in ths file to access HRTWorkQueue::scheduleWorkItem
+int WorkMgr::schedule(DriverFramework::WorkHandle &wh)
 {
-	DF_LOG_INFO("WorkItems::schedule");
-	WorkItems &inst = instance();
-
-	inst.m_lock.lock();
-	int ret = inst._schedule(index);
-	inst.m_lock.unlock();
-	return ret;
+	DF_LOG_INFO("WorkMgr::schedule");
+	HRTWorkQueue::instance().scheduleWorkItem(wh);
+	return (wh.m_errno == 0) ? 0 : -1;
 }
 
-int WorkItems::_schedule(unsigned int index)
-{
-	DF_LOG_INFO("WorkItems::_schedule");
-
-	int ret = 0;
-
-	if (_isValidIndex(index)) {
-		WorkItem *item;
-		
-		if (getAt(index, &item)) {
-			if (item->m_in_use) {
-				DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
-				ret = EBUSY;
-
-			} else {
-				DF_LOG_INFO("WorkMgr::schedule - do schedule");
-				item->m_queue_time = offsetTime();
-				item->m_in_use = true;
-				m_work_list.pushBack(index);
-				//HRTWorkQueue::instance()->scheduleWorkItem(wh);
-			}
-
-		} else {
-			DF_LOG_ERR("couldn't find handle to schedule");
-			ret = EBADF;
-		}
-	} else {
-		ret = EBADF;
-	}
-
-	return ret;
-}

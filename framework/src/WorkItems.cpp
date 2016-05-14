@@ -34,6 +34,7 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 
+#include <errno.h>
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
 #include "WorkItems.hpp"
@@ -112,6 +113,49 @@ void WorkItems::_finalize()
 	m_work_items.clear();
 }
 
+int WorkItems::schedule(unsigned int index)
+{
+	DF_LOG_DEBUG("WorkItems::schedule");
+	WorkItems &inst = instance();
+
+	inst.m_lock.lock();
+	int ret = inst._schedule(index);
+	inst.m_lock.unlock();
+	return ret;
+}
+
+int WorkItems::_schedule(unsigned int index)
+{
+	DF_LOG_DEBUG("WorkItems::_schedule");
+
+	int ret = 0;
+
+	if (_isValidIndex(index)) {
+		WorkItem *item;
+		
+		if (getAt(index, &item)) {
+			if (item->m_in_use) {
+				DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
+				ret = EBUSY;
+
+			} else {
+				DF_LOG_DEBUG("WorkMgr::schedule - do schedule");
+				item->m_queue_time = offsetTime();
+				item->m_in_use = true;
+				m_work_list.pushBack(index);
+			}
+
+		} else {
+			DF_LOG_ERR("couldn't find handle to schedule");
+			ret = EBADF;
+		}
+	} else {
+		ret = EBADF;
+	}
+
+	return ret;
+}
+
 void WorkItems::unschedule(unsigned int index)
 {
 	WorkItems &inst = instance();
@@ -154,7 +198,7 @@ void WorkItems::_unschedule(unsigned int index)
 
 void WorkItems::processExpiredWorkItems(uint64_t &next)
 {
-	DF_LOG_INFO("WorkItems::processExpiredWorkItems %" PRIu64 "", next);
+	DF_LOG_DEBUG("WorkItems::processExpiredWorkItems %" PRIu64 "", next);
 	WorkItems &inst = instance();
 
 	inst.m_lock.lock();
@@ -164,7 +208,7 @@ void WorkItems::processExpiredWorkItems(uint64_t &next)
 
 void WorkItems::_processExpiredWorkItems(uint64_t &next)
 {
-	DF_LOG_INFO("WorkItems::processExpiredWorkItems");
+	DF_LOG_DEBUG("WorkItems::processExpiredWorkItems");
 	uint64_t elapsed;
 	uint64_t now;
 

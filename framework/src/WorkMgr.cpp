@@ -167,16 +167,6 @@ void WorkMgr::releaseWorkHandle(WorkHandle &wh)
 	wh.m_handle = -1;
 }
 
-int WorkMgr::schedule(DriverFramework::WorkHandle &wh)
-{
-	DF_LOG_INFO("WorkMgr::schedule");
-	int ret = WorkItems::schedule(wh.m_handle);
-	if (ret != 0) {
-		wh.m_errno = ret;
-	}
-	return (ret == 0) ? 0 : -1;
-}
-
 void WorkMgr::setError(WorkHandle &h, int error)
 {
 	h.m_errno = error;
