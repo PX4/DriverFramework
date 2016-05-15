@@ -319,14 +319,14 @@ static int setRealtimeSched()
 
 void *HRTWorkQueue::process_trampoline(void *arg)
 {
-	DF_LOG_INFO("HRTWorkQueue::process_trampoline");
+	DF_LOG_DEBUG("HRTWorkQueue::process_trampoline");
 
 	int ret = setRealtimeSched();
 	if (ret != 0) {
 		DF_LOG_ERR("WARNING: setRealtimeSched failed (not run as root?)");
 	}
 
-	DF_LOG_INFO("process_trampoline %d", ret);
+	DF_LOG_DEBUG("process_trampoline %d", ret);
 
 	instance().process();
 
@@ -341,7 +341,7 @@ HRTWorkQueue &HRTWorkQueue::instance(void)
 
 int HRTWorkQueue::initialize(void)
 {
-	DF_LOG_INFO("HRTWorkQueue::initialize");
+	DF_LOG_DEBUG("HRTWorkQueue::initialize");
 
 	pthread_attr_t attr;
 	int ret = pthread_attr_init(&attr);
@@ -368,7 +368,7 @@ int HRTWorkQueue::initialize(void)
 		return -8;
 	}
 
-	DF_LOG_INFO("pthread_create success");
+	DF_LOG_DEBUG("pthread_create success");
 	return 0;
 }
 
@@ -384,12 +384,12 @@ void HRTWorkQueue::finalize(void)
 
 void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 {
-	DF_LOG_INFO("HRTWorkQueue::scheduleWorkItem (%p)", &wh);
+	DF_LOG_DEBUG("HRTWorkQueue::scheduleWorkItem (%p)", &wh);
 
 	// Handle is known to be valid
 	int ret = WorkItems::schedule(wh.m_handle);
 
-	DF_LOG_INFO("WorkItems::schedule %d", ret);
+	DF_LOG_DEBUG("WorkItems::schedule %d", ret);
 	if (ret == 0) {
 		wh.m_errno = 0;
 		g_reschedule.lock();
@@ -409,7 +409,7 @@ void HRTWorkQueue::shutdown(void)
 	DF_LOG_DEBUG("HRTWorkQueue::shutdown");
 	g_run_status.terminate();
 	g_reschedule.lock();
-	g_reschedule.waitOnSignal(0);
+	g_reschedule.signal();
 	g_reschedule.unlock();
 }
 
@@ -454,7 +454,7 @@ void HRTWorkQueue::process(void)
 // This has to be in ths file to access HRTWorkQueue::scheduleWorkItem
 int WorkMgr::schedule(DriverFramework::WorkHandle &wh)
 {
-	DF_LOG_INFO("WorkMgr::schedule");
+	DF_LOG_DEBUG("WorkMgr::schedule");
 	HRTWorkQueue::instance().scheduleWorkItem(wh);
 	return (wh.m_errno == 0) ? 0 : -1;
 }

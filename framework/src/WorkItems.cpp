@@ -243,8 +243,9 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 				item->m_in_use = true;
 
 				void *tmpptr = item->m_arg;
+				WorkCallback cb = item->m_callback;
 				m_lock.unlock();
-				item->m_callback(tmpptr);
+				cb(tmpptr);
 				m_lock.lock();
 			}
 

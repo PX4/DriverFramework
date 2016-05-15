@@ -63,6 +63,7 @@ int WorkMgr::initialize()
 		DF_LOG_ERR("WorkMgr already initialized");
 		return -1;
 	}
+	m_initialized = true;
 
 	return 0;
 }

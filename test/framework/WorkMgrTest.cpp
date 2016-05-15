@@ -64,14 +64,16 @@ static void callback(void *arg)
 
 static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 {
-	*arg = 0;
 	uint64_t starttime = offsetTime();
 
+	cb_counter.lock();
+	*arg = 0;
 	int ret = WorkMgr::schedule(h);
 	if (ret != 0) {
 		DF_LOG_ERR("Schedule failed (%d)", ret);
 		return false;
 	}
+	cb_counter.unlock();
 
 	usleep(delay_usec * 3 + 200);
 	cb_counter.lock();

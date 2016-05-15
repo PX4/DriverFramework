@@ -38,7 +38,7 @@
 
 static void setNotify(void *arg)
 {
-	DF_LOG_INFO("setNotify");
+	DF_LOG_DEBUG("setNotify");
 	DevObj *p = reinterpret_cast<DevObj *>(arg);
 
 	DevMgr::updateNotify(*p);
@@ -50,7 +50,7 @@ bool DevMgrTest::verifyStart(TestDriver &test)
 	int ret = test.init();
 
 	if (ret < 0) {
-		DF_LOG_INFO("init() failed (%d))", ret);
+		DF_LOG_ERR("init() failed (%d))", ret);
 		return false;
 	}
 
@@ -58,7 +58,7 @@ bool DevMgrTest::verifyStart(TestDriver &test)
 	ret = test.start();
 
 	if (ret < 0) {
-		DF_LOG_INFO("start() failed (%d)", ret);
+		DF_LOG_ERR("start() failed (%d)", ret);
 		return false;
 	}
 
@@ -85,7 +85,7 @@ bool DevMgrTest::verifyRegisterDriver()
 	}
 
 	if (!found) {
-		DF_LOG_INFO("Device '%s' was not found", devname);
+		DF_LOG_ERR("Device '%s' was not found", devname);
 		return false;
 	}
 
@@ -136,7 +136,7 @@ bool DevMgrTest::verifyUpdateNotify()
 	ret = DevMgr::waitForUpdate(in_set, out_set, 0);
 
 	if (ret != 0 && out_set.size() != 1) {
-		DF_LOG_INFO("Failed to set handle error");
+		DF_LOG_ERR("Failed to set handle error");
 	}
 
 	UpdateList::Index index = nullptr;
@@ -145,7 +145,7 @@ bool DevMgrTest::verifyUpdateNotify()
 
 	// Verify that the handle returned was the handle passed in
 	if (ph != &h) {
-		DF_LOG_INFO("handle address incorrect");
+		DF_LOG_ERR("handle address incorrect");
 		return false;
 	}
 
@@ -157,7 +157,7 @@ bool DevMgrTest::verifyUpdateNotify()
 	DevMgr::setDevHandleError(h, 1);
 
 	if (h.getError() != 1) {
-		DF_LOG_INFO("Failed to set handle error");
+		DF_LOG_ERR("Failed to set handle error");
 		return false;
 	}
 
