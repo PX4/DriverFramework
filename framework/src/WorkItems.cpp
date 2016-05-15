@@ -41,8 +41,6 @@
 
 using namespace DriverFramework;
 
-extern bool    g_exit_requested;
-
 bool WorkItems::isValidIndex(unsigned int index)
 {
 	WorkItems &inst = instance();
@@ -185,7 +183,6 @@ void WorkItems::_unschedule(unsigned int index)
 
 				} else {
 					item->m_in_use = false;
-					idx = m_work_list.erase(idx);
 					// We're only unscheduling one item, so we can bail out here.
 					break;
 				}
@@ -215,21 +212,30 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 	DFUIntList::Index idx = nullptr;
 	idx = m_work_list.next(idx);
 
-	while ((!g_exit_requested) && (idx != nullptr)) {
-		DF_LOG_INFO("HRTWorkQueue::process work exists");
+	while (g_run_status.check() && (idx != nullptr)) {
+		DF_LOG_DEBUG("HRTWorkQueue::process work exists");
 		unsigned int index;
 		m_work_list.get(idx, index);
+		
 
 		if (index < m_work_items.size()) {
 			WorkItem *item = nullptr;
 			getAt(index, &item);
+			DF_LOG_DEBUG("WorkList (%p) in use=%d delay=%u queue_time=%" PRIu64 , item, item->m_in_use, item->m_delay_usec, item->m_queue_time);
+
+			// Remove inactive work items from work list here to prevent use after free
+			if (item->m_in_use == false) {
+				// Remove the inactive work item from work list
+				idx = m_work_list.erase(idx);
+				continue;
+			}
+
 			now = offsetTime();
 			elapsed = now - item->m_queue_time;
 			//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
 
 			if (elapsed >= item->m_delay_usec) {
-
-				DF_LOG_DEBUG("HRTWorkQueue::process do work (%p) (%u)", item, item->m_delay_usec);
+				DF_LOG_DEBUG("WorkItems::processExpiredWorkItems  do work: (%p) (%u)", item, item->m_delay_usec);
 				item->updateStats(now);
 
 				// reschedule work
@@ -252,4 +258,62 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 			idx = m_work_list.next(idx);
 		}
 	}
+	DF_LOG_DEBUG("Setting next=%" PRIu64, next);
 }
+
+int WorkItems::getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index)
+{
+	WorkItems &inst = instance();
+
+	inst.m_lock.lock();
+	int ret = inst._getIndex(cb, arg, delay_usec, index);
+	inst.m_lock.unlock();
+	return ret;
+}
+
+int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index)
+{
+	int ret;
+
+	// unschedule work and erase the handle if handle exists
+	if (_isValidIndex(index)) {
+		_unschedule(index);
+	} else {
+		// find an available WorkItem
+		unsigned int i = 0;
+		DFPointerList::Index idx = nullptr;
+		idx = m_work_items.next(idx);
+
+		while (idx != nullptr) {
+			WorkItem *wi = reinterpret_cast<WorkItem *>(m_work_items.get(idx));
+
+			if (!wi->m_in_use) {
+				index = i;
+				break;
+			}
+
+			++i;
+			idx = m_work_items.next(idx);
+		}
+
+		// If no free WorkItems, add one to the end
+		if (!_isValidIndex(index)) {
+			m_work_items.pushBack(new WorkItem());
+			index = m_work_items.size() - 1;
+		}
+	}
+
+	if (_isValidIndex(index)) {
+		// Re-use the WorkItem
+		WorkItem *item;
+		getAt(index, &item);
+
+		item->set(cb, arg, delay_usec);
+		ret = 0;
+	} else {
+		ret = EBADF;
+	}
+
+	return ret;
+}
+

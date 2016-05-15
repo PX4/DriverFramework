@@ -89,7 +89,10 @@ using namespace DriverFramework;
 //-----------------------------------------------------------------------
 // Global Variables
 //-----------------------------------------------------------------------
-bool 	g_exit_requested = false;
+namespace DriverFramework
+{
+RunStatus g_run_status;
+};
 
 //-----------------------------------------------------------------------
 // Static Variables
@@ -99,8 +102,7 @@ static pthread_t g_tid;
 
 static SyncObj 	g_framework;
 static SyncObj 	g_reschedule;
-
-static SyncObj 	g_lock_df;
+static SyncObj	g_run_status_lock;
 
 //-----------------------------------------------------------------------
 // Static Functions
@@ -193,6 +195,24 @@ void DriverFramework::backtrace()
 //-----------------------------------------------------------------------
 // Class Methods
 //-----------------------------------------------------------------------
+
+/*************************************************************************
+  RunStatus
+*************************************************************************/
+bool RunStatus::check()
+{
+	g_run_status_lock.lock();
+	bool ret = m_run;
+	g_run_status_lock.unlock();
+	return ret;
+}
+
+void RunStatus::terminate()
+{
+	g_run_status_lock.lock();
+	m_run = false;
+	g_run_status_lock.unlock();
+}
 
 /*************************************************************************
   Framework
@@ -366,15 +386,15 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 {
 	DF_LOG_INFO("HRTWorkQueue::scheduleWorkItem (%p)", &wh);
 
-	g_reschedule.lock();
-
 	// Handle is known to be valid
 	int ret = WorkItems::schedule(wh.m_handle);
 
 	DF_LOG_INFO("WorkItems::schedule %d", ret);
 	if (ret == 0) {
 		wh.m_errno = 0;
+		g_reschedule.lock();
 		g_reschedule.signal();
+		g_reschedule.unlock();
 	} else if (ret == EBADF) {
 		wh.m_errno = EBADF;
 		wh.m_handle = -1;
@@ -382,14 +402,13 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 		wh.m_errno = ret;
 	}
 
-	g_reschedule.unlock();
 }
 
 void HRTWorkQueue::shutdown(void)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::shutdown");
+	g_run_status.terminate();
 	g_reschedule.lock();
-	g_exit_requested = true;
 	g_reschedule.waitOnSignal(0);
 	g_reschedule.unlock();
 }
@@ -401,7 +420,7 @@ void HRTWorkQueue::process(void)
 	timespec ts;
 	uint64_t now;
 
-	while (!g_exit_requested) {
+	while (g_run_status.check()) {
 		now = offsetTime();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -412,16 +431,22 @@ void HRTWorkQueue::process(void)
 		uint64_t TUNING_ADJUSTMENT = 150;
 
 		now = offsetTime();
+		DF_LOG_DEBUG("now=%" PRIu64, now);
 		next -= TUNING_ADJUSTMENT;
-		if (next > now) {
-			// pthread_cond_timedwait uses absolute time
-			ts = offsetTimeToAbsoluteTime(next-TUNING_ADJUSTMENT);
 
-			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", next - offsetTime());
+		uint64_t wait_time_usec = (next > now) ? next - now : 0;
+
+		// Wait granularity is 1ms
+		if (wait_time_usec > 1000) {
+			// pthread_cond_timedwait uses absolute time
+			ts = offsetTimeToAbsoluteTime(next);
+
+			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", wait_time_usec);
 			// Wait until next expiry or until a new item is rescheduled
 			g_reschedule.lock();
-			g_reschedule.waitOnSignal(next - now);
+			g_reschedule.waitOnSignal(wait_time_usec/1000);
 			g_reschedule.unlock();
+			DF_LOG_DEBUG("Done wait");
 		}
 	}
 };

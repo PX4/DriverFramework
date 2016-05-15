@@ -67,12 +67,15 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 	*arg = 0;
 	uint64_t starttime = offsetTime();
 
-	if (WorkMgr::schedule(h) != 0) {
+	int ret = WorkMgr::schedule(h);
+	if (ret != 0) {
+		DF_LOG_ERR("Schedule failed (%d)", ret);
 		return false;
 	}
 
 	usleep(delay_usec * 3 + 200);
 	cb_counter.lock();
+	WorkMgr::releaseWorkHandle(h);
 	if (*arg < 3) {
 		DF_LOG_ERR("Failed to get 3 callbacks (%d)", *arg);
 		cb_counter.unlock();
@@ -131,8 +134,6 @@ bool WorkMgrTest::verifySchedule()
 
 	for (uint32_t i = 10; i < 300010; i += 10000) {
 		delay_usec = i;
-		WorkMgr::releaseWorkHandle(h);
-
 		WorkMgr::getWorkHandle(callback, &arg, delay_usec, h);
 
 		if (!h.isValid()) {

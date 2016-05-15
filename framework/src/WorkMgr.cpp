@@ -93,62 +93,6 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 	}
 }
 
-int WorkItems::getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index)
-{
-	WorkItems &inst = instance();
-
-	inst.m_lock.lock();
-	int ret = inst._getIndex(cb, arg, delay_usec, index);
-	inst.m_lock.unlock();
-	return ret;
-}
-
-int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index)
-{
-	int ret;
-
-	// unschedule work and erase the handle if handle exists
-	if (_isValidIndex(index)) {
-		_unschedule(index);
-	} else {
-		// find an available WorkItem
-		unsigned int i = 0;
-		DFPointerList::Index idx = nullptr;
-		idx = m_work_items.next(idx);
-
-		while (idx != nullptr) {
-			WorkItem *wi = reinterpret_cast<WorkItem *>(m_work_items.get(idx));
-
-			if (!wi->m_in_use) {
-				index = i;
-				break;
-			}
-
-			++i;
-			idx = m_work_items.next(idx);
-		}
-
-		// If no free WorkItems, add one to the end
-		if (!_isValidIndex(index)) {
-			m_work_items.pushBack(new WorkItem());
-			index = m_work_items.size() - 1;
-		}
-	}
-
-	if (_isValidIndex(index)) {
-		// Re-use the WorkItem
-		WorkItem *item;
-		getAt(index, &item);
-
-		item->set(cb, arg, delay_usec);
-		ret = 0;
-	} else {
-		ret = EBADF;
-	}
-
-	return ret;
-}
-
 void WorkMgr::releaseWorkHandle(WorkHandle &wh)
 {
 	DF_LOG_DEBUG("WorkMgr::releaseWorkHandle");

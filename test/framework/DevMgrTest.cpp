@@ -105,7 +105,6 @@ bool DevMgrTest::verifyUpdateNotify()
 		DF_LOG_ERR("Failed to open %s (%d)", devname, h.getError());
 		return false;
 	}
-	DF_LOG_INFO("TEST 1");
 
 	TestDriver *p = DevMgr::getDevObjByHandle<TestDriver>(h);
 
@@ -122,14 +121,12 @@ bool DevMgrTest::verifyUpdateNotify()
 		DF_LOG_ERR("getWorkHandle failed");
 		return false;
 	}
-	DF_LOG_INFO("TEST 2");
 
 	int ret = WorkMgr::schedule(wh);
 	if (ret != 0) {
 		DF_LOG_ERR("schedule failed %d", ret);
 		return false;
 	}
-	DF_LOG_INFO("TEST 3");
 
 	UpdateList in_set, out_set;
 
@@ -137,7 +134,6 @@ bool DevMgrTest::verifyUpdateNotify()
 
 	// Blocking read
 	ret = DevMgr::waitForUpdate(in_set, out_set, 0);
-	DF_LOG_INFO("TEST 4");
 
 	if (ret != 0 && out_set.size() != 1) {
 		DF_LOG_INFO("Failed to set handle error");
