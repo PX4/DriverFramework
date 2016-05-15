@@ -53,9 +53,7 @@ void DFFrameworkTest::_doTests()
 
 	//DFDiag::listRawDevices();
 
-	DF_LOG_INFO("--- ListTests:");
 	reportResult("List tests", list_test.doTests());
-	DF_LOG_INFO("--- SyncTests:");
 	reportResult("Sync tests", sync_test.doTests());
 	reportResult("Time tests", time_test.doTests());
 	reportResult("DevMgr tests", devmgr_test.doTests());
