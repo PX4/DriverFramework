@@ -94,23 +94,5 @@ public:
 	static void waitForShutdown();
 };
 
-class RunStatus
-{
-public:
-	RunStatus() {}
-	~RunStatus() {}
-
-	// check() returns true if no terminate was requested
-	bool check();
-
-	// terminate() requests the framework to terminate
-	void terminate();
-
-private:
-	bool 	m_run = true;
-};
-
-extern RunStatus g_run_status;
-
 };
 

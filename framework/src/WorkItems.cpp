@@ -130,7 +130,7 @@ int WorkItems::_schedule(unsigned int index)
 
 	if (_isValidIndex(index)) {
 		WorkItem *item;
-		
+
 		if (getAt(index, &item)) {
 			if (item->m_in_use) {
 				DF_LOG_ERR("WorkMgr::schedule can't schedule a handle that's in use");
@@ -147,6 +147,7 @@ int WorkItems::_schedule(unsigned int index)
 			DF_LOG_ERR("couldn't find handle to schedule");
 			ret = EBADF;
 		}
+
 	} else {
 		ret = EBADF;
 	}
@@ -212,16 +213,17 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 	DFUIntList::Index idx = nullptr;
 	idx = m_work_list.next(idx);
 
-	while (g_run_status.check() && (idx != nullptr)) {
+	while (g_run_status && g_run_status->check() && (idx != nullptr)) {
 		DF_LOG_DEBUG("HRTWorkQueue::process work exists");
 		unsigned int index;
 		m_work_list.get(idx, index);
-		
+
 
 		if (index < m_work_items.size()) {
 			WorkItem *item = nullptr;
 			getAt(index, &item);
-			DF_LOG_DEBUG("WorkList (%p) in use=%d delay=%u queue_time=%" PRIu64 , item, item->m_in_use, item->m_delay_usec, item->m_queue_time);
+			DF_LOG_DEBUG("WorkList (%p) in use=%d delay=%u queue_time=%" PRIu64 , item, item->m_in_use, item->m_delay_usec,
+				     item->m_queue_time);
 
 			// Remove inactive work items from work list here to prevent use after free
 			if (item->m_in_use == false) {
@@ -259,6 +261,7 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 			idx = m_work_list.next(idx);
 		}
 	}
+
 	DF_LOG_DEBUG("Setting next=%" PRIu64, next);
 }
 
@@ -279,6 +282,7 @@ int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsign
 	// unschedule work and erase the handle if handle exists
 	if (_isValidIndex(index)) {
 		_unschedule(index);
+
 	} else {
 		// find an available WorkItem
 		unsigned int i = 0;
@@ -311,6 +315,7 @@ int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsign
 
 		item->set(cb, arg, delay_usec);
 		ret = 0;
+
 	} else {
 		ret = EBADF;
 	}

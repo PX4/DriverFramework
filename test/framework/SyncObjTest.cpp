@@ -59,7 +59,7 @@ void SyncObjTest::_doTests()
 		passed = false;
 	}
 
-	bool dtime_ok = (delta_usec > wait_in_ms*1000) && (delta_usec < wait_in_ms*1200);
+	bool dtime_ok = (delta_usec > wait_in_ms * 1000) && (delta_usec < wait_in_ms * 1200);
 
 	if (!dtime_ok) {
 		DF_LOG_ERR("waitSignal() timeout of %lums was %" PRIu64 "us", wait_in_ms, delta_usec);

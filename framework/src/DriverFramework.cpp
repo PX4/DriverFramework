@@ -62,8 +62,8 @@ class HRTWorkQueue : public DisableCopy
 public:
 	static HRTWorkQueue &instance(void);
 
-	static int initialize(void);
-	static void finalize(void);
+	int initialize(void);
+	void finalize(void);
 
 	void scheduleWorkItem(WorkHandle &wh);
 
@@ -78,7 +78,9 @@ private:
 
 	void process(void);
 
-	bool m_enable_stats = false;
+	bool 	m_enable_stats = false;
+
+	SyncObj m_reschedule;
 };
 
 
@@ -91,8 +93,9 @@ using namespace DriverFramework;
 //-----------------------------------------------------------------------
 namespace DriverFramework
 {
-RunStatus g_run_status;
+RunStatus *g_run_status = nullptr;
 };
+
 
 //-----------------------------------------------------------------------
 // Static Variables
@@ -100,9 +103,8 @@ RunStatus g_run_status;
 
 static pthread_t g_tid;
 
-static SyncObj 	g_framework;
-static SyncObj 	g_reschedule;
-static SyncObj	g_run_status_lock;
+// QuRT C++ compiler does not support static initialization of classes
+static SyncObj *g_framework;
 
 //-----------------------------------------------------------------------
 // Static Functions
@@ -120,13 +122,19 @@ static uint64_t TsToAbstime(struct timespec *ts)
 
 static uint64_t getStartTime()
 {
-	static SyncObj lock;
+	static SyncObj *lock = nullptr;
 	static uint64_t starttime = 0;
+
+	if (!lock) {
+		lock = new SyncObj;
+	}
 
 	struct timespec ts = {};
 
-	lock.lock();
+	lock->lock();
+
 	int ret = absoluteTime(ts);
+
 	if (ret != 0) {
 		printf("ERROR: absoluteTime returned (%d)", ret);
 		return 0;
@@ -135,7 +143,8 @@ static uint64_t getStartTime()
 	if (!starttime) {
 		starttime = TsToAbstime(&ts);
 	}
-	lock.unlock();
+
+	lock->unlock();
 
 	return starttime;
 }
@@ -150,6 +159,7 @@ uint64_t DriverFramework::offsetTime(void)
 	struct timespec ts = {};
 
 	int ret = absoluteTime(ts);
+
 	if (ret != 0) {
 		printf("ERROR: absoluteTime returned (%d)", ret);
 		return 0;
@@ -171,7 +181,7 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 	return ts;
 }
 
-//#if DF_ENABLE_BACKTRACE
+#if DF_ENABLE_BACKTRACE
 void DriverFramework::backtrace()
 {
 	void *buffer[10];
@@ -190,7 +200,7 @@ void DriverFramework::backtrace()
 
 	free(callstack);
 }
-//#endif
+#endif
 
 //-----------------------------------------------------------------------
 // Class Methods
@@ -201,17 +211,17 @@ void DriverFramework::backtrace()
 *************************************************************************/
 bool RunStatus::check()
 {
-	g_run_status_lock.lock();
+	m_lock.lock();
 	bool ret = m_run;
-	g_run_status_lock.unlock();
+	m_lock.unlock();
 	return ret;
 }
 
 void RunStatus::terminate()
 {
-	g_run_status_lock.lock();
+	m_lock.lock();
 	m_run = false;
-	g_run_status_lock.unlock();
+	m_lock.unlock();
 }
 
 /*************************************************************************
@@ -220,7 +230,7 @@ void RunStatus::terminate()
 void Framework::shutdown()
 {
 	// Free the HRTWorkQueue resources
-	HRTWorkQueue::finalize();
+	HRTWorkQueue::instance().finalize();
 
 	// Free the WorkMgr resources
 	WorkMgr::finalize();
@@ -229,24 +239,39 @@ void Framework::shutdown()
 	DevMgr::finalize();
 
 	// allow Framework to exit
-	g_framework.lock();
-	g_framework.signal();
-	g_framework.unlock();
+	g_framework->lock();
+	g_framework->signal();
+	g_framework->unlock();
 }
 
 int Framework::initialize()
 {
 	DF_LOG_DEBUG("Framework::initialize");
 
-	struct timespec ts = {};
+	g_framework = new SyncObj;
 
-	int ret = absoluteTime(ts);
-	if (ret != 0) {
-		DF_LOG_ERR("ERROR: absoluteTime returned (%d)", ret);
+	if (!g_framework) {
+		DF_LOG_ERR("ERROR: falled to allocate g_framework");
 		return -1;
 	}
 
-	ret = HRTWorkQueue::initialize();
+	g_run_status = new RunStatus;
+
+	if (!g_run_status) {
+		DF_LOG_ERR("g_run_status allocation failed");
+		return -2;
+	}
+
+	struct timespec ts = {};
+
+	int ret = absoluteTime(ts);
+
+	if (ret != 0) {
+		DF_LOG_ERR("ERROR: absoluteTime returned (%d)", ret);
+		return -4;
+	}
+
+	ret = HRTWorkQueue::instance().initialize();
 
 	if (ret < 0) {
 		return ret - 10;
@@ -272,35 +297,34 @@ int Framework::initialize()
 void Framework::waitForShutdown()
 {
 	// Block until shutdown requested
-	g_framework.lock();
-	g_framework.waitOnSignal(0);
-	g_framework.unlock();
+	g_framework->lock();
+	g_framework->waitOnSignal(0);
+	g_framework->unlock();
+
+	delete g_framework;
+	g_framework = nullptr;
 }
 
 /*************************************************************************
   HRTWorkQueue
 *************************************************************************/
-#include <unistd.h>
-#include <sys/syscall.h>   /* For SYS_xxx definitions */
-#include <sys/time.h>
-#include <sys/resource.h>
-
 static void show_sched_settings()
 {
 	int policy;
 	struct sched_param param;
 
 	int ret = pthread_getschedparam(pthread_self(), &policy, &param);
+
 	if (ret != 0) {
 		DF_LOG_ERR("pthread_getschedparam failed (%d)", ret);
 	}
 
 	DF_LOG_INFO("pthread info: policy=%s priority=%d",
-		(policy == SCHED_OTHER) ? "SCHED_OTHER" :
-		(policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-		(policy == SCHED_RR)    ? "SCHED_RR" :
-		"UNKNOWN",
-		param.sched_priority);
+		    (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+		    (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+		    (policy == SCHED_RR)    ? "SCHED_RR" :
+		    "UNKNOWN",
+		    param.sched_priority);
 }
 
 static int setRealtimeSched()
@@ -322,6 +346,7 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 	DF_LOG_DEBUG("HRTWorkQueue::process_trampoline");
 
 	int ret = setRealtimeSched();
+
 	if (ret != 0) {
 		DF_LOG_ERR("WARNING: setRealtimeSched failed (not run as root?)");
 	}
@@ -335,8 +360,13 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 
 HRTWorkQueue &HRTWorkQueue::instance(void)
 {
-	static HRTWorkQueue instance;
-	return instance;
+	static HRTWorkQueue *instance = nullptr;
+
+	if (!instance) {
+		instance = new HRTWorkQueue();
+	}
+
+	return *instance;
 }
 
 int HRTWorkQueue::initialize(void)
@@ -348,7 +378,7 @@ int HRTWorkQueue::initialize(void)
 
 	if (ret != 0) {
 		DF_LOG_ERR("pthread_attr_init failed");
-		return -6;
+		return -1;
 	}
 
 #ifdef __QURT
@@ -358,17 +388,18 @@ int HRTWorkQueue::initialize(void)
 
 	if (pthread_attr_setstacksize(&attr, stacksize) != 0) {
 		DF_LOG_ERR("failed to set stack size of %lu bytes", stacksize);
-		return -7;
+		return -2;
 	}
 
 #endif
 
 	// Create high priority worker thread
 	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
-		return -8;
+		return -3;
 	}
 
 	DF_LOG_DEBUG("pthread_create success");
+
 	return 0;
 }
 
@@ -376,7 +407,7 @@ void HRTWorkQueue::finalize(void)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::finalize");
 
-	instance().shutdown();
+	shutdown();
 
 	// Wait for work queue thread to exit
 	pthread_join(g_tid, NULL);
@@ -390,14 +421,17 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 	int ret = WorkItems::schedule(wh.m_handle);
 
 	DF_LOG_DEBUG("WorkItems::schedule %d", ret);
+
 	if (ret == 0) {
 		wh.m_errno = 0;
-		g_reschedule.lock();
-		g_reschedule.signal();
-		g_reschedule.unlock();
+		m_reschedule.lock();
+		m_reschedule.signal();
+		m_reschedule.unlock();
+
 	} else if (ret == EBADF) {
 		wh.m_errno = EBADF;
 		wh.m_handle = -1;
+
 	} else {
 		wh.m_errno = ret;
 	}
@@ -407,10 +441,14 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 void HRTWorkQueue::shutdown(void)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::shutdown");
-	g_run_status.terminate();
-	g_reschedule.lock();
-	g_reschedule.signal();
-	g_reschedule.unlock();
+
+	if (g_run_status) {
+		g_run_status->terminate();
+	}
+
+	m_reschedule.lock();
+	m_reschedule.signal();
+	m_reschedule.unlock();
 }
 
 void HRTWorkQueue::process(void)
@@ -420,7 +458,7 @@ void HRTWorkQueue::process(void)
 	timespec ts;
 	uint64_t now;
 
-	while (g_run_status.check()) {
+	while (g_run_status && g_run_status->check()) {
 		now = offsetTime();
 
 		// Wake up every 10 sec if nothing scheduled
@@ -428,11 +466,14 @@ void HRTWorkQueue::process(void)
 
 		WorkItems::processExpiredWorkItems(next);
 
-		uint64_t TUNING_ADJUSTMENT = 150;
-
 		now = offsetTime();
 		DF_LOG_DEBUG("now=%" PRIu64, now);
+
+#ifdef __DF_LINUX
+		// This offset removes latency in processing the items on the queue
+		uint64_t TUNING_ADJUSTMENT = 150;
 		next -= TUNING_ADJUSTMENT;
+#endif
 
 		uint64_t wait_time_usec = (next > now) ? next - now : 0;
 
@@ -443,9 +484,9 @@ void HRTWorkQueue::process(void)
 
 			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", wait_time_usec);
 			// Wait until next expiry or until a new item is rescheduled
-			g_reschedule.lock();
-			g_reschedule.waitOnSignal(wait_time_usec/1000);
-			g_reschedule.unlock();
+			m_reschedule.lock();
+			m_reschedule.waitOnSignal(wait_time_usec / 1000);
+			m_reschedule.unlock();
 			DF_LOG_DEBUG("Done wait");
 		}
 	}

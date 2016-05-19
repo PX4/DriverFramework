@@ -38,7 +38,7 @@
 
 using namespace DriverFramework;
 
-static SyncObj cb_counter;
+static SyncObj *cb_counter;
 
 static uint64_t cb_times[3];
 
@@ -46,58 +46,66 @@ void WorkMgrTest::_doTests()
 {
 	TestDriver test;
 
+	cb_counter = new SyncObj;
 	reportResult("Verify Schedule", verifySchedule());
 
 	test.stop();
+	delete cb_counter;
 }
 
 static void callback(void *arg)
 {
-	cb_counter.lock();
+	cb_counter->lock();
 	int *x = reinterpret_cast<int *>(arg);
+
 	if (*x < 3) {
 		cb_times[*x] = offsetTime();
-		*x +=1;
+		*x += 1;
 	}
-	cb_counter.unlock();
+
+	cb_counter->unlock();
 }
 
 static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 {
 	uint64_t starttime = offsetTime();
 
-	cb_counter.lock();
+	cb_counter->lock();
 	*arg = 0;
 	int ret = WorkMgr::schedule(h);
+
 	if (ret != 0) {
 		DF_LOG_ERR("Schedule failed (%d)", ret);
 		return false;
 	}
-	cb_counter.unlock();
+
+	cb_counter->unlock();
 
 	usleep(delay_usec * 3 + 200);
-	cb_counter.lock();
+	cb_counter->lock();
 	WorkMgr::releaseWorkHandle(h);
+
 	if (*arg < 3) {
 		DF_LOG_ERR("Failed to get 3 callbacks (%d)", *arg);
-		cb_counter.unlock();
+		cb_counter->unlock();
 		return false;
 	}
-	cb_counter.unlock();
 
-	for (int i =0; i< 3; i++) {
+	cb_counter->unlock();
+
+	for (int i = 0; i < 3; i++) {
 		uint64_t elapsedtime = cb_times[i] - starttime;
 
 		// Shouldn't take more than extra 50us
-		uint64_t time_to_achieve = delay_usec * (i+1) + 500;
+		uint64_t time_to_achieve = delay_usec * (i + 1) + 500;
 
 		DF_LOG_INFO("Delay: %uusec Expected: %" PRIu64 " Actual: %" PRIu64 " Delta: %ldusec",
-			delay_usec * (i+1), starttime + delay_usec * (i+1), cb_times[i],
-			(long)(cb_times[i]-starttime-(delay_usec * (i+1))));
+			    delay_usec * (i + 1), starttime + delay_usec * (i + 1), cb_times[i],
+			    (long)(cb_times[i] - starttime - (delay_usec * (i + 1))));
 
 		if (elapsedtime > time_to_achieve) {
 			DF_LOG_ERR("Failed %u usec timeout * %d (%" PRIu64 " > %" PRIu64 ")",
-				   delay_usec, (i+1), elapsedtime, time_to_achieve);
+				   delay_usec, (i + 1), elapsedtime, time_to_achieve);
 			return false;
 		}
 	}

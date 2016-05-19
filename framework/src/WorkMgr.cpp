@@ -63,6 +63,7 @@ int WorkMgr::initialize()
 		DF_LOG_ERR("WorkMgr already initialized");
 		return -1;
 	}
+
 	m_initialized = true;
 
 	return 0;
@@ -85,9 +86,11 @@ void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, Wor
 	unsigned int handle;
 
 	int ret = WorkItems::getIndex(cb, arg, delay_usec, handle);
+
 	if (ret == 0) {
 		wh.m_errno = 0;
 		wh.m_handle = (int)handle;
+
 	} else {
 		wh.m_errno = ret;
 		wh.m_handle = -1;
@@ -109,6 +112,7 @@ void WorkMgr::releaseWorkHandle(WorkHandle &wh)
 	} else {
 		wh.m_errno = EBADF;
 	}
+
 	wh.m_handle = -1;
 }
 
