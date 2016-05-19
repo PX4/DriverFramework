@@ -299,15 +299,6 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 	/* implement sensor interface via rpi2 spi */
 	int transfer_bytes = 1 + length; // first byte is address
 
-	/* Typical number of bytes should be less than 21 for MPU9250
-	 * 9 (IMU degrees of freedom) x 2bytes + 1 (tempreture) x 2bytes
-	 *	+ 1 (address byte) = 21 bytes
-	 */
-	if (transfer_bytes > 21) {
-		DF_LOG_ERR("ERROR: SPI transfer bytes request over limit");
-		return -1;
-	}
-
 	// automatic write buffer
 	uint8_t *write_buffer = (uint8_t *)alloca(transfer_bytes);
 	memset(write_buffer, 0, transfer_bytes);
