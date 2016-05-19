@@ -171,7 +171,7 @@ timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 	return ts;
 }
 
-//#if DF_ENABLE_BACKTRACE
+#if DF_ENABLE_BACKTRACE
 void DriverFramework::backtrace()
 {
 	void *buffer[10];
@@ -190,7 +190,7 @@ void DriverFramework::backtrace()
 
 	free(callstack);
 }
-//#endif
+#endif
 
 //-----------------------------------------------------------------------
 // Class Methods
