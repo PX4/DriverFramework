@@ -54,17 +54,16 @@ SyncObj::SyncObj()
 // QURT always uses CLOCK_MONOTONIC.
 // CLOCK_MONOTONIC is not available on OSX.
 #if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__))
+
 	// Configure the pthread_cond_timedwait to use the monotonic clock
 	// because we don't want time skews to influence the scheduling.
 	if (0 != pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC)) {
 		DF_LOG_ERR("ERROR: Failed to initialize m_new_data_cond attr");
 	}
+
 #endif
 
 	pthread_cond_init(&m_new_data_cond, &condattr);
-	if ((void *)this == (void *)0x15475a0) {
-		backtrace();
-	}
 }
 
 SyncObj::~SyncObj()

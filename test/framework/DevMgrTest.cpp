@@ -123,6 +123,7 @@ bool DevMgrTest::verifyUpdateNotify()
 	}
 
 	int ret = WorkMgr::schedule(wh);
+
 	if (ret != 0) {
 		DF_LOG_ERR("schedule failed %d", ret);
 		return false;

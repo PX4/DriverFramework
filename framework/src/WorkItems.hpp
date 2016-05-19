@@ -47,8 +47,13 @@ public:
 
 	static WorkItems &instance()
 	{
-		static WorkItems instance;
-		return instance;
+		static WorkItems *instance = nullptr;
+
+		if (!instance) {
+			instance = new WorkItems;
+		}
+
+		return *instance;
 	}
 
 	static int  getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index);
@@ -113,7 +118,7 @@ private:
 		unsigned long 	m_count;
 
 		bool		m_in_use = false;
-		
+
 	};
 
 	// The list of WorkItem only grows via push_back so the order is preserved and
@@ -145,6 +150,25 @@ private:
 	DFManagedList<WorkItem> m_work_items;	// List of all created work items
 	SyncObj			m_lock;
 };
+
+class RunStatus
+{
+public:
+	RunStatus() {};
+	~RunStatus() {};
+
+	// check() returns true if no terminate was requested
+	bool check();
+
+	// terminate() requests the framework to terminate
+	void terminate();
+
+private:
+	bool 	m_run = true;
+	SyncObj	m_lock;
+};
+
+extern RunStatus *g_run_status;
 
 };
 
