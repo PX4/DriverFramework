@@ -64,16 +64,11 @@ using namespace DriverFramework;
 // Global Functions
 //-----------------------------------------------------------------------
 
-#ifdef __PX4_NUTTX
-#ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 1
-#endif
-#endif
 int DriverFramework::absoluteTime(struct timespec &ts)
 {
-#if defined(__APPLE__) && defined(__MACH__)
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(__DF_NUTTX)
 #define CLOCK_REALTIME 0
-	// CLOCK_MONOTONIC not available on Mac
+	// CLOCK_MONOTONIC not available on Mac or NuttX
 	return clock_gettime(CLOCK_REALTIME, &ts);
 #else
 	return clock_gettime(CLOCK_MONOTONIC, &ts);
