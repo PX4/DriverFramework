@@ -51,8 +51,8 @@ SyncObj::SyncObj()
 	pthread_condattr_t condattr;
 	pthread_condattr_init(&condattr);
 
-// QURT always uses CLOCK_MONOTONIC.
-// CLOCK_MONOTONIC is not available on OSX.
+// CLOCK_MONOTONIC is not available on OSX and NuttX
+// CLOCK_MONOTONIC is the default on QuRT so it need not be explicitly set
 #if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__DF_NUTTX)
 
 	// Configure the pthread_cond_timedwait to use the monotonic clock
