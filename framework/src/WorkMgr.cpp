@@ -48,7 +48,7 @@ bool WorkMgr::m_initialized = false;
 // TODO FIXME: this seems conflicting with WorkHandle::isValid()
 bool WorkMgr::isValidHandle(const WorkHandle &h)
 {
-	return ((h.m_handle >= 0) && WorkItems::isValidIndex((unsigned int)h.m_handle));
+	return ((h.m_handle >= 0) && WorkItems::isValidIndex(h.m_handle));
 }
 
 //-----------------------------------------------------------------------
@@ -83,7 +83,8 @@ void WorkMgr::finalize()
 
 void WorkMgr::getWorkHandle(WorkCallback cb, void *arg, uint32_t delay_usec, WorkHandle &wh)
 {
-	unsigned int handle;
+	// Use -1 to flag that we don't know the index, otherwise we pass undefined.
+	int handle = -1;
 
 	int ret = WorkItems::getIndex(cb, arg, delay_usec, handle);
 

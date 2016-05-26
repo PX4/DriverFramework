@@ -43,7 +43,7 @@ namespace DriverFramework
 class WorkItems
 {
 public:
-	static bool isValidIndex(unsigned int index);
+	static bool isValidIndex(int index);
 
 	static WorkItems &instance()
 	{
@@ -56,10 +56,10 @@ public:
 		return *instance;
 	}
 
-	static int  getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index);
+	static int  getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, int &index);
 	static void processExpiredWorkItems(uint64_t &next);
-	static int  schedule(unsigned int index);
-	static void unschedule(unsigned int index);
+	static int  schedule(int index);
+	static void unschedule(int index);
 	static void finalize();
 
 private:
@@ -72,12 +72,12 @@ private:
 	void addItem(WorkHandle &wh);
 
 	// These version do not call m_lock.lock()
-	int  _schedule(unsigned int index);
-	void _unschedule(unsigned int index);
+	int  _schedule(int index);
+	void _unschedule(int index);
 	void _finalize();
 	void _processExpiredWorkItems(uint64_t &next);
-	int  _getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index);
-	bool _isValidIndex(unsigned int index);
+	int  _getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, int &index);
+	bool _isValidIndex(int index);
 
 	class WorkItem
 	{
@@ -126,12 +126,12 @@ private:
 	// the list to that point.
 	// This is somewhat inefficuent but in general the depth of the list is expected
 	// to be small
-	bool getAt(unsigned int index, WorkItem **item)
+	bool getAt(int index, WorkItem **item)
 	{
 		DFManagedList<WorkItem>::Index idx = nullptr;
 		idx = m_work_items.next(idx);
 
-		for (unsigned int i = 0; i < index; ++i) {
+		for (int i = 0; i < index; ++i) {
 
 			// if the index is invalid m_work_items.next() will return nullptr
 			if (idx == nullptr) {

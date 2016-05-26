@@ -41,7 +41,7 @@
 
 using namespace DriverFramework;
 
-bool WorkItems::isValidIndex(unsigned int index)
+bool WorkItems::isValidIndex(int index)
 {
 	WorkItems &inst = instance();
 
@@ -51,9 +51,9 @@ bool WorkItems::isValidIndex(unsigned int index)
 	return ret;
 }
 
-bool WorkItems::_isValidIndex(unsigned int index)
+bool WorkItems::_isValidIndex(int index)
 {
-	return (index < m_work_items.size());
+	return (index >= 0 && (index < m_work_items.size()));
 }
 
 void WorkItems::WorkItem::updateStats(unsigned int cur_usec)
@@ -111,7 +111,7 @@ void WorkItems::_finalize()
 	m_work_items.clear();
 }
 
-int WorkItems::schedule(unsigned int index)
+int WorkItems::schedule(int index)
 {
 	DF_LOG_DEBUG("WorkItems::schedule");
 	WorkItems &inst = instance();
@@ -122,7 +122,7 @@ int WorkItems::schedule(unsigned int index)
 	return ret;
 }
 
-int WorkItems::_schedule(unsigned int index)
+int WorkItems::_schedule(int index)
 {
 	DF_LOG_DEBUG("WorkItems::_schedule");
 
@@ -155,7 +155,7 @@ int WorkItems::_schedule(unsigned int index)
 	return ret;
 }
 
-void WorkItems::unschedule(unsigned int index)
+void WorkItems::unschedule(int index)
 {
 	WorkItems &inst = instance();
 
@@ -164,14 +164,14 @@ void WorkItems::unschedule(unsigned int index)
 	inst.m_lock.unlock();
 }
 
-void WorkItems::_unschedule(unsigned int index)
+void WorkItems::_unschedule(int index)
 {
 	DFUIntList::Index idx = nullptr;
 	idx = m_work_list.next(idx);
 
 	while (idx != nullptr) {
 		// If we find it in the list at the current idx, let's go ahead and delete it.
-		unsigned cur_index;
+		unsigned int cur_index;
 
 		if (m_work_list.get(idx, cur_index)) {
 
@@ -265,7 +265,7 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 	DF_LOG_DEBUG("Setting next=%" PRIu64, next);
 }
 
-int WorkItems::getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index)
+int WorkItems::getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, int &index)
 {
 	WorkItems &inst = instance();
 
@@ -275,7 +275,7 @@ int WorkItems::getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigne
 	return ret;
 }
 
-int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsigned int &index)
+int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, int &index)
 {
 	int ret;
 
@@ -285,7 +285,7 @@ int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, unsign
 
 	} else {
 		// find an available WorkItem
-		unsigned int i = 0;
+		unsigned i = 0;
 		DFPointerList::Index idx = nullptr;
 		idx = m_work_items.next(idx);
 
