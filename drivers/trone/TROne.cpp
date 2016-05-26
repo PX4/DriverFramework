@@ -68,21 +68,32 @@ int TROne::start()
 		goto exit;
 	}
 
-	result = DevObj::start();
-
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
 		goto exit;
 	}
 
-	// probe to check if device is reachable
+	/* Probe to check if device is available, otherwise give up. */
 	result = probe();
+
+	if (result != 0) {
+		DF_LOG_ERR("probing not successful");
+		goto exit;
+	}
+
+	result = DevObj::start();
+
+	if (result != 0) {
+		DF_LOG_ERR("DevObj start not successful");
+		DevObj::stop();
+		goto exit;
+
+	}
 
 exit:
 
 	if (result != 0) {
 		DF_LOG_ERR("error: Failed to start TROne");
-		DevObj::stop();
 		I2CDevObj::stop();
 		devClose();
 	}
