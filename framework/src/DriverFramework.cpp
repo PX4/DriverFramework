@@ -137,6 +137,7 @@ static uint64_t getStartTime()
 
 	if (ret != 0) {
 		printf("ERROR: absoluteTime returned (%d)", ret);
+		lock->unlock();
 		return 0;
 	}
 
