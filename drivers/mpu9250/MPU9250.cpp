@@ -167,7 +167,7 @@ int MPU9250::mpu9250_init()
 		if ((_mag = new MPU9250_mag(*this, MPU9250_MAG_SAMPLE_RATE_100HZ))
 				!= nullptr) {
 			// Initialize the magnetometer, providing the output data rate for
-			// data read from the IMU FIFO.  This is used to calculating the I2C
+			// data read from the IMU FIFO.  This is used to calculate the I2C
 			// delay for reading the magnetometer.
 			result = _mag->initialize(MPU9250_MEASURE_INTERVAL_US);
 			if (result != 0) {
@@ -185,9 +185,26 @@ int MPU9250::mpu9250_init()
 	return 0;
 }
 
+int MPU9250::mpu9250_deinit()
+{
+	// Leave the IMU in a reset state (turned off).
+	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
+
+	if (result != 0) {
+		DF_LOG_ERR("reset failed");
+	}
+
+	// Deallocate the resources for the mag driver, if enabled.
+	if (_mag_enabled && _mag != nullptr) {
+		delete _mag;
+		_mag = nullptr;
+	}
+
+	return 0;
+}
+
 int MPU9250::start()
 {
-
 	/* Open the device path specified in the class initialization. */
 	// attempt to open device in start()
 	int result = SPIDevObj::start();
@@ -224,8 +241,7 @@ int MPU9250::start()
 	result = mpu9250_init();
 
 	if (result != 0) {
-		DF_LOG_ERR(
-				"error: IMU sensor initialization failed, sensor read thread not started");
+		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
 		goto exit;
 	}
 
@@ -247,7 +263,15 @@ int MPU9250::start()
 
 int MPU9250::stop()
 {
-	int result = DevObj::stop();
+	int result = mpu9250_deinit();
+
+	if (result != 0) {
+		DF_LOG_ERR(
+				"error: IMU sensor de-initialization failed.");
+		return result;
+	}
+
+	result = DevObj::stop();
 
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
@@ -294,11 +318,13 @@ void MPU9250::reset_fifo()
 	int result;
 	if (_mag_enabled) {
 		result = _writeReg(MPUREG_USER_CTRL,
-				BITS_USER_CTRL_FIFO_RST | BITS_USER_CTRL_FIFO_EN
-						| BITS_USER_CTRL_I2C_MST_EN);
+			BITS_USER_CTRL_FIFO_RST |
+			BITS_USER_CTRL_FIFO_EN |
+			BITS_USER_CTRL_I2C_MST_EN);
 	} else {
 		result = _writeReg(MPUREG_USER_CTRL,
-				BITS_USER_CTRL_FIFO_RST | BITS_USER_CTRL_FIFO_EN);
+			BITS_USER_CTRL_FIFO_RST |
+			BITS_USER_CTRL_FIFO_EN);
 	}
 
 	if (result != 0) {
@@ -324,9 +350,8 @@ void MPU9250::_measure()
 		reset_fifo();
 
 		m_synchronize.lock();
-		if ((++m_sensor_data.fifo_overflow_counter % 1000) == 0) {
-			DF_LOG_ERR("FIFO overflow");
-		}
+		++m_sensor_data.fifo_overflow_counter;
+		DF_LOG_ERR("FIFO overflow");
 		m_synchronize.unlock();
 
 		return;
@@ -350,9 +375,9 @@ void MPU9250::_measure()
 		return;
 	}
 
-	// The FIFO buffer on the MPU is 512 bytes according to the datasheet, so let's use
-	// 36*size_of_fifo_packet.
-	const unsigned buf_len = 36 * size_of_fifo_packet;
+	// Allocate a buffer large enough for n complete packets, read from the
+	// sensor FIFO.
+	const unsigned buf_len = (MPU_MAX_LEN_FIFO_IN_BYTES / size_of_fifo_packet) * size_of_fifo_packet;
 	uint8_t fifo_read_buf[buf_len];
 
 	if (bytes_to_read <= 0) {
@@ -385,10 +410,9 @@ void MPU9250::_measure()
 		return;
 	}
 
-	for (unsigned i = 0; i < read_len / size_of_fifo_packet; ++i) {
+	for (unsigned packet_index = 0; packet_index < read_len / size_of_fifo_packet; ++packet_index) {
 
-		fifo_packet *report = (fifo_packet *) (&fifo_read_buf[i
-				* size_of_fifo_packet]);
+		fifo_packet *report = (fifo_packet *) (&fifo_read_buf[packet_index	* size_of_fifo_packet]);
 
 		/* TODO: add ifdef for endianness */
 		report->accel_x = swap16(report->accel_x);
@@ -403,19 +427,18 @@ void MPU9250::_measure()
 		// Check if the full accel range of the accel has been used. If this occurs, it is
 		// either a spike due to a crash/landing or a sign that the vibrations levels
 		// measured are excessive.
-		if (report->accel_x == INT16_MIN || report->accel_x == INT16_MAX
-				|| report->accel_y == INT16_MIN || report->accel_y == INT16_MAX
-				|| report->accel_z == INT16_MIN
-				|| report->accel_z == INT16_MAX) {
+		if (report->accel_x == INT16_MIN || report->accel_x == INT16_MAX ||
+			report->accel_y == INT16_MIN || report->accel_y == INT16_MAX ||
+			report->accel_z == INT16_MIN || report->accel_z == INT16_MAX) {
 			m_synchronize.lock();
 			++m_sensor_data.accel_range_hit_counter;
 			m_synchronize.unlock();
 		}
 
 		// Also check the full gyro range, however, this is very unlikely to happen.
-		if (report->gyro_x == INT16_MIN || report->gyro_x == INT16_MAX
-				|| report->gyro_y == INT16_MIN || report->gyro_y == INT16_MAX
-				|| report->gyro_z == INT16_MIN || report->gyro_z == INT16_MAX) {
+		if (report->gyro_x == INT16_MIN || report->gyro_x == INT16_MAX ||
+			report->gyro_y == INT16_MIN || report->gyro_y == INT16_MAX ||
+			report->gyro_z == INT16_MIN || report->gyro_z == INT16_MAX) {
 			m_synchronize.lock();
 			++m_sensor_data.gyro_range_hit_counter;
 			m_synchronize.unlock();
@@ -476,6 +499,8 @@ void MPU9250::_measure()
 				m_sensor_data.mag_ga_x = report_with_mag_data->mag_x;
 				m_sensor_data.mag_ga_y = report_with_mag_data->mag_y;
 				m_sensor_data.mag_ga_z = report_with_mag_data->mag_z;
+			} else if (mag_error == MAG_ERROR_DATA_OVERFLOW) {
+				m_sensor_data.mag_fifo_overflow_counter++;
 			}
 		}
 
@@ -483,7 +508,7 @@ void MPU9250::_measure()
 		m_sensor_data.fifo_sample_interval_us = 125;
 
 		// Flag if this is the last sample, and _publish() should wrap up the data it has received.
-		m_sensor_data.is_last_fifo_sample = ((i + 1) == (read_len / size_of_fifo_packet));
+		m_sensor_data.is_last_fifo_sample = ((packet_index + 1) == (read_len / size_of_fifo_packet));
 
 		++m_sensor_data.read_counter;
 		

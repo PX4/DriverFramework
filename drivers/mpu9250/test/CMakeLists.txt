@@ -32,7 +32,6 @@
 ############################################################################
 
 include_directories(..)
-	../../../../DriverFramework/framework/include/
 
 if("${DF_TARGET}" STREQUAL "qurt")
 	add_subdirectory(qurt)

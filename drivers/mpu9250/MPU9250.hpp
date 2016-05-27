@@ -97,6 +97,10 @@ namespace DriverFramework {
 #define MPUREG_FIFO_COUNTL		0x73
 #define MPUREG_FIFO_R_W			0x74
 
+// Length of the FIFO used by the sensor to buffer unread
+// sensor data.
+#define MPU_MAX_LEN_FIFO_IN_BYTES 512
+
 // Configuration bits MPU 9250
 #define BIT_SLEEP			0x40
 #define BIT_H_RESET			0x80
@@ -258,6 +262,9 @@ private:
 	// @returns 0 on success, -errno on failure
 	int mpu9250_init();
 
+	// @returns 0 on success, -errno on failure
+	int mpu9250_deinit();
+
 	// @return the number of FIFO bytes to collect
 	int get_fifo_count();
 
@@ -270,6 +277,5 @@ private:
 };
 
 }
-;
 // namespace DriverFramework
 
