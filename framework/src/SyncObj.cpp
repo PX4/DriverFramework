@@ -84,14 +84,14 @@ void SyncObj::unlock()
 
 // waitOnSignal must be called inside a lock()
 // of this object
-int SyncObj::waitOnSignal(unsigned long timeout_ms)
+int SyncObj::waitOnSignal(unsigned long timeout_us)
 {
 	int ret;
-	DEBUG("wait %p %lu\n", &m_new_data_cond, timeout_ms);
+	DEBUG("wait %p %lu us\n", &m_new_data_cond, timeout_us);
 
-	if (timeout_ms) {
+	if (timeout_us) {
 		struct timespec ts;
-		ret = absoluteTimeInFuture(timeout_ms, ts);
+		ret = absoluteTimeInFuture(timeout_us, ts);
 		ret = ret ? ret : pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
 
 	} else {

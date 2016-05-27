@@ -317,7 +317,7 @@ int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int 
 	g_wait_list.pushFront(&wl);
 	g_lock_dev_mgr->unlock();
 
-	int ret = wl.m_lock.waitOnSignal(timeout_ms);
+	int ret = wl.m_lock.waitOnSignal(timeout_ms*1000); // usecs needed
 	wl.m_lock.unlock();
 
 	// Remove the List item

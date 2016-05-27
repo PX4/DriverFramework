@@ -63,7 +63,7 @@ namespace DriverFramework
 int absoluteTime(struct timespec &ts);
 
 // convert offset time to absolute time
-int absoluteTimeInFuture(uint64_t time_ms, struct timespec &ts);
+int absoluteTimeInFuture(uint64_t time_us, struct timespec &ts);
 
 /**
  * Get the absolute time off the system monotonic clock

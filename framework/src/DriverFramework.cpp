@@ -478,18 +478,21 @@ void HRTWorkQueue::process(void)
 
 		uint64_t wait_time_usec = (next > now) ? next - now : 0;
 
-		// Wait granularity is 1ms
-		if (wait_time_usec > 1000) {
+		// Wait granularity is 200us
+		// TODO: this magic number needs checking
+		if (wait_time_usec > 200) {
 			// pthread_cond_timedwait uses absolute time
 			ts = offsetTimeToAbsoluteTime(next);
 
 			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", wait_time_usec);
 			// Wait until next expiry or until a new item is rescheduled
 			m_reschedule.lock();
-			m_reschedule.waitOnSignal(wait_time_usec / 1000);
+			m_reschedule.waitOnSignal(wait_time_usec);
 			m_reschedule.unlock();
 			DF_LOG_DEBUG("Done wait");
 		}
+
+		DF_LOG_DEBUG("not waiting for work (%" PRIi64 "usec)", wait_time_usec);
 	}
 };
 
