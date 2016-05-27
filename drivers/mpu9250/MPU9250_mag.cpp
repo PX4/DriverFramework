@@ -126,6 +126,7 @@ int MPU9250_mag::_initialize(int output_data_rate_in_hz)
 		DF_LOG_ERR("Unable to convert the requested mag sample rate to Hz.");
 		return -1;
 	}
+
 	uint8_t i2c_mst_delay = output_data_rate_in_hz / sample_rate_in_hz;
 	result = _imu.writeReg(MPUREG_I2C_SLV4_CTRL, i2c_mst_delay);
 	if (result != 0) {
