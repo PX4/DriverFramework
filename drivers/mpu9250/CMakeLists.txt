@@ -40,6 +40,7 @@ include_directories(
 get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 df_add_library(df_${drivername}
 	MPU9250.cpp
+	MPU9250_mag.cpp
 	)
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
