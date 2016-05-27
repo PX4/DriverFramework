@@ -47,9 +47,9 @@ void SyncObjTest::_doTests()
 	reportResult("Simple lock/unlock", passed);
 
 	uint64_t now = offsetTime();
-	unsigned long wait_in_ms = 5;
+	unsigned long wait_in_us = 5000;
 	so.lock();
-	int rv = so.waitOnSignal(wait_in_ms);
+	int rv = so.waitOnSignal(wait_in_us);
 	so.unlock();
 	uint64_t after = offsetTime();
 	uint64_t delta_usec = after - now;
@@ -59,10 +59,10 @@ void SyncObjTest::_doTests()
 		passed = false;
 	}
 
-	bool dtime_ok = (delta_usec > wait_in_ms * 1000) && (delta_usec < wait_in_ms * 1200);
+	bool dtime_ok = (delta_usec > wait_in_us) && (delta_usec < wait_in_us * 1.2f);
 
 	if (!dtime_ok) {
-		DF_LOG_ERR("waitSignal() timeout of %lums was %" PRIu64 "us", wait_in_ms, delta_usec);
+		DF_LOG_ERR("waitSignal() timeout of %luus was %" PRIu64 "us", wait_in_us, delta_usec);
 		passed = false;
 	}
 

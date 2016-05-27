@@ -75,12 +75,12 @@ int DriverFramework::absoluteTime(struct timespec &ts)
 #endif
 }
 
-int DriverFramework::absoluteTimeInFuture(uint64_t time_ms, struct timespec &ts)
+int DriverFramework::absoluteTimeInFuture(uint64_t time_us, struct timespec &ts)
 {
 	int ret = absoluteTime(ts);
 
 	if (ret == 0) {
-		uint64_t nsecs = ts.tv_nsec + time_ms * 1000000;
+		uint64_t nsecs = ts.tv_nsec + time_us * 1000;
 		uint64_t secs = (nsecs / 1000000000);
 
 		ts.tv_sec += secs;

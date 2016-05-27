@@ -88,11 +88,11 @@ bool TimeTest::verifyAbsoluteTime()
 
 	int64_t seconds = delta.tv_sec + delta.tv_nsec / 1000000000;
 
-	int64_t msecs = delta.tv_sec * 1000 + delta.tv_nsec / 1000000 - seconds * 1000;
+	int64_t usecs = delta.tv_sec * 1000000 + delta.tv_nsec / 1000 - seconds * 1000000;
 
-	// sleep should be accurate withing 50ms
-	if (seconds != 2 || msecs > 50) {
-		DF_LOG_ERR("sleep(2) took %" PRId64 "sec %" PRId64 "ms", seconds, msecs);
+	// sleep should be accurate withing 50000us
+	if (seconds != 2 || usecs > 50000) {
+		DF_LOG_ERR("sleep(2) took %" PRId64 "sec %" PRId64 "us", seconds, usecs);
 		return false;
 	}
 
@@ -103,7 +103,7 @@ bool TimeTest::verifyAbsoluteTimeInFuture()
 {
 	struct timespec ts, ts2;
 
-	(void)absoluteTimeInFuture(2000, ts);
+	(void)absoluteTimeInFuture(2000000, ts);
 
 	sleep(2);
 
@@ -112,11 +112,11 @@ bool TimeTest::verifyAbsoluteTimeInFuture()
 	struct timespec delta = { ts2.tv_sec - ts.tv_sec, ts2.tv_nsec - ts.tv_nsec };
 
 	int64_t seconds = delta.tv_sec + delta.tv_nsec / 1000000000;
-	int64_t msecs = delta.tv_sec * 1000 + delta.tv_nsec / 1000000 - seconds * 1000;
+	int64_t usecs = delta.tv_sec * 1000000 + delta.tv_nsec / 1000 - seconds * 1000000;
 
-	// sleep should be accurate withing 50ms
-	if (seconds != 0 || msecs > 50) {
-		DF_LOG_ERR("sleep(2) took an extra %" PRId64 "sec %" PRId64 "ms", seconds, msecs);
+	// sleep should be accurate withing 50000us
+	if (seconds != 0 || usecs > 50000) {
+		DF_LOG_ERR("sleep(2) took an extra %" PRId64 "sec %" PRId64 "us", seconds, usecs);
 		return false;
 	}
 
