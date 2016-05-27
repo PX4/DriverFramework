@@ -53,7 +53,7 @@ bool WorkItems::isValidIndex(int index)
 
 bool WorkItems::_isValidIndex(int index)
 {
-	return (index >= 0 && (index < m_work_items.size()));
+	return (index >= 0 && (index < (int)m_work_items.size()));
 }
 
 void WorkItems::WorkItem::updateStats(unsigned int cur_usec)
@@ -175,7 +175,7 @@ void WorkItems::_unschedule(int index)
 
 		if (m_work_list.get(idx, cur_index)) {
 
-			if (cur_index == index) {
+			if ((int)cur_index == index) {
 				// remove unscheduled item
 				WorkItem *item = nullptr;
 
