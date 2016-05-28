@@ -248,16 +248,16 @@ int MPU9250_mag::write_imu_reg_verified(int reg, uint8_t val, uint8_t mask)
 	bool err_seen;
 
 	while (retry) {
-		err_seen = FALSE;
+		err_seen = false;
 		--retry;
 		retVal = _imu.writeReg(reg, val);
 		if (retVal != 0) {
-			err_seen = TRUE;
+			err_seen = true;
 			continue;
 		}
 		retVal = _imu.readReg(reg, b);
 		if (retVal != 0) {
-			err_seen = TRUE;
+			err_seen = true;
 			continue;
 		}
 		if ((b & mask) != val) {
