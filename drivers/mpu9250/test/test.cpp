@@ -43,7 +43,7 @@ public:
 	static const int TEST_FAIL = 1;
 
 	ImuTester() :
-		m_sensor(IMU_DEVICE_PATH)
+		m_sensor(IMU_DEVICE_PATH, true)
 	{}
 
 	static void readSensorCallback(void *arg);
@@ -96,7 +96,7 @@ int ImuTester::run()
 
 			if (m_read_counter != count) {
 				m_read_counter = count;
-				ImuSensor::printImuValues(data);
+				ImuSensor::printImuValues(h, data);
 			}
 
 		} else {
