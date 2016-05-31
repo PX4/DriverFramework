@@ -87,80 +87,80 @@ public:
 	{
 	};
 
-	/// @brief
-	/// Called to initialize the magnetometer connection via the
-	/// internal I2C bus of the sensor.  The gyro and accelerometer
-	/// must have been previously configured.
-	/// @return
-	/// - 0 on success,
-	/// - -errno on failure
+	// @brief
+	// Called to initialize the magnetometer connection via the
+	// internal I2C bus of the sensor.  The gyro and accelerometer
+	// must have been previously configured.
+	// @return
+	// - 0 on success,
+	// - -errno on failure
 	int initialize(int output_data_rate_in_hz);
 
-	/// @brief
-	/// Reads the sensitivity values contained in the FUSE memory of the mag and
-	/// generates values used internally to process mag measurements.
-	/// @return
-	/// - 0 on success, -
-	/// errno on failure
+	// @brief
+	// Reads the sensitivity values contained in the FUSE memory of the mag and
+	// generates values used internally to process mag measurements.
+	// @return
+	// - 0 on success, -
+	// errno on failure
 	int get_sensitivity_adjustment(void);
 
-	/// @brief
-	/// Verifies the presence of the mag on the internal I2C bus, by querying
-	/// for the known device ID.
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Verifies the presence of the mag on the internal I2C bus, by querying
+	// for the known device ID.
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int detect(void);
 
-	/// @brief
-	/// Writes a value to the specified IMU register, and verifies that it was
-	/// successfully written by attempting to read it back.
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Writes a value to the specified IMU register, and verifies that it was
+	// successfully written by attempting to read it back.
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int write_imu_reg_verified(int reg, uint8_t val, uint8_t mask);
 
-	/// @brief
-	/// Reads the value of the specified magnetometer register and returns the
-	/// register value in the "val" parameter.
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Reads the value of the specified magnetometer register and returns the
+	// register value in the "val" parameter.
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int read_reg(uint8_t reg, uint8_t *val);
 
-	/// @brief
-	/// Writes the value passed in to the specified magnetometer register.
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Writes the value passed in to the specified magnetometer register.
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int write_reg(uint8_t reg, uint8_t val);
 
-	/// @brief
-	/// Process the data passed in to generate mag values in Gauss units.
-	/// The values passed in are modified and returned in the same parameter.
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Process the data passed in to generate mag values in Gauss units.
+	// The values passed in are modified and returned in the same parameter.
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int process(struct mag_data &data);
 
 protected:
-	/// @brief
-	/// Used internally to perform a complete mag initialization.  Called
-	/// multiple times by the initialize() function if the first initialization
-	/// attempt fails.
-	/// @param
-	/// output_data_rate_in_hz
-	/// The rate at which the sensor produces new IMU data (accel, gyro, and temperature data)
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Used internally to perform a complete mag initialization.  Called
+	// multiple times by the initialize() function if the first initialization
+	// attempt fails.
+	// @param
+	// output_data_rate_in_hz
+	// The rate at which the sensor produces new IMU data (accel, gyro, and temperature data)
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int _initialize(int output_data_rate_in_hz);
 
-	/// @brief
-	/// Convert the magnetometer sample rate enum to an equivalent number in Hz.
-	/// @return
-	/// - 0 on success
-	/// - -errno on failure
+	// @brief
+	// Convert the magnetometer sample rate enum to an equivalent number in Hz.
+	// @return
+	// - 0 on success
+	// - -errno on failure
 	int _convert_sample_rate_enum_to_hz(enum mag_sample_rate_e sample_rate);
 
 private:
