@@ -36,7 +36,8 @@
 #include "ImuSensor.hpp"
 #include "MPU9250_mag.hpp"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 #define MPUREG_WHOAMI			0x75
 #define MPUREG_SMPLRT_DIV		0x19
 #define MPUREG_CONFIG			0x1A
@@ -186,8 +187,7 @@ namespace DriverFramework {
 #define MPU_WHOAMI_9250			0x71
 
 #pragma pack(push, 1)
-struct fifo_packet
-{
+struct fifo_packet {
 	int16_t accel_x;
 	int16_t accel_y;
 	int16_t accel_z;
@@ -197,8 +197,7 @@ struct fifo_packet
 	int16_t gyro_z;
 	//uint8_t		ext_data[24];
 };
-struct fifo_packet_with_mag
-{
+struct fifo_packet_with_mag {
 	int16_t accel_x;
 	int16_t accel_y;
 	int16_t accel_z;
@@ -214,8 +213,7 @@ struct fifo_packet_with_mag
 };
 // This data structure is a copy of the segment of the above fifo_packet_with_mag data
 // struture that contains mag data.
-struct mag_data
-{
+struct mag_data {
 	char mag_st1; // mag ST1 (1B)
 	int16_t mag_x; // uT (2B)
 	int16_t mag_y; // uT (2B)
@@ -228,9 +226,9 @@ class MPU9250: public ImuSensor
 {
 public:
 	MPU9250(const char *device_path, bool mag_enabled = false) :
-			ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US, mag_enabled), // true = mag is enabled
-			_last_temp_c(0.0f), _temp_initialized(false),
-			_mag_enabled(mag_enabled)
+		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US, mag_enabled), // true = mag is enabled
+		_last_temp_c(0.0f), _temp_initialized(false),
+		_mag_enabled(mag_enabled)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
 		// TODO: does the WHOAMI make sense as an address?

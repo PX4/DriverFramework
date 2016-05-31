@@ -35,7 +35,8 @@
 
 #include "MPU9250.hpp"
 
-namespace DriverFramework {
+namespace DriverFramework
+{
 
 // Forward reference:
 class MPU9250;
@@ -71,8 +72,7 @@ class MPU9250;
 
 #define MAG_ERROR_DATA_OVERFLOW                      -3
 
-enum mag_sample_rate_e
-{
+enum mag_sample_rate_e {
 	MPU9250_MAG_SAMPLE_RATE_8HZ = 0,
 	MPU9250_MAG_SAMPLE_RATE_100HZ = 1,
 	NUM_MPU9250_MAG_SAMPLE_RATES
@@ -82,7 +82,7 @@ class MPU9250_mag
 {
 public:
 	MPU9250_mag(MPU9250 &imu, enum mag_sample_rate_e sample_rate) :
-			_mag_initialized(false), _sample_rate(sample_rate), _imu(imu)
+		_mag_initialized(false), _sample_rate(sample_rate), _imu(imu)
 	{
 	};
 
