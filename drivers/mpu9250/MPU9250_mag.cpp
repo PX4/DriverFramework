@@ -271,7 +271,6 @@ int MPU9250_mag::detect(void)
 	return 0;
 }
 
-// int mpu_spi_write_reg_verified(int reg, uint8_t val, uint8_t mask)
 int MPU9250_mag::write_imu_reg_verified(int reg, uint8_t val, uint8_t mask)
 {
 	int retVal;
@@ -394,7 +393,6 @@ int MPU9250_mag::read_reg(uint8_t reg, uint8_t *val)
 	return 0;
 }
 
-// int compass_write_register(uint8_t reg, uint8_t val)
 int MPU9250_mag::write_reg(uint8_t reg, uint8_t val)
 {
 	int retVal = 0;
