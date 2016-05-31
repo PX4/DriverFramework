@@ -145,4 +145,4 @@ protected:
 	SyncObj 					m_synchronize;
 };
 
-}; // namespace DriverFramework
+} // namespace DriverFramework
