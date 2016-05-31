@@ -128,7 +128,7 @@ int MPU9250_mag::_initialize(int output_data_rate_in_hz)
 		return -1;
 	}
 
-	result = _imu.writeReg(MPUREG_I2C_SLV0_CTRL, BITS_I2C_SLV0_EN | 0x08);
+	result = _imu.writeReg(MPUREG_I2C_SLV0_CTRL, BITS_I2C_SLV0_EN | BITS_I2C_SLV0_READ_8BYTES);
 
 	if (result != 0) {
 		DF_LOG_ERR("MPU9250 I2C slave 0 control configuration failed.");

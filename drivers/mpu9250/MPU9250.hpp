@@ -152,6 +152,7 @@ namespace DriverFramework
 #define BITS_ACCEL_CONFIG2_BW_1130HZ	0x08
 
 #define BITS_I2C_SLV0_EN    0x80
+#define BITS_I2C_SLV0_READ_8BYTES 0x08
 #define BITS_I2C_SLV1_EN    0x80
 #define BITS_I2C_SLV1_DIS   0x00
 #define BITS_I2C_SLV2_EN    0x80
