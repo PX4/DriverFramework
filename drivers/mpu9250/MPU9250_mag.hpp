@@ -164,16 +164,12 @@ protected:
 	int _convert_sample_rate_enum_to_hz(enum mag_sample_rate_e sample_rate);
 
 private:
-	float _mag_range_ga;
-	float _mag_scaling;
 	int _mag_sens_adj[3];
 	bool _mag_initialized;
 	mag_sample_rate_e _sample_rate;
 
 	// Internal reference to the MPU9250 object that instantiated this mag class.
 	MPU9250 &_imu;
-
-	int _initialize();
 };
 
 };
