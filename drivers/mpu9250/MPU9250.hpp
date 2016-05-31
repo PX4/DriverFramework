@@ -195,7 +195,6 @@ struct fifo_packet {
 	int16_t gyro_x;
 	int16_t gyro_y;
 	int16_t gyro_z;
-	//uint8_t		ext_data[24];
 };
 struct fifo_packet_with_mag {
 	int16_t accel_x;
