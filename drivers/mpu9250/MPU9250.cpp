@@ -497,20 +497,15 @@ void MPU9250::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
-		int mag_error;
-
 		if (_mag_enabled) {
-			struct fifo_packet_with_mag *report_with_mag_data =
-				(struct fifo_packet_with_mag *) report;
-			mag_error = _mag->process(
-					    (struct mag_data &) report_with_mag_data->mag_st1);
+			struct fifo_packet_with_mag *report_with_mag_data = (struct fifo_packet_with_mag *)report;
 
-			if (mag_error == 0) {
-				m_sensor_data.mag_ga_x = report_with_mag_data->mag_x;
-				m_sensor_data.mag_ga_y = report_with_mag_data->mag_y;
-				m_sensor_data.mag_ga_z = report_with_mag_data->mag_z;
+			int mag_error = _mag->process((const struct mag_data &)report_with_mag_data->mag_st1,
+						      m_sensor_data.mag_ga_x,
+						      m_sensor_data.mag_ga_y,
+						      m_sensor_data.mag_ga_z);
 
-			} else if (mag_error == MAG_ERROR_DATA_OVERFLOW) {
+			if (mag_error == MAG_ERROR_DATA_OVERFLOW) {
 				m_sensor_data.mag_fifo_overflow_counter++;
 			}
 		}

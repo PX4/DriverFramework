@@ -207,9 +207,6 @@ int MPU9250_mag::initialize(int output_data_rate_in_hz)
 
 int MPU9250_mag::get_sensitivity_adjustment(void)
 {
-	int i;
-	uint8_t asa[3];
-
 	// First set power-down mode
 	if (write_reg(MPU9250_MAG_REG_CNTL1, BIT_MAG_CNTL1_MODE_POWER_DOWN) != 0) {
 		return -1;
@@ -228,13 +225,19 @@ int MPU9250_mag::get_sensitivity_adjustment(void)
 	usleep(10000);
 
 	// Get compass calibration register 0x10, 0x11, 0x12
-	// store into context
-	for (i = 0; i < 3; i++) {
-		if (read_reg(MPU9250_MAG_REG_ASAX + i, &asa[i]) != 0) {
+	// store into context.
+	for (int i = 0; i < 3; ++i) {
+
+		uint8_t asa;
+
+		if (read_reg(MPU9250_MAG_REG_ASAX + i, &asa) != 0) {
 			return -1;
 		}
 
-		_mag_sens_adj[i] = (float)(((float) asa[i] - 128.0) / 256.0) + 1.0f;
+		// H_adj = H * ((ASA-128)*0.5/128 + 1)
+		//       = H * ((ASA-128) / 256 + 1)
+		// H is the raw compass reading.
+		_mag_sens_adj[i] = (((float)asa - 128.0f) / 256.0f) + 1.0f;
 	}
 
 	// Leave in a power-down mode
@@ -245,8 +248,8 @@ int MPU9250_mag::get_sensitivity_adjustment(void)
 	usleep(10000);
 
 #ifdef MPU9250_MAG_DEBUG
-	DF_LOG_INFO("magnetometer sensitivity adjustment: %d %d %d",
-		    (int)(_mag_sens_adj[0] * 1000.0), (int)(_mag_sens_adj[1] * 1000.0), (int)(_mag_sens_adj[2] * 1000.0));
+	DF_LOG_INFO("magnetometer sensitivity adjustment: %.3f %.3f %.3f",
+		    _mag_sens_adj[0], _mag_sens_adj[1], _mag_sens_adj[2]);
 #endif
 	return 0;
 }
@@ -468,7 +471,8 @@ int MPU9250_mag::write_reg(uint8_t reg, uint8_t val)
 	return 0;
 }
 
-int MPU9250_mag::process(struct mag_data &data)
+
+int MPU9250_mag::process(const struct mag_data &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z)
 {
 #ifdef MPU9250_MAG_DEBUG
 	static int hofl_bit_counter = 0;
@@ -487,31 +491,26 @@ int MPU9250_mag::process(struct mag_data &data)
 		return MAG_ERROR_DATA_OVERFLOW;
 	}
 
-	data.mag_x = ImuSensor::swap16(data.mag_x);
-	data.mag_y = ImuSensor::swap16(data.mag_y);
-	data.mag_z = ImuSensor::swap16(data.mag_z);
+#ifdef MPU9250_MAG_DEBUG
+	//DF_LOG_INFO("Raw mag data: [%d, %d, %d]", data.mag_x, data.mag_y, data.mag_z);
+#endif
+	// _mag_sens_adj[i] = (((float) asa[i] - 128.0) / 256.0) + 1.0f;
 
-	// H_adj = H * ((ASA-128)*0.5/128 + 1)
-	//       = H * ((ASA-128) / 256 + 1)
-	// H is the raw compass reading, ((ASA-128) / 256 + 1) has been
-	// computed and stored in compass_cal_f:
-	// _mag_sens_adj[i] = (float) (((float) asa[i] - 128.0) / 256.0) + 1.0f;
-	data.mag_x = (int16_t)((int) data.mag_x * _mag_sens_adj[0]);
-	data.mag_y = (int16_t)((int) data.mag_y * _mag_sens_adj[1]);
-	data.mag_z = (int16_t)((int) data.mag_z * _mag_sens_adj[2]);
+	mag_ga_x = data.mag_x * _mag_sens_adj[0] * MAG_RAW_TO_GAUSS;
+	mag_ga_y = data.mag_y * _mag_sens_adj[1] * MAG_RAW_TO_GAUSS;
+	mag_ga_z = data.mag_z * _mag_sens_adj[2] * MAG_RAW_TO_GAUSS;
 
-	// Convert the native units of the sensor (micro-Teslas) to Gauss
-	data.mag_x /= 100;
-	data.mag_y /= 100;
-	data.mag_z /= 100;
 
-	// Swap magnetometer x and y axis
+	// Swap magnetometer x and y axis, and invert z because internal mag in MPU9250
+	// has a different orientation.
 	// Magnetometer X axis = Gyro and Accel Y axis
 	// Magnetometer Y axis = Gyro and Accel X axis
-	// Magnetometer Z axis = Gyro and Accel Z axis
-	int16_t temp_mag_x = data.mag_x;
-	data.mag_x = data.mag_y;
-	data.mag_y = temp_mag_x;
+	// Magnetometer Z axis = -Gyro and Accel Z axis
+	float temp_mag_x = mag_ga_x;
+	mag_ga_x = mag_ga_y;
+	mag_ga_y = temp_mag_x;
+
+	mag_ga_z = -mag_ga_z;
 
 	return 0;
 }

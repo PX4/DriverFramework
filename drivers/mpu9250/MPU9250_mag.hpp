@@ -72,6 +72,8 @@ class MPU9250;
 
 #define MAG_ERROR_DATA_OVERFLOW				-3
 
+// 16bit mode: 0.15uTesla/LSB, 100 uTesla == 1 Gauss
+#define MAG_RAW_TO_GAUSS 	 (0.15f / 100.0f)
 
 enum mag_sample_rate_e {
 	MPU9250_MAG_SAMPLE_RATE_8HZ = 0,
@@ -137,11 +139,13 @@ public:
 
 	// @brief
 	// Process the data passed in to generate mag values in Gauss units.
-	// The values passed in are modified and returned in the same parameter.
+	// @param mag_ga_x: Use to return mag value in Gauss for x
+	// @param mag_ga_y: Use to return mag value in Gauss for y
+	// @param mag_ga_z: Use to return mag value in Gauss for z
 	// @return
 	// - 0 on success
 	// - -errno on failure
-	int process(struct mag_data &data);
+	int process(const struct mag_data &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z);
 
 protected:
 	// @brief
@@ -164,7 +168,7 @@ protected:
 	int _convert_sample_rate_enum_to_hz(enum mag_sample_rate_e sample_rate);
 
 private:
-	int _mag_sens_adj[3];
+	float _mag_sens_adj[3];
 	bool _mag_initialized;
 	mag_sample_rate_e _sample_rate;
 
