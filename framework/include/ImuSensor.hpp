@@ -61,9 +61,9 @@ struct imu_sensor_data {
 	float		gyro_rad_s_x;
 	float		gyro_rad_s_y;
 	float		gyro_rad_s_z;
-	float       mag_ga_x;
-	float       mag_ga_y;
-	float       mag_ga_z;
+	float		mag_ga_x;
+	float       	mag_ga_y;
+	float       	mag_ga_z;
 	float		temp_c;
 	uint64_t	read_counter;
 	uint64_t	error_counter;

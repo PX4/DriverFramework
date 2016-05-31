@@ -42,7 +42,7 @@ namespace DriverFramework
 class MPU9250;
 
 // Magnetometer device ID
-#define MPU9250_AKM_DEV_ID		0x48
+#define MPU9250_AKM_DEV_ID	0x48
 
 // Magnetometer device address
 #define MPU9250_AK8963_I2C_ADDR  0x0C
@@ -51,26 +51,27 @@ class MPU9250;
 
 // MPU9250 Magnetometer Register Addresses: Defines only the register addresses
 // used in MPU9250 driver.
-#define MPU9250_MAG_REG_WIA		0x00
-#define MPU9250_MAG_REG_ST1		0x02
+#define MPU9250_MAG_REG_WIA	0x00
+#define MPU9250_MAG_REG_ST1	0x02
 #define MPU9250_MAG_REG_DATA	0x03
 #define MPU9250_MAG_REG_HXL     0x03
-#define MPU9250_MAG_REG_ST2		0x09
+#define MPU9250_MAG_REG_ST2	0x09
 #define MPU9250_MAG_REG_CNTL1	0x0a
 #define MPU9250_MAG_REG_ASAX	0x10
 #define MPU9250_MAG_REG_ASAY    0x11
 #define MPU9250_MAG_REG_ASAZ    0x12
 
 // Bit definitions for the magnetometer registers
-#define BIT_MAG_CNTL1_MODE_POWER_DOWN 				 0x0
-#define BIT_MAG_CNTL1_MODE_SINGLE_MEASURE_MODE 		 0x1
-#define BIT_MAG_CNTL1_MODE_CONTINUOUS_MEASURE_MODE_1 0x2
-#define BIT_MAG_CNTL1_MODE_CONTINUOUS_MEASURE_MODE_2 0x6
-#define BIT_MAG_CNTL1_FUSE_ROM_ACCESS_MODE 		 	 0xF
-#define BIT_MAG_CNTL1_16_BITS 						 0x10
-#define BIT_MAG_HOFL                                 0x08
+#define BIT_MAG_CNTL1_MODE_POWER_DOWN 			0x0
+#define BIT_MAG_CNTL1_MODE_SINGLE_MEASURE_MODE 		0x1
+#define BIT_MAG_CNTL1_MODE_CONTINUOUS_MEASURE_MODE_1	0x2
+#define BIT_MAG_CNTL1_MODE_CONTINUOUS_MEASURE_MODE_2	0x6
+#define BIT_MAG_CNTL1_FUSE_ROM_ACCESS_MODE		0xF
+#define BIT_MAG_CNTL1_16_BITS 				0x10
+#define BIT_MAG_HOFL					0x08
 
-#define MAG_ERROR_DATA_OVERFLOW                      -3
+#define MAG_ERROR_DATA_OVERFLOW				-3
+
 
 enum mag_sample_rate_e {
 	MPU9250_MAG_SAMPLE_RATE_8HZ = 0,

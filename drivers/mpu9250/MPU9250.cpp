@@ -530,9 +530,13 @@ void MPU9250::_measure()
 		if (++m_sensor_data.read_counter % (1000000 / 125) == 0) {
 
 			DF_LOG_INFO("IMU: accel: [%f, %f, %f]",
-				    (double)m_sensor_data.accel_m_s2_x, (double)m_sensor_data.accel_m_s2_y, (double)m_sensor_data.accel_m_s2_z);
+				    (double)m_sensor_data.accel_m_s2_x,
+				    (double)m_sensor_data.accel_m_s2_y,
+				    (double)m_sensor_data.accel_m_s2_z);
 			DF_LOG_INFO("     gyro:  [%f, %f, %f]",
-				    (double)m_sensor_data.gyro_rad_s_x, (double)m_sensor_data.gyro_rad_s_y, (double)m_sensor_data.gyro_rad_s_z);
+				    (double)m_sensor_data.gyro_rad_s_x,
+				    (double)m_sensor_data.gyro_rad_s_y,
+				    (double)m_sensor_data.gyro_rad_s_z);
 			DF_LOG_INFO("    temp:  %f C", (double)m_sensor_data.temp_c);
 		}
 

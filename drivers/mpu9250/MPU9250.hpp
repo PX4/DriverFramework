@@ -151,20 +151,20 @@ namespace DriverFramework
 // This is ACCEL_FCHOICE_B which is the inverse of ACCEL_FCHOICE
 #define BITS_ACCEL_CONFIG2_BW_1130HZ	0x08
 
-#define BITS_I2C_SLV0_EN	 0x80
-#define BITS_I2C_SLV1_EN     0x80
-#define BITS_I2C_SLV1_DIS    0x00
-#define BITS_I2C_SLV2_EN     0x80
-#define BITS_I2C_SLV4_EN     0x80
-#define BITS_I2C_SLV4_DONE   0x40
+#define BITS_I2C_SLV0_EN    0x80
+#define BITS_I2C_SLV1_EN    0x80
+#define BITS_I2C_SLV1_DIS   0x00
+#define BITS_I2C_SLV2_EN    0x80
+#define BITS_I2C_SLV4_EN    0x80
+#define BITS_I2C_SLV4_DONE  0x40
 
-#define BITS_SLV4_DLY_EN     0x10
-#define BITS_SLV3_DLY_EN     0x08
-#define BITS_SLV2_DLY_EN     0x04
-#define BITS_SLV1_DLY_EN     0x02
-#define BITS_SLV0_DLY_EN     0x01
+#define BITS_SLV4_DLY_EN    0x10
+#define BITS_SLV3_DLY_EN    0x08
+#define BITS_SLV2_DLY_EN    0x04
+#define BITS_SLV1_DLY_EN    0x02
+#define BITS_SLV0_DLY_EN    0x01
 
-#define BIT_RAW_RDY_EN			0x01
+#define BIT_RAW_RDY_EN		0x01
 #define BIT_INT_ANYRD_2CLEAR	0x10
 
 #define BITS_INT_STATUS_FIFO_OVERFLOW	0x10
