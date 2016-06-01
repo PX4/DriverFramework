@@ -320,12 +320,12 @@ static void show_sched_settings()
 		DF_LOG_ERR("pthread_getschedparam failed (%d)", ret);
 	}
 
-	DF_LOG_INFO("pthread info: policy=%s priority=%d",
-		    (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-		    (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-		    (policy == SCHED_RR)    ? "SCHED_RR" :
-		    "UNKNOWN",
-		    param.sched_priority);
+	DF_LOG_DEBUG("pthread info: policy=%s priority=%d",
+		     (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+		     (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+		     (policy == SCHED_RR)    ? "SCHED_RR" :
+		     "UNKNOWN",
+		     param.sched_priority);
 }
 
 static int setRealtimeSched()
