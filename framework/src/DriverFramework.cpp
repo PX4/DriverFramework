@@ -309,6 +309,9 @@ void Framework::waitForShutdown()
 /*************************************************************************
   HRTWorkQueue
 *************************************************************************/
+
+#ifndef __PX4_QURT
+// pthread_setschedparam does not seem to work on QURT.
 static void show_sched_settings()
 {
 	int policy;
@@ -341,16 +344,20 @@ static int setRealtimeSched()
 
 	return ret;
 }
+#endif
 
 void *HRTWorkQueue::process_trampoline(void *arg)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::process_trampoline");
 
+#ifndef __PX4_QURT
 	int ret = setRealtimeSched();
 
 	if (ret != 0) {
 		DF_LOG_ERR("WARNING: setRealtimeSched failed (not run as root?)");
 	}
+
+#endif
 
 	DF_LOG_DEBUG("process_trampoline %d", ret);
 
