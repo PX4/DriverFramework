@@ -142,7 +142,7 @@ int DevMgr::registerDriver(DevObj *obj)
 
 				obj->m_dev_instance_path = strdup(tmp_path);
 				g_driver_list.pushBack(obj);
-				DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_instance_path);
+				DF_LOG_DEBUG("Added driver %p %s", obj, obj->m_dev_instance_path);
 				registered = true;
 				break;
 			}
@@ -156,7 +156,7 @@ int DevMgr::registerDriver(DevObj *obj)
 	} else {
 		// Some drivers do not specify a base class, or hardcode a specific instance
 		g_driver_list.pushBack(obj);
-		DF_LOG_INFO("Added driver %p %s", obj, obj->m_dev_path);
+		DF_LOG_DEBUG("Added driver %p %s", obj, obj->m_dev_path);
 	}
 
 	g_lock_dev_mgr->unlock();
