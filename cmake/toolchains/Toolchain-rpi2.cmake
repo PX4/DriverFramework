@@ -11,7 +11,8 @@ include(CMakeForceCompiler)
 
 add_definitions(
 	-D__RPI2
-	)
+	-D__DF_LINUX
+)
 
 ######### test DriverFramework for rpi2 ###
 # used for debug

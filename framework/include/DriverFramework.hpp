@@ -45,7 +45,7 @@
 #include "WorkMgr.hpp"
 #endif
 
-#if defined(__DF_LINUX) || defined(__RPI2)
+#ifdef __DF_LINUX
 // Show backtrace on error
 #define DF_ENABLE_BACKTRACE 1
 #endif
