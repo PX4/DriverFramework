@@ -29,6 +29,21 @@ env:
   global:
     - NINJA_BUILD=1
 
+before_install:
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      pushd .
+      && cd ~
+      && mkdir -p ~/bin
+      && wget -O ~/bin/astyle https://github.com/PX4/astyle/releases/download/2.05.1/astyle-linux
+      && chmod +x ~/bin/astyle
+      && astyle --version
+      && popd
+      ;
+    fi
+
+before_script:
+  - export PATH=~/bin:$PATH
+
 script:
   - make check-style
   - make run
