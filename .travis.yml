@@ -30,4 +30,5 @@ env:
     - NINJA_BUILD=1
 
 script:
+  - make check-format
   - make run
