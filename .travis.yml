@@ -25,10 +25,6 @@ addons:
     - clang-3.5
     - cmake
 
-env:
-  global:
-    - NINJA_BUILD=1
-
 before_install:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
       pushd .
