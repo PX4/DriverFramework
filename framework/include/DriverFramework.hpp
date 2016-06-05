@@ -94,5 +94,4 @@ public:
 	static void waitForShutdown();
 };
 
-};
-
+}
