@@ -43,16 +43,15 @@ int doTest()
 	int ret = Framework::initialize();
 
 	if (ret < 0) {
-		DF_LOG_INFO("Framework::initialize() failed");
+		DF_LOG_ERR("Framework::initialize() failed");
 		return ret;
 	}
 
 	DFFrameworkTest df;
 
-	df.doTests();
+	bool tests_ok = df.doTests();
 
-	DF_LOG_INFO("shutdown");
 	Framework::shutdown();
 
-	return 0;
+	return (tests_ok ? 0 : 1);
 }
