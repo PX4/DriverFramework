@@ -75,6 +75,16 @@ int MPU9250_mag::_initialize(int output_data_rate_in_hz)
 
 	usleep(1000);
 
+	// First set power-down mode
+	result = write_reg(MPU9250_MAG_REG_CNTL2, BIT_MAG_CNTL2_SOFT_RESET);
+
+	if (result != 0) {
+		DF_LOG_ERR("MPU9250 soft reset failed.");
+		return -1;
+	}
+
+	usleep(1000);
+
 	// Detect mag presence by reading whoami register
 	if (detect() != 0) {
 		DF_LOG_ERR("MPU9250 mag not detected.");
