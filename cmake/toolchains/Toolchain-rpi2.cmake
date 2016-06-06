@@ -35,9 +35,6 @@ set(CMAKE_C_FLAGS "")
 set(LINKER_FLAGS "-Wl,-gc-sections")
 set(CMAKE_EXE_LINKER_FLAGS ${LINKER_FLAGS})
 
-CMAKE_FORCE_C_COMPILER(arm-linux-gnueabihf-gcc GNU)
-CMAKE_FORCE_CXX_COMPILER(arm-linux-gnueabihf-g++ GNU)
-
 # search for programs in the build host directories
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 # for libraries and headers in the target directories
