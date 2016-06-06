@@ -95,6 +95,37 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
+	result = _writeReg(MPUREG_PWR_MGMT_2, 0);
+
+	if (result != 0) {
+		DF_LOG_ERR("enable failed");
+	}
+
+	usleep(1000);
+
+	// Reset I2C master and device.
+	result = _writeReg(MPUREG_USER_CTRL,
+			   BITS_USER_CTRL_I2C_MST_RST |
+			   BITS_USER_CTRL_I2C_IF_DIS);
+
+	if (result != 0) {
+		DF_LOG_ERR("user ctrl 1 failed");
+	}
+
+	usleep(1000);
+
+	// Enable I2C again and start FIFO.
+	result = _writeReg(MPUREG_USER_CTRL,
+			   BITS_USER_CTRL_FIFO_RST |
+			   BITS_USER_CTRL_FIFO_EN |
+			   BITS_USER_CTRL_I2C_MST_EN);
+
+	if (result != 0) {
+		DF_LOG_ERR("user ctrl 2 failed");
+	}
+
+	usleep(1000);
+
 	if (_mag_enabled) {
 		result = _writeReg(MPUREG_FIFO_EN,
 				   BITS_FIFO_ENABLE_TEMP_OUT | BITS_FIFO_ENABLE_GYRO_XOUT
