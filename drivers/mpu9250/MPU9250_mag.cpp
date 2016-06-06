@@ -369,22 +369,17 @@ int MPU9250_mag::read_reg(uint8_t reg, uint8_t *val)
 
 	// Continuously check I2C_MST_STATUS register value for the completion
 	// of I2C transfer until timeout
-	retVal = _imu.readReg(MPUREG_I2C_MST_STATUS, b);
 
-	if (retVal != 0) {
-		return retVal;
-	}
+	int loop_ctrl = 1000; // wait up to 1000 * 1ms for completion
 
-	int loop_ctrl = 1000; // wait up to 1000 * 1 ms for completion
-
-	while (((b & BITS_I2C_SLV4_DONE) == 0x00) && (--loop_ctrl)) {
+	do {
 		usleep(1000);
 		retVal = _imu.readReg(MPUREG_I2C_MST_STATUS, b);
 
 		if (retVal != 0) {
 			return retVal;
 		}
-	}
+	} while (((b & BITS_I2C_SLV4_DONE) == 0x00) && (--loop_ctrl));
 
 	if (loop_ctrl == 0) {
 		DF_LOG_ERR("I2C transfer timed out");
@@ -450,23 +445,18 @@ int MPU9250_mag::write_reg(uint8_t reg, uint8_t val)
 	}
 
 	// Continuously check I2C_MST_STATUS regsiter value for the completion
-	// of I2C transfer until timeout
-	retVal = _imu.readReg(MPUREG_I2C_MST_STATUS, b);
-
-	if (retVal != 0) {
-		return retVal;
-	}
+	// of I2C transfer until timeout.
 
 	int loop_ctrl = 1000; // wait up to 1000 * 1ms for completion
 
-	while (((b & BITS_I2C_SLV4_DONE) == 0x00) && (--loop_ctrl)) {
+	do {
 		usleep(1000);
 		retVal = _imu.readReg(MPUREG_I2C_MST_STATUS, b);
 
 		if (retVal != 0) {
 			return retVal;
 		}
-	}
+	} while (((b & BITS_I2C_SLV4_DONE) == 0x00) && (--loop_ctrl));
 
 	if (loop_ctrl == 0) {
 		DF_LOG_ERR("I2C transfer to mag timed out");
