@@ -7,8 +7,6 @@
 # Author: Bo Liu (bo-rc@acm.org)
 #
 ############################################################################
-include(CMakeForceCompiler)
-
 add_definitions(
 	-D__RPI2
 	-D__DF_LINUX
