@@ -42,6 +42,8 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
+	static constexpr unsigned num_read_attempts = 1000;
+
 	ImuTester() :
 		m_sensor(IMU_DEVICE_PATH, true)
 	{}
@@ -103,18 +105,20 @@ int ImuTester::run()
 			DF_LOG_INFO("error: unable to read the IMU sensor device.");
 		}
 
-		if ((m_read_counter >= 1000) && (m_read_attempts == m_read_counter)) {
+		if (m_read_counter >= num_read_attempts) {
 			// Done test - PASSED
 			m_pass = TEST_PASS;
 			m_done = true;
 
-		} else if (m_read_attempts > 1000) {
+		} else if (m_read_attempts > num_read_attempts) {
 			DF_LOG_INFO("error: unable to read the IMU sensor device.");
 			m_done = true;
 		}
 	}
 
-	DF_LOG_INFO("Closing IMU sensor\n");
+	DevMgr::releaseHandle(h);
+
+	DF_LOG_INFO("Closing IMU sensor");
 	m_sensor.stop();
 	return m_pass;
 }
