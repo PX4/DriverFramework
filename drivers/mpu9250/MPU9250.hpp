@@ -229,8 +229,10 @@ class MPU9250: public ImuSensor
 public:
 	MPU9250(const char *device_path, bool mag_enabled = false) :
 		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US, mag_enabled), // true = mag is enabled
-		_last_temp_c(0.0f), _temp_initialized(false),
-		_mag_enabled(mag_enabled)
+		_last_temp_c(0.0f),
+		_temp_initialized(false),
+		_mag_enabled(mag_enabled),
+		_mag(nullptr)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
 		// TODO: does the WHOAMI make sense as an address?
