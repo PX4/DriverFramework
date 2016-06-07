@@ -498,7 +498,7 @@ void MPU9250::_measure()
 
 				// Initialize the temperature logic.
 				_last_temp_c = temp_c;
-				DF_LOG_INFO("IMU temperature initialized to: %f", temp_c);
+				DF_LOG_INFO("IMU temperature initialized to: %f", (double) temp_c);
 				_temp_initialized = true;
 			}
 
