@@ -312,6 +312,10 @@ int MPU9250::stop()
 		return result;
 	}
 
+	// We need to wait so that all measure calls are finished before
+	// closing the device.
+	usleep(10000);
+
 	result = devClose();
 
 	if (result != 0) {
