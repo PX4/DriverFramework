@@ -90,22 +90,6 @@ protected:
 	int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
 	int _setBusFrequency(SPI_FREQUENCY freq_hz);
 
-	int devOpen(int flags)
-	{
-		int fd = ::open(m_dev_instance_path, flags);
-
-		if (fd >= 0) {
-			m_fd = fd;
-		}
-
-		return (fd >= 0) ? 0 : -errno;
-	}
-
-	int devClose()
-	{
-		return ::close(m_fd);
-	}
-
 	int m_fd = 0;
 };
 
