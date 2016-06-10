@@ -42,7 +42,7 @@ bool TimeTest::verifyOffsetTime()
 #ifdef __APPLE__
 	const float error_factor = 1.5f;
 #else
-	const float error_factor = 1.1f;
+	const float error_factor = 1.2f;
 #endif
 
 	bool passed = true;
