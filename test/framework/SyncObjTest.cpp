@@ -59,7 +59,13 @@ void SyncObjTest::_doTests()
 		passed = false;
 	}
 
-	bool dtime_ok = (delta_usec > wait_in_us) && (delta_usec < wait_in_us * 1.2f);
+#ifdef __APPLE__
+	const float error_factor = 1.5f;
+#else
+	const float error_factor = 1.2f;
+#endif
+
+	bool dtime_ok = (delta_usec > wait_in_us) && (delta_usec < wait_in_us * error_factor);
 
 	if (!dtime_ok) {
 		DF_LOG_ERR("waitSignal() timeout of %luus was %" PRIu64 "us", wait_in_us, delta_usec);

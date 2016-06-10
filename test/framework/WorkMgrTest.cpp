@@ -81,7 +81,14 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 
 	cb_counter->unlock();
 
-	usleep(delay_usec * 3 + 200);
+#ifdef __APPLE__
+	// We need to be generous on Mac.
+	const unsigned tolerance_us = 1500;
+#else
+	const unsigned tolerance_us = 100;
+#endif
+
+	usleep((delay_usec + tolerance_us) * 3);
 	cb_counter->lock();
 	WorkMgr::releaseWorkHandle(h);
 
@@ -96,8 +103,8 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 	for (int i = 0; i < 3; i++) {
 		uint64_t elapsedtime = cb_times[i] - starttime;
 
-		// Shouldn't take more than extra 50us
-		uint64_t time_to_achieve = delay_usec * (i + 1) + 500;
+		// Shouldn't take too much longer.
+		uint64_t time_to_achieve = delay_usec * (i + 1) + tolerance_us;
 
 		DF_LOG_INFO("Delay: %uusec Expected: %" PRIu64 " Actual: %" PRIu64 " Delta: %ldusec",
 			    delay_usec * (i + 1), starttime + delay_usec * (i + 1), cb_times[i],
