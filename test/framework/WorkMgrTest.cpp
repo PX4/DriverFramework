@@ -83,7 +83,6 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 
 #ifdef CI
 	const unsigned tolerance_us = 5000;
-#error actually CI
 #else
 
 

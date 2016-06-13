@@ -40,7 +40,6 @@ bool TimeTest::verifyOffsetTime()
 {
 
 #ifdef CI
-#error actually CI
 	const float error_factor = 3.0f;
 
 #else
