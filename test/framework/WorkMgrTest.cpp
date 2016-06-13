@@ -82,7 +82,7 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 	cb_counter->unlock();
 
 #ifdef CI
-	const unsigned tolerance_us = 5000;
+	const unsigned tolerance_us = 50000;
 #else
 
 
