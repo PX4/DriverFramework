@@ -39,17 +39,10 @@
 bool TimeTest::verifyOffsetTime()
 {
 
-#ifdef CI
-	const float error_factor = 3.0f;
-
-#else
-
 #ifdef __APPLE__
 	const float error_factor = 1.5f;
 #else
 	const float error_factor = 1.2f;
-#endif
-
 #endif
 
 	bool passed = true;
