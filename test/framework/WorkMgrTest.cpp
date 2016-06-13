@@ -81,11 +81,19 @@ static bool verifyDelay(WorkHandle &h, uint32_t delay_usec, int *arg)
 
 	cb_counter->unlock();
 
+#ifdef CI
+	const unsigned tolerance_us = 5000;
+#error actually CI
+#else
+
+
 #ifdef __APPLE__
 	// We need to be generous on Mac.
 	const unsigned tolerance_us = 1500;
 #else
 	const unsigned tolerance_us = 500;
+#endif
+
 #endif
 
 	usleep((delay_usec + tolerance_us) * 3);
