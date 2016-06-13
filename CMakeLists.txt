@@ -65,6 +65,11 @@ endif()
 # Enable this directory's flags:
 set(CMAKE_CXX_FLAGS "${DF_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
 
+# Enable CI flags from travis:
+if ("$ENV{CI}")
+	add_definitions(-DCI)
+endif()
+
 set(df_link_libs CACHE STRING "DF_LINK_LIBS")
 
 # set DF_TARGET
