@@ -282,10 +282,6 @@ int MS5607::start()
 
 exit:
 
-	if (result != 0) {
-		devClose();
-	}
-
 	return result;
 }
 
@@ -295,13 +291,6 @@ int MS5607::stop()
 
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
-		return result;
-	}
-
-	result = devClose();
-
-	if (result != 0) {
-		DF_LOG_ERR("device close failed");
 		return result;
 	}
 
