@@ -61,52 +61,50 @@ using namespace DriverFramework;
 // as convertTemperature sets m_raw_sensor_convertion values
 int64_t MS5607::convertPressure(int64_t adc_P)
 {
-  // Conversion from the datasheet
-  int64_t p = (((adc_P * m_raw_sensor_convertion.sens) >> 21) - m_raw_sensor_convertion.off) >> 15;
-  m_raw_sensor_convertion.pressure_mbar = p;
+	// Conversion from the datasheet
+	int64_t p = (((adc_P * m_raw_sensor_convertion.sens) >> 21) - m_raw_sensor_convertion.off) >> 15;
+	m_raw_sensor_convertion.pressure_mbar = p;
 	return p;
 }
 
 int32_t MS5607::convertTemperature(int32_t adc_T)
 {
-  // Conversion from the datasheet
-  /* temperature offset (in ADC units) */
-  int32_t dT = adc_T - ((int32_t)m_sensor_calibration.c5_reference_temp << 8);
+	// Conversion from the datasheet
+	/* temperature offset (in ADC units) */
+	int32_t dT = adc_T - ((int32_t)m_sensor_calibration.c5_reference_temp << 8);
 
-  int64_t sens = ((int64_t)m_sensor_calibration.c1_pressure_sens << 16) 
-    + (((int64_t)m_sensor_calibration.c3_temp_coeff_pres_sens * dT) >> 7);
+	int64_t sens = ((int64_t)m_sensor_calibration.c1_pressure_sens << 16)
+		       + (((int64_t)m_sensor_calibration.c3_temp_coeff_pres_sens * dT) >> 7);
 
-  int64_t off = ((int64_t)m_sensor_calibration.c2_pressure_offset << 17) 
-    + (((int64_t)m_sensor_calibration.c4_temp_coeff_pres_offset * dT) >> 6);
+	int64_t off = ((int64_t)m_sensor_calibration.c2_pressure_offset << 17)
+		      + (((int64_t)m_sensor_calibration.c4_temp_coeff_pres_offset * dT) >> 6);
 
-  /* absolute temperature in centidegrees - note intermediate value is outside 32-bit range */
-  int32_t temp =  2000 + (int32_t)(((int64_t)dT * m_sensor_calibration.c6_temp_coeff_temp) >> 23);
+	/* absolute temperature in centidegrees - note intermediate value is outside 32-bit range */
+	int32_t temp =  2000 + (int32_t)(((int64_t)dT * m_sensor_calibration.c6_temp_coeff_temp) >> 23);
 
-  /* temperature compensation */
-  if (temp < 2000) 
-  {
-    int32_t t2 = POW2(dT) >> 31;
+	/* temperature compensation */
+	if (temp < 2000) {
+		int32_t t2 = POW2(dT) >> 31;
 
-    int64_t f = POW2((int64_t)temp - 2000);
-    int64_t off2 = 61 * f >> 4;
-    int64_t sens2 = 2 * f;
+		int64_t f = POW2((int64_t)temp - 2000);
+		int64_t off2 = 61 * f >> 4;
+		int64_t sens2 = 2 * f;
 
-    if (temp < -1500)
-    {
-      int64_t f2 = POW2(temp + 1500);
-      off2 += 15 * f2;
-      sens2 += 8 * f2;
-    }
+		if (temp < -1500) {
+			int64_t f2 = POW2(temp + 1500);
+			off2 += 15 * f2;
+			sens2 += 8 * f2;
+		}
 
-    temp -= t2;
-    sens -= sens2;
-    off -= off2;
-  }
+		temp -= t2;
+		sens -= sens2;
+		off -= off2;
+	}
 
-  m_raw_sensor_convertion.temperature_c = temp;
-  m_raw_sensor_convertion.sens = sens;
-  m_raw_sensor_convertion.off = off;
-  return temp;
+	m_raw_sensor_convertion.temperature_c = temp;
+	m_raw_sensor_convertion.sens = sens;
+	m_raw_sensor_convertion.off = off;
+	return temp;
 }
 
 /**
@@ -146,7 +144,7 @@ bool MS5607::crc4(uint16_t *n_prom)
 		}
 	}
 
-  /* final 4 bit remainder is CRC value */
+	/* final 4 bit remainder is CRC value */
 	n_rem = (0x000F & (n_rem >> 12));
 	n_prom[7] = crc_read;
 
@@ -157,44 +155,42 @@ bool MS5607::crc4(uint16_t *n_prom)
 
 int MS5607::loadCalibration()
 {
-  // Wait for PROM contents to be in the device (2.8 ms), in case we are called
-  // immediatelly after reset.
-  usleep(3000);
+	// Wait for PROM contents to be in the device (2.8 ms), in case we are called
+	// immediatelly after reset.
+	usleep(3000);
 
-  uint8_t last_val = 0;
-  bool bits_stuck = true;
+	uint8_t last_val = 0;
+	bool bits_stuck = true;
 
-  uint8_t prom_buf[2];
-  union {
-    uint8_t b[2];
-    uint16_t w;
-  } cvt;
+	uint8_t prom_buf[2];
+	union {
+		uint8_t b[2];
+		uint16_t w;
+	} cvt;
 
-  for (int i = 0; i < 8; ++i)
-  {
-    uint8_t cmd = ADDR_PROM_SETUP + (i * 2);
+	for (int i = 0; i < 8; ++i) {
+		uint8_t cmd = ADDR_PROM_SETUP + (i * 2);
 
-    _retries = 5;
-    if (_transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, &prom_buf[0], 2) < 0)
-    {
-      DF_LOG_ERR("Read calibration error");
-      break;
-    }
+		_retries = 5;
 
-    // check if all bytes are zero
-    if (i == 0)
-    {
-      last_val = prom_buf[0];
-    }
+		if (_transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, &prom_buf[0], 2) < 0) {
+			DF_LOG_ERR("Read calibration error");
+			break;
+		}
 
-    if (prom_buf[0] != last_val || prom_buf[1] != last_val)
-    {
-      bits_stuck = false;
-    }
-    cvt.b[0] = prom_buf[1];
-    cvt.b[1] = prom_buf[0];
-	  memcpy(((uint16_t*)&m_sensor_calibration + i), &cvt.w, sizeof(uint16_t));
-  }
+		// check if all bytes are zero
+		if (i == 0) {
+			last_val = prom_buf[0];
+		}
+
+		if (prom_buf[0] != last_val || prom_buf[1] != last_val) {
+			bits_stuck = false;
+		}
+
+		cvt.b[0] = prom_buf[1];
+		cvt.b[1] = prom_buf[0];
+		memcpy(((uint16_t *)&m_sensor_calibration + i), &cvt.w, sizeof(uint16_t));
+	}
 
 	DF_LOG_DEBUG("factory_setup: %d", m_sensor_calibration.factory_setup);
 	DF_LOG_DEBUG("c1: %d", m_sensor_calibration.c1_pressure_sens);
@@ -204,7 +200,7 @@ int MS5607::loadCalibration()
 	DF_LOG_DEBUG("c5: %d", m_sensor_calibration.c5_reference_temp);
 	DF_LOG_DEBUG("c6: %d", m_sensor_calibration.c6_temp_coeff_temp);
 
-	return (crc4((uint16_t*)&m_sensor_calibration) && !bits_stuck) ? 0 : -1;
+	return (crc4((uint16_t *)&m_sensor_calibration) && !bits_stuck) ? 0 : -1;
 }
 
 int MS5607::ms5607_init()
@@ -219,7 +215,7 @@ int MS5607::ms5607_init()
 	m_sensor_data.error_counter = 0;
 	m_synchronize.unlock();
 
-  int result;
+	int result;
 
 	/* Reset sensor and load calibration data into internal register */
 	result = reset();
@@ -236,21 +232,21 @@ int MS5607::ms5607_init()
 		return -EIO;
 	}
 
-  return 0;
+	return 0;
 }
 
 int MS5607::reset()
 {
-  int result;
+	int result;
 	uint8_t cmd = ADDR_RESET_CMD;
 	_retries = 10;
 	result = _transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, nullptr, 0);
 
-	if (result < 0)
-  {
-    DF_LOG_ERR("Unable to reset device: %d", result);
-    return -EIO;
-  }
+	if (result < 0) {
+		DF_LOG_ERR("Unable to reset device: %d", result);
+		return -EIO;
+	}
+
 	return result;
 }
 
@@ -299,78 +295,78 @@ int MS5607::stop()
 
 int MS5607::_request(uint8_t cmd)
 {
-  int ret;
+	int ret;
 
-  _retries = 0;
-  ret = _transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, nullptr, 0);
+	_retries = 0;
+	ret = _transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, nullptr, 0);
 
-  if (ret < 0)
-  {
-    DF_LOG_ERR("error: request failed");
-  }
-  return ret;
+	if (ret < 0) {
+		DF_LOG_ERR("error: request failed");
+	}
+
+	return ret;
 }
-	
-int MS5607::_collect(uint32_t* raw)
+
+int MS5607::_collect(uint32_t *raw)
 {
-  int ret;
+	int ret;
 
-  union {
-    uint8_t b[4];
-    uint32_t w;
-  } cvt;
+	union {
+		uint8_t b[4];
+		uint32_t w;
+	} cvt;
 
-  uint8_t buf[3];
+	uint8_t buf[3];
 
-  _retries = 0;
-  uint8_t cmd = ADDR_CMD_ADC_READ;
-  ret = _transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, &buf[0], 3);
+	_retries = 0;
+	uint8_t cmd = ADDR_CMD_ADC_READ;
+	ret = _transfer(MS5607_SLAVE_ADDRESS, &cmd, 1, &buf[0], 3);
 
-  if (ret < 0)
-  {
-    *raw = 0;
-    return -1;
-  }
-  cvt.b[0] = buf[2];
-  cvt.b[1] = buf[1];
-  cvt.b[2] = buf[0];
-  cvt.b[3] = 0;
-  *raw = cvt.w;
+	if (ret < 0) {
+		*raw = 0;
+		return -1;
+	}
 
-  return 0;
+	cvt.b[0] = buf[2];
+	cvt.b[1] = buf[1];
+	cvt.b[2] = buf[0];
+	cvt.b[3] = 0;
+	*raw = cvt.w;
+
+	return 0;
 }
 
 void MS5607::_measure(void)
 {
 
-  // Request to convert the temperature
-  if (_request(ADDR_CMD_CONVERT_D2) < 0)
-  {
-    DF_LOG_ERR("error: temp measure failed");
-    return;
-  }
+	// Request to convert the temperature
+	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+		DF_LOG_ERR("error: temp measure failed");
+		return;
+	}
 
-  usleep(MS5607_CONVERSION_INTERVAL_US);
+	usleep(MS5607_CONVERSION_INTERVAL_US);
 
-  // read the result
-  uint32_t temperature_from_sensor;
+	// read the result
+	uint32_t temperature_from_sensor;
+
 	if (_collect(&temperature_from_sensor) < 0) {
 		DF_LOG_ERR("error: temp collect failed");
 		reset();
 		return;
 	}
 
-  // Request to convert the pressure
-  if (_request(ADDR_CMD_CONVERT_D1) < 0)
-  {
-    DF_LOG_ERR("error: pressure measure failed");
-    return;
-  }
+	// Request to convert the pressure
+	if (_request(ADDR_CMD_CONVERT_D1) < 0) {
+		DF_LOG_ERR("error: pressure measure failed");
+		return;
+	}
 
-  usleep(MS5607_CONVERSION_INTERVAL_US);
+	usleep(MS5607_CONVERSION_INTERVAL_US);
 
-  // read the result
-  uint32_t pressure_from_sensor;
+	// read the result
+	uint32_t pressure_from_sensor;
+
 	if (_collect(&pressure_from_sensor) < 0) {
 		DF_LOG_ERR("error: pressure collect failed");
 		return;

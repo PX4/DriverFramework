@@ -40,7 +40,7 @@ namespace DriverFramework
 {
 
 struct ms5607_sensor_calibration {
-  uint16_t factory_setup;
+	uint16_t factory_setup;
 	uint16_t c1_pressure_sens;
 	uint16_t c2_pressure_offset;
 	uint16_t c3_temp_coeff_pres_sens;
@@ -51,10 +51,10 @@ struct ms5607_sensor_calibration {
 };
 
 struct ms5607_sensor_measurement {
-  int32_t temperature_c;
-  int64_t off;
-  int64_t sens;
-  int32_t pressure_mbar;
+	int32_t temperature_c;
+	int64_t off;
+	int64_t sens;
+	int32_t pressure_mbar;
 };
 
 #define BARO_DEVICE_PATH "/dev/i2c-ms5607"
@@ -105,10 +105,10 @@ private:
 
 	int loadCalibration();
 
-  // Request to convert pressure or temperature data
+	// Request to convert pressure or temperature data
 	int _request(uint8_t phase);
 	// Read out the requested sensor data
-	int _collect(uint32_t* raw);
+	int _collect(uint32_t *raw);
 
 	bool crc4(uint16_t *n_prom);
 

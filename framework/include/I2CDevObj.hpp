@@ -70,14 +70,14 @@ public:
 	static int readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length);
 	static int writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length);
 	static int transfer(DevHandle &h, uint8_t address, uint8_t *send_buffer, uint8_t send_len,
-	    uint8_t *receive_buffer, uint8_t receive_len);
+			    uint8_t *receive_buffer, uint8_t receive_len);
 
 protected:
 	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
 	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
 
 	int _transfer(uint8_t address, const uint8_t *send_buffer, uint8_t send_len,
-	    uint8_t *receive_buffer, uint8_t receive_len);
+		      uint8_t *receive_buffer, uint8_t receive_len);
 
 	// read from a register without ioctl
 	int _simple_read(uint8_t *out_buffer, int length);

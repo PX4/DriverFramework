@@ -136,7 +136,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 
 	return 0;
 #elif defined(__BEBOP)
-  return -1;
+	return -1;
 #else
 	return -1;
 #endif
@@ -165,7 +165,7 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 
 	return 0;
 #elif defined(__BEBOP)
-  return -1;
+	return -1;
 #else
 	return -1;
 #endif
@@ -214,14 +214,14 @@ int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_kh
 	slave_config.byte_transer_timeout_in_usecs = transfer_timeout_usec;
 	return ::ioctl(m_fd, I2C_IOCTL_SLAVE, &slave_config);
 #elif defined(__BEBOP)
-  return -1;
+	return -1;
 #else
 	return -1;
 #endif
 }
 
 int I2CDevObj::transfer(DevHandle &h, uint8_t address, uint8_t *send_buffer,
-    uint8_t send_len, uint8_t *receive_buffer, uint8_t receive_len)
+			uint8_t send_len, uint8_t *receive_buffer, uint8_t receive_len)
 {
 	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
 
@@ -234,7 +234,7 @@ int I2CDevObj::transfer(DevHandle &h, uint8_t address, uint8_t *send_buffer,
 }
 
 int I2CDevObj::_transfer(uint8_t address, const uint8_t *send_buffer,
-    uint8_t send_len, uint8_t *receive_buffer, uint8_t receive_len)
+			 uint8_t send_len, uint8_t *receive_buffer, uint8_t receive_len)
 {
 	if (m_fd == 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
@@ -269,18 +269,18 @@ int I2CDevObj::_transfer(uint8_t address, const uint8_t *send_buffer,
 		}
 
 		if (msgs == 0) {
-		  DF_LOG_ERR("Message empty");
+			DF_LOG_ERR("Message empty");
 			return -1;
 		}
 
 		packets.msgs  = msgv;
 		packets.nmsgs = msgs;
 
-    ret = ::ioctl(m_fd, I2C_RDWR, (uint32_t*)&packets);
+		ret = ::ioctl(m_fd, I2C_RDWR, (uint32_t *)&packets);
 
-    if (ret < 0) {
-      DF_LOG_ERR("I2C transfer failed: %s", strerror(errno));
-      return ret;
+		if (ret < 0) {
+			DF_LOG_ERR("I2C transfer failed: %s", strerror(errno));
+			return ret;
 		}
 
 		/* success */
@@ -292,6 +292,6 @@ int I2CDevObj::_transfer(uint8_t address, const uint8_t *send_buffer,
 
 	return ret;
 #else
-  return -1;
+	return -1;
 #endif
 }
