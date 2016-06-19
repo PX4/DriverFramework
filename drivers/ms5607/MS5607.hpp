@@ -40,25 +40,38 @@ namespace DriverFramework
 {
 
 struct ms5607_sensor_calibration {
+  uint16_t factory_setup;
+	uint16_t c1_pressure_sens;
+	uint16_t c2_pressure_offset;
+	uint16_t c3_temp_coeff_pres_sens;
+	uint16_t c4_temp_coeff_pres_offset;
+	uint16_t c5_reference_temp;
+	uint16_t c6_temp_coeff_temp;
+	uint16_t serial_and_crc;
 };
 
+struct ms5607_sensor_measurement {
+  int32_t temperature_c;
+  int64_t off;
+  int64_t sens;
+  int32_t pressure_mbar;
+};
 
 #define BARO_DEVICE_PATH "/dev/i2c-ms5607"
 
 // update frequency is 50 Hz (44.4-51.3Hz ) at 8x oversampling
-#define MS5607_MEASURE_INTERVAL_US 20000
+#define MS5607_MEASURE_INTERVAL_US 20000 // microseconds
+#define MS5607_CONVERSION_INTERVAL_US 10000 /*microseconds */
 
 #define MS5607_BUS_FREQUENCY_IN_KHZ 400
 #define MS5607_TRANSFER_TIMEOUT_IN_USECS 9000
 
 #define MS5607_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES 6
-#define MS5607_MAX_LEN_CALIB_VALUES 26
+#define MS5607_MAX_LEN_CALIB_VALUES 16
 
-// TODO: include some common header file (currently in drv_sensor.h).
 #define DRV_DF_DEVTYPE_MS5607 0x42
 
-#define MS5607_SLAVE_ADDRESS 0b1110110       /* 7-bit slave address */
-
+#define MS5607_SLAVE_ADDRESS 0x77       /* 7-bit slave address */
 
 class MS5607 : public BaroSensor
 {
@@ -81,10 +94,9 @@ protected:
 	virtual int _publish(struct baro_sensor_data &data);
 
 private:
-	// Returns pressure in Pa as unsigned 32 bit integer in
-	// Q24.8 format (24 integer bits and 8 fractional bits)
+	// Returns pressure in Pa as unsigned 32 bit integer
 	// Output value of “24674867” represents
-	// 24674867/256 = 96386.2 Pa = 963.862 hPa
+	// 24674867/100 = 246748.67 Pa = 24674867 hPa
 	int64_t convertPressure(int64_t adc_pressure);
 
 	// Returns temperature in DegC, resolution is 0.01 DegC
@@ -93,10 +105,21 @@ private:
 
 	int loadCalibration();
 
+  // Request to convert pressure or temperature data
+	int _request(uint8_t phase);
+	// Read out the requested sensor data
+	int _collect(uint32_t* raw);
+
+	bool crc4(uint16_t *n_prom);
+
 	// returns 0 on success, -errno on failure
 	int ms5607_init();
 
+	// Send reset to device
+	int reset();
+
 	struct ms5607_sensor_calibration 	m_sensor_calibration;
+	struct ms5607_sensor_measurement m_raw_sensor_convertion;;
 };
 
 }; // namespace DriverFramework
