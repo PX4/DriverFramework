@@ -51,7 +51,7 @@ struct ms5607_sensor_calibration {
 };
 
 struct ms5607_sensor_measurement {
-	int32_t temperature_c; // Temperature with 0.01 DegC resolution 2356 = 23.56 DegC
+	int32_t temperature_cc; // Temperature with 0.01 DegC resolution 2356 = 23.56 DegC
 	int64_t off; // Offset at actual temperature
 	int64_t sens; // Sensitivity at actual temperature
 	int32_t pressure_mbar; // Temperature compensated pressure with 0.01 mbar resolution

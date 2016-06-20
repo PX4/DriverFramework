@@ -101,7 +101,7 @@ int32_t MS5607::convertTemperature(int32_t adc_T)
 		off -= off2;
 	}
 
-	m_raw_sensor_convertion.temperature_c = temp;
+	m_raw_sensor_convertion.temperature_cc = temp;
 	m_raw_sensor_convertion.sens = sens;
 	m_raw_sensor_convertion.off = off;
 	return temp;
