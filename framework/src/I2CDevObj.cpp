@@ -42,7 +42,7 @@
 #include "DevIOCTL.h"
 #ifdef __QURT
 #include "dev_fs_lib_i2c.h"
-#elif defined(__BEBOP)
+#elif defined(__LINUX)
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
@@ -135,7 +135,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 	}
 
 	return 0;
-#elif defined(__BEBOP)
+#elif defined(__LINUX)
 	return -1;
 #else
 	return -1;
@@ -164,7 +164,7 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 	}
 
 	return 0;
-#elif defined(__BEBOP)
+#elif defined(__LINUX)
 	return -1;
 #else
 	return -1;
@@ -213,7 +213,7 @@ int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_kh
 	slave_config.bus_frequency_in_khz = bus_frequency_khz;
 	slave_config.byte_transer_timeout_in_usecs = transfer_timeout_usec;
 	return ::ioctl(m_fd, I2C_IOCTL_SLAVE, &slave_config);
-#elif defined(__BEBOP)
+#elif defined(__LINUX)
 	return -1;
 #else
 	return -1;
@@ -242,7 +242,7 @@ int I2CDevObj::_transfer(uint8_t address, const uint8_t *send_buffer,
 	}
 
 
-#if defined(__BEBOP)
+#if defined(__LINUX)
 	struct i2c_msg msgv[2];
 	uint32_t msgs;
 	struct i2c_rdwr_ioctl_data packets;

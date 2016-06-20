@@ -7,7 +7,7 @@
 #
 ############################################################################
 add_definitions(
-	-D__BEBOP
+  -D__LINUX
 	)
 
 ######### test DriverFramework for bebop ###
