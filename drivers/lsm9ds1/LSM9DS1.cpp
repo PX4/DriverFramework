@@ -121,7 +121,7 @@ int LSM9DS1::lsm9ds1_init()
 	_readReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9);
 
   _writeReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9 |
-            BITS_USER_CTRL_REG9_FIFO_EN);
+            BITS_USER_CTRL_REG9_FIFO_EN | BITS_USER_CTRL_REG9_FIFO_TEMP_EN);
 
 	reset_fifo();
 
@@ -170,7 +170,7 @@ int LSM9DS1::start()
 		goto exit;
 	}
 
-	if (sensor_id) {
+	if (sensor_id != LSM9DS1_WHO_AM_I_ACC_GYRO) {
 		DF_LOG_ERR("LSM9DS1 sensor WHOAMI wrong: 0x%X, should be: 0x%X",
 			   sensor_id, LSM9DS1_WHO_AM_I_ACC_GYRO);
 		result = -1;
@@ -342,6 +342,7 @@ void LSM9DS1::_measure()
     report->gyro_z = bit_data[2];
 
 
+#if 0
 		/* TODO: add ifdef for endianness */
 		report->accel_x = swap16(report->accel_x);
 		report->accel_y = swap16(report->accel_y);
@@ -350,7 +351,7 @@ void LSM9DS1::_measure()
 		report->gyro_x = swap16(report->gyro_x);
 		report->gyro_y = swap16(report->gyro_y);
 		report->gyro_z = swap16(report->gyro_z);
-
+#endif
 
 		// Check if the full accel range of the accel has been used. If this occurs, it is
 		// either a spike due to a crash/landing or a sign that the vibrations levels
