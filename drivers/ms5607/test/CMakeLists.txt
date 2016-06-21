@@ -34,7 +34,7 @@
 include_directories(..)
 
 if("${DF_TARGET}" STREQUAL "qurt")
-	add_subdirectory(qurt)
+	# Don't compile this driver for Snapdragon.
 else()
 	add_executable(df_ms5607_test
 		main.cpp
