@@ -32,7 +32,7 @@
  ****************************************************************************/
 #include <unistd.h>
 #include "DriverFramework.hpp"
-#include "MPU9250.hpp"
+#include "LSM9DS1.hpp"
 
 using namespace DriverFramework;
 
@@ -45,7 +45,7 @@ public:
 	static constexpr unsigned num_read_attempts = 1000;
 
 	ImuTester() :
-		m_sensor(IMU_DEVICE_PATH, true)
+		m_sensor(IMU_DEVICE_ACC_GYRO)
 	{}
 
 	static void readSensorCallback(void *arg);
@@ -56,7 +56,7 @@ private:
 	void readSensor();
 	void wait();
 
-	MPU9250		m_sensor;
+	LSM9DS1		m_sensor;
 	uint32_t	m_read_attempts = 0;
 	uint32_t	m_read_counter = 0;
 
@@ -74,11 +74,11 @@ int ImuTester::run()
 
 	// Open the IMU sensor
 	DevHandle h;
-	DevMgr::getHandle(IMU_DEVICE_PATH, h);
+	DevMgr::getHandle(IMU_DEVICE_ACC_GYRO, h);
 
 	if (!h.isValid()) {
 		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
-			    IMU_DEVICE_PATH, h.getError());
+			    IMU_DEVICE_ACC_GYRO, h.getError());
 		m_done = true;
 
 	} else {

@@ -31,19 +31,21 @@
 #
 ############################################################################
 
-include(../../cmake/df_common.cmake)
+include_directories(..)
 
-include_directories(
-	../../framework/include
-	)
+if("${DF_TARGET}" STREQUAL "qurt")
+	add_subdirectory(qurt)
+else()
+	add_executable(df_imu_test2
+		main.cpp
+		test.cpp
+		)
 
-get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-df_add_library(df_${drivername}
-	LSM9DS1.cpp
-	)
-
-if("${DF_ENABLE_TESTS}" STREQUAL "1")
-	add_subdirectory(test)
+	target_link_libraries(df_imu_test2
+		df_driver_framework
+		df_lsm9ds1
+		${df_link_libs}
+		)
 endif()
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

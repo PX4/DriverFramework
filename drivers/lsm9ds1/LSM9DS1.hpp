@@ -141,9 +141,10 @@ namespace DriverFramework
 
 
 #define BITS_USER_CTRL_FIFO_FMODE_RST    0x00
-#define BITS_USER_CTRL_FIFO_FMODE_EN    (6 << 5)
-#define BITS_USER_CTRL_REG9_FIFO_EN     (1 << 2)
-#define BITS_USER_CTRL_FIFO_SRC_FSS     (0x2f)
+#define BITS_USER_CTRL_FIFO_FMODE_EN    (5 << 5)
+#define BITS_USER_CTRL_REG9_FIFO_EN     (1 << 1)
+#define BITS_USER_CTRL_REG9_FIFO_TEMP_EN    (1 << 4)
+#define BITS_USER_CTRL_FIFO_SRC_FSS     (0x3f)
 #define BITS_INT_STATUS_FIFO_OVRN  0x40
 #define LSM9DS1_MAX_FIFO_LEN       32
 
@@ -152,7 +153,7 @@ namespace DriverFramework
 #endif
 
 // update frequency 1000 Hz
-#define LSM9DS1_MEASURE_INTERVAL_US 1000
+#define LSM9DS1_MEASURE_INTERVAL_US 2900
 
 #define DRV_DF_DEVTYPE_LSM9DS1 0x44
 
