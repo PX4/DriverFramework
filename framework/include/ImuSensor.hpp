@@ -48,7 +48,7 @@
 
 #if defined(__RPI2)
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
-#define IMU_DEVICE_MAGNETOMETER "/dev/spidev0.2"
+#define IMU_DEVICE_MAG "/dev/spidev0.2"
 #endif
 
 #define IMU_CLASS_PATH  "/dev/imu"
