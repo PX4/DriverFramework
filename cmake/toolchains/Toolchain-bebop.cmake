@@ -7,7 +7,9 @@
 #
 ############################################################################
 add_definitions(
-	-D__LINUX
+  -D__LINUX
+  -D__BEBOP
+  -D__IMU_USE_I2C
 )
 
 ######### test DriverFramework for bebop ###
