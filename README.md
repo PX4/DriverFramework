@@ -146,9 +146,43 @@ if (ret < 0) {
 
 To run the unit tests build it and run the test app:
 
+
+#### Testing on the PC
 ```
-make
+make linux
 build_linux/test/df_testapp
 ```
-# Porting Navio drivers
 
+#### Testing on Snapdragon Flight
+
+Attach the Snapdragon Flight board via adb.
+
+```
+$ make qurt
+$ cd build_qurt
+$ make df_testapp-load df_imu_test-load df_mag_test-load df_pressure_test-load
+```
+
+Run mini-dm to see the output from the DSP
+```
+${HEXAGON_SDK_ROOT}/tools/mini-dm/Linux_Debug/mini-dm
+```
+
+Open an new shell and run the application on the target.
+
+```
+$ adb shell
+# cd /home/linaro
+# ./df_testapp
+# ./df_imu_test
+# ./df_pressure_test
+```
+
+The following unit test seems to be failing
+```
+# ./df_mag_test
+```
+
+#### Testing on RPi
+
+TBD

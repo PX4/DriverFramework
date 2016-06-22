@@ -287,11 +287,6 @@ int MPU9250::start()
 	}
 
 exit:
-
-	if (result != 0) {
-		devClose();
-	}
-
 	return result;
 }
 
@@ -315,13 +310,6 @@ int MPU9250::stop()
 	// We need to wait so that all measure calls are finished before
 	// closing the device.
 	usleep(10000);
-
-	result = devClose();
-
-	if (result != 0) {
-		DF_LOG_ERR("device close failed");
-		return result;
-	}
 
 	return 0;
 }

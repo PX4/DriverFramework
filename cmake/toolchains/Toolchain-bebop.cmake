@@ -1,18 +1,16 @@
 ############################################################################
 # Cross-compilation Toolchain File (CMAKE_TOOLCHAIN_FILE)
-# for Raspberry Pi 2
+# for Parrot Bebop
 #     requires a proper toolchain setup:
 #     https://github.com/pixhawk/rpi_toolchain
 #
-# Author: Bo Liu (bo-rc@acm.org)
 #
 ############################################################################
 add_definitions(
-	-D__RPI2
-	-D__DF_LINUX
-)
+  -D__LINUX
+	)
 
-######### test DriverFramework for rpi2 ###
+######### test DriverFramework for bebop ###
 # used for debug
 #add_definitions(-DDF_DEBUG)
 
@@ -29,7 +27,8 @@ set(CMAKE_SYSTEM_VERSION 1)
 # set cross compilers
 set(CMAKE_C_COMPILER "${RPI_TOOLCHAIN_DIR}/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-gcc")
 set(CMAKE_CXX_COMPILER "${RPI_TOOLCHAIN_DIR}/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-g++")
-set(CMAKE_C_FLAGS "")
+set(CMAKE_C_FLAGS "-static" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "-static" CACHE STRING "" FORCE)
 set(LINKER_FLAGS "-Wl,-gc-sections")
 set(CMAKE_EXE_LINKER_FLAGS ${LINKER_FLAGS})
 

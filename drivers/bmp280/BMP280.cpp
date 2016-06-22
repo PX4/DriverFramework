@@ -192,16 +192,7 @@ int BMP280::bmp280_init()
 
 int BMP280::start()
 {
-	int result = devOpen(0);
-
-	/* Open the device path specified in the class initialization */
-	if (result < 0) {
-		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
-		//goto exit;
-		return -1;
-	}
-
-	result = I2CDevObj::start();
+	int result = I2CDevObj::start();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
@@ -235,11 +226,6 @@ int BMP280::start()
 	}
 
 exit:
-
-	if (result != 0) {
-		devClose();
-	}
-
 	return result;
 }
 
@@ -249,13 +235,6 @@ int BMP280::stop()
 
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
-		return result;
-	}
-
-	result = devClose();
-
-	if (result != 0) {
-		DF_LOG_ERR("device close failed");
 		return result;
 	}
 

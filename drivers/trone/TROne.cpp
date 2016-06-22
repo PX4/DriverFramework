@@ -42,16 +42,7 @@ using namespace DriverFramework;
 
 int TROne::start()
 {
-	int result = devOpen(0);
-
-	/* Open the device path specified in the class initialization */
-	if (result < 0) {
-		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
-		//goto exit;
-		return -1;
-	}
-
-	result = I2CDevObj::start();
+	int result = I2CDevObj::start();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
@@ -91,13 +82,6 @@ int TROne::start()
 	}
 
 exit:
-
-	if (result != 0) {
-		DF_LOG_ERR("error: Failed to start TROne");
-		I2CDevObj::stop();
-		devClose();
-	}
-
 	return result;
 }
 
@@ -112,14 +96,6 @@ int TROne::stop()
 
 	usleep(100000);
 
-	result = devClose();
-
-	if (result != 0) {
-		DF_LOG_ERR("device close failed");
-		return result;
-	}
-
-	usleep(100000);
 	return 0;
 }
 
