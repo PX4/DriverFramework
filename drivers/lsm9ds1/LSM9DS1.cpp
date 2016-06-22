@@ -94,6 +94,9 @@ int LSM9DS1::lsm9ds1_init()
 	m_sensor_data.gyro_rad_s_x = 0.0f;
 	m_sensor_data.gyro_rad_s_y = 0.0f;
 	m_sensor_data.gyro_rad_s_z = 0.0f;
+  m_sensor_data.mag_ga_x = 0.0f;
+  m_sensor_data.mag_ga_y = 0.0f;
+  m_sensor_data.mag_ga_z = 0.0f;
 	m_sensor_data.temp_c = 0.0f;
 
 	m_sensor_data.read_counter = 0;
@@ -475,6 +478,10 @@ void LSM9DS1::_measure()
       report->mag_x = bit_data[0];
       report->mag_y = bit_data[1];
       report->mag_z = bit_data[2];
+    } else {
+      report->mag_x = 0;
+      report->mag_y = 0;
+      report->mag_z = 0;
     }
 
 #if 0
@@ -555,9 +562,9 @@ void LSM9DS1::_measure()
 		m_sensor_data.gyro_rad_s_y = (PI / 180) * float(report->gyro_y) * _gyro_scale;
 		m_sensor_data.gyro_rad_s_z = (PI / 180) * float(report->gyro_z) * _gyro_scale;
 
-    m_sensor_data.mag_ga_x = 100.0 * ((float)report->mag_x * _mag_scale);
-    m_sensor_data.mag_ga_y = 100.0 * ((float)report->mag_y * _mag_scale);
-    m_sensor_data.mag_ga_z = 100.0 * ((float)report->mag_z * _mag_scale);
+    m_sensor_data.mag_ga_x = 100.0 * (double(report->mag_x) * double(_mag_scale));
+    m_sensor_data.mag_ga_y = 100.0 * (double(report->mag_y) * double(_mag_scale));
+    m_sensor_data.mag_ga_z = 100.0 * (double(report->mag_z) * double(_mag_scale));
 
 		// Pass on the sampling interval between FIFO samples at 8kHz.
 		m_sensor_data.fifo_sample_interval_us = 125;
