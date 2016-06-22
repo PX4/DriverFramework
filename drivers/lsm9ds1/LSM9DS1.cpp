@@ -54,6 +54,30 @@ void LSM9DS1::set_acc_scale(int scale)
     }
 }
 
+void LSM9DS1::set_mag_scale(int scale)
+{
+  uint8_t reg;
+  _mag->readReg(LSM9DS1M_CTRL_REG2_M, reg);
+  reg &= BITS_FS_M_MASK;
+  _mag->writeReg(LSM9DS1M_CTRL_REG2_M, reg | scale);
+
+  switch (scale) {
+  case BITS_FS_M_4Gs:
+    _mag_scale = 0.00014;
+    break;
+  case BITS_FS_M_8Gs:
+    _mag_scale = 0.00029;
+    break;
+  case BITS_FS_M_12Gs:
+    _mag_scale = 0.00043;
+    break;
+  case BITS_FS_M_16Gs:
+    _mag_scale = 0.00058;
+    break;
+  }
+
+}
+
 
 int LSM9DS1::lsm9ds1_init()
 {
@@ -96,24 +120,24 @@ int LSM9DS1::lsm9ds1_init()
   _writeReg(LSM9DS1XG_CTRL_REG5_XL, BITS_XEN_XL | BITS_YEN_XL | BITS_ZEN_XL);
 
   usleep(200);
-  //TODO:
-  // Initialize the magnetometer inside the IMU, if enabled by the caller.
-	// if (_mag_enabled && _mag == nullptr) {
-	// 	if ((_mag = new MPU9250_mag(*this, MPU9250_MAG_SAMPLE_RATE_100HZ))
-	// 	    != nullptr) {
-	// 		// Initialize the magnetometer, providing the output data rate for
-	// 		// data read from the IMU FIFO.  This is used to calculate the I2C
-	// 		// delay for reading the magnetometer.
-	// 		result = _mag->initialize(MPU9250_MEASURE_INTERVAL_US);
 
-	// 		if (result != 0) {
-	// 			DF_LOG_ERR("Magnetometer initialization failed");
-	// 		}
+  if (_mag_enabled && _mag == nullptr) {
 
-	// 	} else {
-	// 		DF_LOG_ERR("Allocation of magnetometer object failed.");
-	// 	}
-	// }
+    if ((_mag = new LSM9DS1M(_mag_device_path)) != nullptr) {
+
+      int result;
+
+      result = _mag->start();
+      result = _mag->init();
+
+      if (result != 0) {
+        DF_LOG_ERR("Magnetometor initialization failed");
+      }
+    } else {
+      DF_LOG_ERR("Allocation of magnetometor object failed");
+    }
+
+  }
 
 	// Enable/clear the FIFO of any residual data and enable the I2C master clock, if the mag is
 	// enabled.
@@ -127,17 +151,29 @@ int LSM9DS1::lsm9ds1_init()
 
   set_gyro_scale(BITS_FS_G_2000DPS);
   set_acc_scale(BITS_FS_XL_16G);
+  set_mag_scale(BITS_FS_M_16Gs);
 	return 0;
+}
+
+int LSM9DS1::LSM9DS1M::init() {
+  int result = -1;
+
+  result = writeReg(LSM9DS1M_CTRL_REG1_M, BITS_TEMP_COMP | BITS_OM_HIGH | BITS_ODR_M_80HZ);
+  result = writeReg(LSM9DS1M_CTRL_REG2_M, BITS_FS_M_16Gs);
+  result = writeReg(LSM9DS1M_CTRL_REG3_M, BITS_MD_CONTINUOUS);
+  result = writeReg(LSM9DS1M_CTRL_REG4_M, BITS_OMZ_HIGH);
+  result = writeReg(LSM9DS1M_CTRL_REG5_M, 0x00);
+
+  return result; 
 }
 
 int LSM9DS1::lsm9ds1_deinit()
 {
-  //TODO:
   // Deallocate the resources for the mag driver, if enabled.
-	// if (_mag_enabled && _mag != nullptr) {
-	// 	delete _mag;
-	// 	_mag = nullptr;
-	// }
+	if (_mag_enabled && _mag != nullptr) {
+	 	delete _mag;
+	 	_mag = nullptr;
+	}
 
 	return 0;
 }
@@ -200,6 +236,56 @@ exit:
 	return result;
 }
 
+int LSM9DS1::LSM9DS1M::start() {
+	/* Open the device path specified in the class initialization. */
+	// attempt to open device in start()
+	int result = SPIDevObj::start();
+
+	if (result != 0) {
+		DF_LOG_ERR("DevObj start failed");
+		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
+		return result;
+	}
+
+	/* Set the bus frequency for register get/set. */
+	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
+
+	if (result != 0) {
+		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
+	}
+
+	/* Try to talk to the sensor. */
+	uint8_t sensor_id;
+  result = _readReg(LSM9DS1M_WHO_AM_I, sensor_id);
+
+  if (result != 0) {
+    DF_LOG_ERR("Unable to communicate with the LSM9DS1M sensor");
+    goto exit;
+  }
+
+  if (sensor_id != LSM9DS1_WHO_AM_I_MAG) {
+    DF_LOG_ERR("LSM9DS1M sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, LSM9DS1_WHO_AM_I_MAG);
+    result = -1;
+    goto exit;
+  }
+
+	result = DevObj::start();
+
+	if (result != 0) {
+		DF_LOG_ERR("DevObj start failed");
+		return result;
+	}
+
+ exit:
+
+	if (result != 0) {
+		devClose();
+	}
+
+	return result;
+
+}
+
 int LSM9DS1::stop()
 {
 	int result = lsm9ds1_deinit();
@@ -229,6 +315,32 @@ int LSM9DS1::stop()
 	}
 
 	return 0;
+}
+
+int LSM9DS1::LSM9DS1M::stop()
+{
+  int result = -1;
+
+	result = DevObj::stop();
+
+	if (result != 0) {
+		DF_LOG_ERR("DevObj stop failed");
+		return result;
+	}
+
+	// We need to wait so that all measure calls are finished before
+	// closing the device.
+	usleep(10000);
+
+	result = devClose();
+
+	if (result != 0) {
+		DF_LOG_ERR("device close failed");
+		return result;
+	}
+
+	return 0;
+
 }
 
 int LSM9DS1::get_fifo_count()
@@ -281,10 +393,23 @@ void LSM9DS1::_measure()
 
 	if (result != 0) {
 		m_synchronize.lock();
+    DF_LOG_ERR("ACC_GYRO Error");
 		++m_sensor_data.error_counter;
 		m_synchronize.unlock();
 		return;
 	}
+
+  if (_mag_enabled) {
+    result = _readReg(LSM9DS1M_STATUS_REG_M, int_status);
+
+    if (result != 0) {
+      m_synchronize.lock();
+      DF_LOG_ERR("MAG Error");
+      ++m_sensor_data.error_counter;
+      m_synchronize.unlock();
+      return;
+    }
+  }
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVRN) {
     //No need to reset as it is configured to be in continuous mode.
@@ -300,9 +425,8 @@ void LSM9DS1::_measure()
 
 	// Get FIFO byte count to read and floor it to the report size.
   int fifo_count = get_fifo_count();
-  int bytes_to_read = fifo_count * sizeof(fifo_packet);
 
-	if (bytes_to_read < 0) {
+	if (fifo_count < 0) {
 		m_synchronize.lock();
 		++m_sensor_data.error_counter;
 		m_synchronize.unlock();
@@ -341,6 +465,17 @@ void LSM9DS1::_measure()
     report->gyro_y = bit_data[1];
     report->gyro_z = bit_data[2];
 
+    if (_mag_enabled) {
+      _mag->bulkRead(LSM9DS1M_OUT_X_L_M, &response[0], 6);
+
+      for (int i=0; i<3; i++) {
+        bit_data[i] = ((int16_t)response[2*i+1] << 8) | response[2*i];
+      }
+
+      report->mag_x = bit_data[0];
+      report->mag_y = bit_data[1];
+      report->mag_z = bit_data[2];
+    }
 
 #if 0
 		/* TODO: add ifdef for endianness */
@@ -419,6 +554,10 @@ void LSM9DS1::_measure()
 		m_sensor_data.gyro_rad_s_x = (PI / 180) * float(report->gyro_x) * _gyro_scale;
 		m_sensor_data.gyro_rad_s_y = (PI / 180) * float(report->gyro_y) * _gyro_scale;
 		m_sensor_data.gyro_rad_s_z = (PI / 180) * float(report->gyro_z) * _gyro_scale;
+
+    m_sensor_data.mag_ga_x = 100.0 * ((float)report->mag_x * _mag_scale);
+    m_sensor_data.mag_ga_y = 100.0 * ((float)report->mag_y * _mag_scale);
+    m_sensor_data.mag_ga_z = 100.0 * ((float)report->mag_z * _mag_scale);
 
 		// Pass on the sampling interval between FIFO samples at 8kHz.
 		m_sensor_data.fifo_sample_interval_us = 125;

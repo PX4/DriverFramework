@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include "DriverFramework.hpp"
 #include "LSM9DS1.hpp"
+#include "ImuSensor.hpp"
 
 using namespace DriverFramework;
 

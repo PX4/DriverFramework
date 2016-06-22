@@ -5,9 +5,9 @@
 namespace DriverFramework
 {
 #define LSM9DS1_WHO_AM_I_ACC_GYRO           0x68
-#define LSM9DS1_WHO_AM_I_MAG                0x3D
+#define LSM9DS1_WHO_AM_I_MAG	0x3D
 
-// Accelerometer and Gyroscope registers
+  // Accelerometer and Gyroscope registers
 #define LSM9DS1XG_ACT_THS           0x04
 #define LSM9DS1XG_ACT_DUR           0x05
 #define LSM9DS1XG_INT_GEN_CFG_XL    0x06
@@ -156,37 +156,43 @@ namespace DriverFramework
 #define LSM9DS1_MEASURE_INTERVAL_US 2900
 
 #define DRV_DF_DEVTYPE_LSM9DS1 0x44
+#define DRV_DF_DEVTYPE_LSM9DS1M 0x45
+
 
 
 #pragma pack(push, 1)
 
 struct fifo_packet {
-	int16_t accel_x;
+ 	int16_t accel_x;
 	int16_t accel_y;
 	int16_t accel_z;
 	int16_t temp;
 	int16_t gyro_x;
 	int16_t gyro_y;
 	int16_t gyro_z;
+  int16_t mag_x;
+  int16_t mag_y;
+  int16_t mag_z;
 };
 #pragma pack(pop)
 
 class LSM9DS1: public ImuSensor
 {
 public:
-	LSM9DS1(const char *device_path) :
-		ImuSensor(device_path, LSM9DS1_MEASURE_INTERVAL_US, false), // true = mag is enabled
-		_last_temp_c(0.0f),
+	LSM9DS1(const char *acc_gyro_device_path, const char *mag_device_path, bool mag_enabled = true) :
+		ImuSensor(acc_gyro_device_path, LSM9DS1_MEASURE_INTERVAL_US, mag_enabled), 
+    _mag_enabled(mag_enabled),
+    _last_temp_c(0.0f),
 		_temp_initialized(false),
-		_mag_enabled(false)
+    _mag_device_path(mag_device_path),
+    _mag(nullptr)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_LSM9DS1;
-		//TODO: How to use both ACC/GYRO + MAG?
 		m_id.dev_id_s.address = LSM9DS1XG_WHO_AM_I;
-	}
+  }
 
 	// @return 0 on success, -errno on failure
-	int writeReg(int reg, uint8_t val)
+	int writeReg(int reg, uint8_t val) 
 	{
 		return _writeReg(reg, val);
 	}
@@ -207,7 +213,40 @@ protected:
 	virtual int _publish(struct imu_sensor_data &data);
 
 private:
-	// @returns 0 on success, -errno on failure
+
+  class LSM9DS1M: public ImuSensor {
+      public:
+    LSM9DS1M(const char *device_path):
+      ImuSensor(device_path, LSM9DS1_MEASURE_INTERVAL_US, true)
+    {
+      m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_LSM9DS1M;
+      m_id.dev_id_s.address = LSM9DS1M_WHO_AM_I;
+    }
+
+    int writeReg(int reg, uint8_t val)
+    {
+      return _writeReg(reg, val);
+    }
+
+    int readReg(uint8_t address, uint8_t &val)
+    {
+      return _readReg(address, val);
+    }
+
+    int bulkRead(uint8_t address, uint8_t *out_buffer, int length) {
+      return _bulkRead(address, out_buffer, length);
+    }
+
+    int init();
+
+    virtual int start();
+    virtual int stop();
+    virtual void _measure() { return; }
+    virtual int _publish(struct imu_sensor_data &data) { return 0; }
+  };
+
+
+  // @returns 0 on success, -errno on failure
 	int lsm9ds1_init();
 
 	// @returns 0 on success, -errno on failure
@@ -219,12 +258,17 @@ private:
 	void reset_fifo();
   void set_gyro_scale(int scale);
   void set_acc_scale(int scale);
+  void set_mag_scale(int scale);
 
+  bool _mag_enabled;
 	float _last_temp_c;
 	bool _temp_initialized;
-	bool _mag_enabled;
   float _gyro_scale;
   float _acc_scale;
+  float _mag_scale;
+  const char *_mag_device_path;
+
+  LSM9DS1M *_mag;
 };
 
 }
