@@ -14,67 +14,77 @@ using namespace DriverFramework;
 
 void LSM9DS1::set_gyro_scale(int scale)
 {
-  uint8_t reg;
-  _readReg(LSM9DS1XG_CTRL_REG1_G, reg);
-  reg &= BITS_FS_G_MASK;
-  _writeReg(LSM9DS1XG_CTRL_REG1_G, reg | scale);
-  switch (scale) {
-  case BITS_FS_G_245DPS:
-    _gyro_scale = 0.00875;
-    break;
-  case BITS_FS_G_500DPS:
-    _gyro_scale = 0.0175;
-    break;
-  case BITS_FS_G_2000DPS:
-    _gyro_scale = 0.07;
-    break;
-    }
+	uint8_t reg;
+	_readReg(LSM9DS1XG_CTRL_REG1_G, reg);
+	reg &= BITS_FS_G_MASK;
+	_writeReg(LSM9DS1XG_CTRL_REG1_G, reg | scale);
+
+	switch (scale) {
+	case BITS_FS_G_245DPS:
+		_gyro_scale = 0.00875;
+		break;
+
+	case BITS_FS_G_500DPS:
+		_gyro_scale = 0.0175;
+		break;
+
+	case BITS_FS_G_2000DPS:
+		_gyro_scale = 0.07;
+		break;
+	}
 }
 
 void LSM9DS1::set_acc_scale(int scale)
 {
-  uint8_t reg;
+	uint8_t reg;
 
-  _readReg(LSM9DS1XG_CTRL_REG6_XL, reg);
-  reg &= BITS_FS_XL_MASK;
-  _writeReg(LSM9DS1XG_CTRL_REG6_XL, reg | scale);
-  switch (scale) {
-  case BITS_FS_XL_2G:
-    _acc_scale = 0.000061;
-    break;
-  case BITS_FS_XL_4G:
-    _acc_scale = 0.000122;
-    break;
-  case BITS_FS_XL_8G:
-    _acc_scale = 0.000244;
-    break;
-  case BITS_FS_XL_16G:
-    _acc_scale = 0.000732;
-    break;
-    }
+	_readReg(LSM9DS1XG_CTRL_REG6_XL, reg);
+	reg &= BITS_FS_XL_MASK;
+	_writeReg(LSM9DS1XG_CTRL_REG6_XL, reg | scale);
+
+	switch (scale) {
+	case BITS_FS_XL_2G:
+		_acc_scale = 0.000061;
+		break;
+
+	case BITS_FS_XL_4G:
+		_acc_scale = 0.000122;
+		break;
+
+	case BITS_FS_XL_8G:
+		_acc_scale = 0.000244;
+		break;
+
+	case BITS_FS_XL_16G:
+		_acc_scale = 0.000732;
+		break;
+	}
 }
 
 void LSM9DS1::set_mag_scale(int scale)
 {
-  uint8_t reg;
-  _mag->readReg(LSM9DS1M_CTRL_REG2_M, reg);
-  reg &= BITS_FS_M_MASK;
-  _mag->writeReg(LSM9DS1M_CTRL_REG2_M, reg | scale);
+	uint8_t reg;
+	_mag->readReg(LSM9DS1M_CTRL_REG2_M, reg);
+	reg &= BITS_FS_M_MASK;
+	_mag->writeReg(LSM9DS1M_CTRL_REG2_M, reg | scale);
 
-  switch (scale) {
-  case BITS_FS_M_4Gs:
-    _mag_scale = 0.00014;
-    break;
-  case BITS_FS_M_8Gs:
-    _mag_scale = 0.00029;
-    break;
-  case BITS_FS_M_12Gs:
-    _mag_scale = 0.00043;
-    break;
-  case BITS_FS_M_16Gs:
-    _mag_scale = 0.00058;
-    break;
-  }
+	switch (scale) {
+	case BITS_FS_M_4Gs:
+		_mag_scale = 0.00014;
+		break;
+
+	case BITS_FS_M_8Gs:
+		_mag_scale = 0.00029;
+		break;
+
+	case BITS_FS_M_12Gs:
+		_mag_scale = 0.00043;
+		break;
+
+	case BITS_FS_M_16Gs:
+		_mag_scale = 0.00058;
+		break;
+	}
 
 }
 
@@ -82,7 +92,7 @@ void LSM9DS1::set_mag_scale(int scale)
 int LSM9DS1::lsm9ds1_init()
 {
 	// Use 1 MHz for normal registers.
-  //TODO: I'm not sure if this should be different
+	//TODO: I'm not sure if this should be different
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 
 	/* Zero the struct */
@@ -94,9 +104,9 @@ int LSM9DS1::lsm9ds1_init()
 	m_sensor_data.gyro_rad_s_x = 0.0f;
 	m_sensor_data.gyro_rad_s_y = 0.0f;
 	m_sensor_data.gyro_rad_s_z = 0.0f;
-  m_sensor_data.mag_ga_x = 0.0f;
-  m_sensor_data.mag_ga_y = 0.0f;
-  m_sensor_data.mag_ga_z = 0.0f;
+	m_sensor_data.mag_ga_x = 0.0f;
+	m_sensor_data.mag_ga_y = 0.0f;
+	m_sensor_data.mag_ga_z = 0.0f;
 	m_sensor_data.temp_c = 0.0f;
 
 	m_sensor_data.read_counter = 0;
@@ -111,73 +121,75 @@ int LSM9DS1::lsm9ds1_init()
 
 	m_synchronize.unlock();
 
-  // Enable Gyroscope
-  _writeReg(LSM9DS1XG_CTRL_REG4, BITS_XEN_G | BITS_YEN_G | BITS_ZEN_G);
+	// Enable Gyroscope
+	_writeReg(LSM9DS1XG_CTRL_REG4, BITS_XEN_G | BITS_YEN_G | BITS_ZEN_G);
 
-  // Configure Gyroscope
-  _writeReg(LSM9DS1XG_CTRL_REG1_G, BITS_ODR_G_952HZ | BITS_FS_G_2000DPS);
+	// Configure Gyroscope
+	_writeReg(LSM9DS1XG_CTRL_REG1_G, BITS_ODR_G_952HZ | BITS_FS_G_2000DPS);
 
 	usleep(200);
 
-  // Enable Accelerometer
-  _writeReg(LSM9DS1XG_CTRL_REG5_XL, BITS_XEN_XL | BITS_YEN_XL | BITS_ZEN_XL);
+	// Enable Accelerometer
+	_writeReg(LSM9DS1XG_CTRL_REG5_XL, BITS_XEN_XL | BITS_YEN_XL | BITS_ZEN_XL);
 
-  usleep(200);
+	usleep(200);
 
-  if (_mag_enabled && _mag == nullptr) {
+	if (_mag_enabled && _mag == nullptr) {
 
-    if ((_mag = new LSM9DS1M(_mag_device_path)) != nullptr) {
+		if ((_mag = new LSM9DS1M(_mag_device_path)) != nullptr) {
 
-      int result;
+			int result;
 
-      _mag->init();
-      result = _mag->start();
+			_mag->init();
+			result = _mag->start();
 
-      if (result != 0) {
-        DF_LOG_ERR("Magnetometor initialization failed");
-      }
-    } else {
-      DF_LOG_ERR("Allocation of magnetometor object failed");
-    }
+			if (result != 0) {
+				DF_LOG_ERR("Magnetometor initialization failed");
+			}
 
-  }
+		} else {
+			DF_LOG_ERR("Allocation of magnetometor object failed");
+		}
+
+	}
 
 	// Enable/clear the FIFO of any residual data and enable the I2C master clock, if the mag is
 	// enabled.
-  uint8_t ctrl_reg9;
+	uint8_t ctrl_reg9;
 	_readReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9);
 
-  _writeReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9 |
-            BITS_USER_CTRL_REG9_FIFO_EN | BITS_USER_CTRL_REG9_FIFO_TEMP_EN);
+	_writeReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9 |
+		  BITS_USER_CTRL_REG9_FIFO_EN | BITS_USER_CTRL_REG9_FIFO_TEMP_EN);
 
 	reset_fifo();
 
-  set_gyro_scale(BITS_FS_G_2000DPS);
-  set_acc_scale(BITS_FS_XL_16G);
-  set_mag_scale(BITS_FS_M_16Gs);
+	set_gyro_scale(BITS_FS_G_2000DPS);
+	set_acc_scale(BITS_FS_XL_16G);
+	set_mag_scale(BITS_FS_M_16Gs);
 	return 0;
 }
 
-int LSM9DS1::LSM9DS1M::lsm9ds1m_init() {
-  int result = -1;
+int LSM9DS1::LSM9DS1M::lsm9ds1m_init()
+{
+	int result = -1;
 
-  result = writeReg(LSM9DS1M_CTRL_REG1_M, BITS_TEMP_COMP | BITS_OM_HIGH | BITS_ODR_M_80HZ);
-  result = writeReg(LSM9DS1M_CTRL_REG2_M, BITS_FS_M_16Gs);
-  result = writeReg(LSM9DS1M_CTRL_REG3_M, BITS_MD_CONTINUOUS);
-  result = writeReg(LSM9DS1M_CTRL_REG4_M, BITS_OMZ_HIGH);
-  result = writeReg(LSM9DS1M_CTRL_REG5_M, 0x00);
+	result = writeReg(LSM9DS1M_CTRL_REG1_M, BITS_TEMP_COMP | BITS_OM_HIGH | BITS_ODR_M_80HZ);
+	result = writeReg(LSM9DS1M_CTRL_REG2_M, BITS_FS_M_16Gs);
+	result = writeReg(LSM9DS1M_CTRL_REG3_M, BITS_MD_CONTINUOUS);
+	result = writeReg(LSM9DS1M_CTRL_REG4_M, BITS_OMZ_HIGH);
+	result = writeReg(LSM9DS1M_CTRL_REG5_M, 0x00);
 
-  usleep(200);
-  return result; 
+	usleep(200);
+	return result;
 }
 
 int LSM9DS1::lsm9ds1_deinit()
 {
-  // Deallocate the resources for the mag driver, if enabled.
+	// Deallocate the resources for the mag driver, if enabled.
 	if (_mag_enabled && _mag != nullptr) {
-        _mag->stop();
-	 	delete _mag;
-	 	_mag = nullptr;
+		_mag->stop();
+		delete _mag;
+		_mag = nullptr;
 	}
 
 	return 0;
@@ -237,7 +249,8 @@ exit:
 	return result;
 }
 
-int LSM9DS1::LSM9DS1M::start() {
+int LSM9DS1::LSM9DS1M::start()
+{
 	/* Open the device path specified in the class initialization. */
 	// attempt to open device in start()
 	int result = SPIDevObj::start();
@@ -257,20 +270,20 @@ int LSM9DS1::LSM9DS1M::start() {
 
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
-  result = _readReg(LSM9DS1M_WHO_AM_I, sensor_id);
+	result = _readReg(LSM9DS1M_WHO_AM_I, sensor_id);
 
-  if (result != 0) {
-    DF_LOG_ERR("Unable to communicate with the LSM9DS1M sensor");
-    goto exit;
-  }
+	if (result != 0) {
+		DF_LOG_ERR("Unable to communicate with the LSM9DS1M sensor");
+		goto exit;
+	}
 
-  if (sensor_id != LSM9DS1_WHO_AM_I_MAG) {
-    DF_LOG_ERR("LSM9DS1M sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, LSM9DS1_WHO_AM_I_MAG);
-    result = -1;
-    goto exit;
-  }
+	if (sensor_id != LSM9DS1_WHO_AM_I_MAG) {
+		DF_LOG_ERR("LSM9DS1M sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, LSM9DS1_WHO_AM_I_MAG);
+		result = -1;
+		goto exit;
+	}
 
-      lsm9ds1m_init();
+	lsm9ds1m_init();
 	result = DevObj::start();
 
 	if (result != 0) {
@@ -278,7 +291,7 @@ int LSM9DS1::LSM9DS1M::start() {
 		return result;
 	}
 
- exit:
+exit:
 
 	return result;
 
@@ -310,7 +323,7 @@ int LSM9DS1::stop()
 
 int LSM9DS1::LSM9DS1M::stop()
 {
-  int result = -1;
+	int result = -1;
 
 	result = DevObj::stop();
 
@@ -333,18 +346,19 @@ int LSM9DS1::get_fifo_count()
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 
-  uint8_t fifo_src;
-  _readReg(LSM9DS1XG_FIFO_SRC, fifo_src);
+	uint8_t fifo_src;
+	_readReg(LSM9DS1XG_FIFO_SRC, fifo_src);
 
-  int fss = 0;
+	int fss = 0;
 
-  if (fifo_src != 0) {
-    fss = swap16(fifo_src & BITS_USER_CTRL_FIFO_SRC_FSS);
-  } else {
-    DF_LOG_ERR("FIFO read count failed");
-  }
+	if (fifo_src != 0) {
+		fss = swap16(fifo_src & BITS_USER_CTRL_FIFO_SRC_FSS);
 
-  return fss;
+	} else {
+		DF_LOG_ERR("FIFO read count failed");
+	}
+
+	return fss;
 }
 
 void LSM9DS1::reset_fifo()
@@ -354,17 +368,19 @@ void LSM9DS1::reset_fifo()
 
 	int result;
 
-  result = _writeReg(LSM9DS1XG_FIFO_CTRL,
-                     BITS_USER_CTRL_FIFO_FMODE_RST);
- 	if (result != 0) {
+	result = _writeReg(LSM9DS1XG_FIFO_CTRL,
+			   BITS_USER_CTRL_FIFO_FMODE_RST);
+
+	if (result != 0) {
 		DF_LOG_ERR("FIFO FMODE reset failed");
 	}
 
-  result = _writeReg(LSM9DS1XG_FIFO_CTRL,
-                     BITS_USER_CTRL_FIFO_FMODE_EN);
-  if (result != 0) {
-    DF_LOG_ERR("FIFO FMODE enable failed");
-  }
+	result = _writeReg(LSM9DS1XG_FIFO_CTRL,
+			   BITS_USER_CTRL_FIFO_FMODE_EN);
+
+	if (result != 0) {
+		DF_LOG_ERR("FIFO FMODE enable failed");
+	}
 }
 
 void LSM9DS1::_measure()
@@ -372,19 +388,19 @@ void LSM9DS1::_measure()
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 
-    uint8_t int_status = 0;
+	uint8_t int_status = 0;
 	int result = _readReg(LSM9DS1XG_STATUS_REG, int_status);
 
 	if (result != 0) {
 		m_synchronize.lock();
-    DF_LOG_ERR("ACC_GYRO Error");
+		DF_LOG_ERR("ACC_GYRO Error");
 		++m_sensor_data.error_counter;
 		m_synchronize.unlock();
 		return;
 	}
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVRN) {
-    //No need to reset as it is configured to be in continuous mode.
+		//No need to reset as it is configured to be in continuous mode.
 		m_synchronize.lock();
 		++m_sensor_data.fifo_overflow_counter;
 		DF_LOG_ERR("FIFO overrun");
@@ -394,7 +410,7 @@ void LSM9DS1::_measure()
 	}
 
 	// Get FIFO byte count to read and floor it to the report size.
-    int fifo_count = get_fifo_count();
+	int fifo_count = get_fifo_count();
 
 	if (fifo_count < 0) {
 		m_synchronize.lock();
@@ -408,48 +424,53 @@ void LSM9DS1::_measure()
 
 	for (unsigned packet_index = 0; packet_index < read_len; ++packet_index) {
 
-    fifo_packet _report;
-    fifo_packet * report = &_report;
-    uint8_t response[6];
-    int16_t bit_data[3];
+		fifo_packet _report;
+		fifo_packet *report = &_report;
+		uint8_t response[6];
+		int16_t bit_data[3];
 
-    // Read Temperature
-    _bulkRead(LSM9DS1XG_OUT_TEMP_L, &response[0], 2);
-    report->temp = (((int16_t) response[1] << 8) | response[0]);
+		// Read Temperature
+		_bulkRead(LSM9DS1XG_OUT_TEMP_L, &response[0], 2);
+		report->temp = (((int16_t) response[1] << 8) | response[0]);
 
-    // Read Accelerometor
-    _bulkRead(LSM9DS1XG_OUT_X_L_XL, &response[0], 6);
-    for (int i=0; i<3; i++) {
-      bit_data[i] = ((int16_t)response[2*i+1] << 8) | response[2*i] ;
-    }
-    report->accel_x = bit_data[0];
-    report->accel_y = bit_data[1];
-    report->accel_z = bit_data[2];
+		// Read Accelerometor
+		_bulkRead(LSM9DS1XG_OUT_X_L_XL, &response[0], 6);
 
-    // Read gyroscope
-    _bulkRead(LSM9DS1XG_OUT_X_L_G, &response[0], 6);
-    for (int i=0; i<3; i++) {
-      bit_data[i] = ((int16_t)response[2*i+1] << 8) | response[2*i] ;
-    }
-    report->gyro_x = bit_data[0];
-    report->gyro_y = bit_data[1];
-    report->gyro_z = bit_data[2];
+		for (int i = 0; i < 3; i++) {
+			bit_data[i] = ((int16_t)response[2 * i + 1] << 8) | response[2 * i] ;
+		}
 
-    if (_mag_enabled) {
-      _mag->bulkRead(LSM9DS1M_OUT_X_L_M, &response[0], 6);
+		report->accel_x = bit_data[0];
+		report->accel_y = bit_data[1];
+		report->accel_z = bit_data[2];
 
-      for (int i=0; i<3; i++) {
-        bit_data[i] = ((int16_t)response[2*i+1] << 8) | response[2*i];
-      }
+		// Read gyroscope
+		_bulkRead(LSM9DS1XG_OUT_X_L_G, &response[0], 6);
 
-      report->mag_x = bit_data[0];
-      report->mag_y = bit_data[1];
-      report->mag_z = bit_data[2];
-    } else {
-      report->mag_x = 0;
-      report->mag_y = 0;
-      report->mag_z = 0;
-    }
+		for (int i = 0; i < 3; i++) {
+			bit_data[i] = ((int16_t)response[2 * i + 1] << 8) | response[2 * i] ;
+		}
+
+		report->gyro_x = bit_data[0];
+		report->gyro_y = bit_data[1];
+		report->gyro_z = bit_data[2];
+
+		if (_mag_enabled) {
+			_mag->bulkRead(LSM9DS1M_OUT_X_L_M, &response[0], 6);
+
+			for (int i = 0; i < 3; i++) {
+				bit_data[i] = ((int16_t)response[2 * i + 1] << 8) | response[2 * i];
+			}
+
+			report->mag_x = bit_data[0];
+			report->mag_y = bit_data[1];
+			report->mag_z = bit_data[2];
+
+		} else {
+			report->mag_x = 0;
+			report->mag_y = 0;
+			report->mag_z = 0;
+		}
 
 #if 0
 		/* TODO: add ifdef for endianness */
@@ -518,20 +539,20 @@ void LSM9DS1::_measure()
 
 		m_synchronize.lock();
 		m_sensor_data.accel_m_s2_x = double(report->accel_x)
-      * double(G_SI) * double(_acc_scale);
+					     * double(G_SI) * double(_acc_scale);
 		m_sensor_data.accel_m_s2_y = double(report->accel_y)
-      * double(G_SI) * double(_acc_scale);
+					     * double(G_SI) * double(_acc_scale);
 		m_sensor_data.accel_m_s2_z = double(report->accel_z)
-      * double(G_SI) * double(_acc_scale);
+					     * double(G_SI) * double(_acc_scale);
 
 		m_sensor_data.temp_c = temp_c;
 		m_sensor_data.gyro_rad_s_x = (PI / 180) * float(report->gyro_x) * _gyro_scale;
 		m_sensor_data.gyro_rad_s_y = (PI / 180) * float(report->gyro_y) * _gyro_scale;
 		m_sensor_data.gyro_rad_s_z = (PI / 180) * float(report->gyro_z) * _gyro_scale;
 
-    m_sensor_data.mag_ga_x = 100.0 * (double(report->mag_x) * double(_mag_scale));
-    m_sensor_data.mag_ga_y = 100.0 * (double(report->mag_y) * double(_mag_scale));
-    m_sensor_data.mag_ga_z = 100.0 * (double(report->mag_z) * double(_mag_scale));
+		m_sensor_data.mag_ga_x = 100.0 * (double(report->mag_x) * double(_mag_scale));
+		m_sensor_data.mag_ga_y = 100.0 * (double(report->mag_y) * double(_mag_scale));
+		m_sensor_data.mag_ga_z = 100.0 * (double(report->mag_z) * double(_mag_scale));
 
 		// Pass on the sampling interval between FIFO samples at 8kHz.
 		m_sensor_data.fifo_sample_interval_us = 125;
