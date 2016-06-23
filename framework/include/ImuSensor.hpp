@@ -46,6 +46,14 @@
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
+#if defined(__RPI2)
+#define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
+#define IMU_DEVICE_MAG "/dev/spidev0.2"
+#else
+#define IMU_DEVICE_ACC_GYRO ""
+#define IMU_DEVICE_MAG ""
+#endif
+
 #define IMU_CLASS_PATH  "/dev/imu"
 
 namespace DriverFramework
