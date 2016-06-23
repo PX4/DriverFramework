@@ -130,8 +130,8 @@ int LSM9DS1::lsm9ds1_init()
 
       int result;
 
+      _mag->init();
       result = _mag->start();
-      result = _mag->init();
 
       if (result != 0) {
         DF_LOG_ERR("Magnetometor initialization failed");
@@ -158,7 +158,7 @@ int LSM9DS1::lsm9ds1_init()
 	return 0;
 }
 
-int LSM9DS1::LSM9DS1M::init() {
+int LSM9DS1::LSM9DS1M::lsm9ds1m_init() {
   int result = -1;
 
   result = writeReg(LSM9DS1M_CTRL_REG1_M, BITS_TEMP_COMP | BITS_OM_HIGH | BITS_ODR_M_80HZ);
@@ -167,6 +167,7 @@ int LSM9DS1::LSM9DS1M::init() {
   result = writeReg(LSM9DS1M_CTRL_REG4_M, BITS_OMZ_HIGH);
   result = writeReg(LSM9DS1M_CTRL_REG5_M, 0x00);
 
+  usleep(200);
   return result; 
 }
 
@@ -174,6 +175,7 @@ int LSM9DS1::lsm9ds1_deinit()
 {
   // Deallocate the resources for the mag driver, if enabled.
 	if (_mag_enabled && _mag != nullptr) {
+        _mag->stop();
 	 	delete _mag;
 	 	_mag = nullptr;
 	}
@@ -232,10 +234,6 @@ int LSM9DS1::start()
 
 exit:
 
-	if (result != 0) {
-		devClose();
-	}
-
 	return result;
 }
 
@@ -272,6 +270,7 @@ int LSM9DS1::LSM9DS1M::start() {
     goto exit;
   }
 
+      lsm9ds1m_init();
 	result = DevObj::start();
 
 	if (result != 0) {
@@ -280,10 +279,6 @@ int LSM9DS1::LSM9DS1M::start() {
 	}
 
  exit:
-
-	if (result != 0) {
-		devClose();
-	}
 
 	return result;
 
@@ -310,13 +305,6 @@ int LSM9DS1::stop()
 	// closing the device.
 	usleep(10000);
 
-	result = devClose();
-
-	if (result != 0) {
-		DF_LOG_ERR("device close failed");
-		return result;
-	}
-
 	return 0;
 }
 
@@ -334,13 +322,6 @@ int LSM9DS1::LSM9DS1M::stop()
 	// We need to wait so that all measure calls are finished before
 	// closing the device.
 	usleep(10000);
-
-	result = devClose();
-
-	if (result != 0) {
-		DF_LOG_ERR("device close failed");
-		return result;
-	}
 
 	return 0;
 
@@ -391,7 +372,7 @@ void LSM9DS1::_measure()
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 
-  uint8_t int_status = 0;
+    uint8_t int_status = 0;
 	int result = _readReg(LSM9DS1XG_STATUS_REG, int_status);
 
 	if (result != 0) {
@@ -401,18 +382,6 @@ void LSM9DS1::_measure()
 		m_synchronize.unlock();
 		return;
 	}
-
-  if (_mag_enabled) {
-    result = _readReg(LSM9DS1M_STATUS_REG_M, int_status);
-
-    if (result != 0) {
-      m_synchronize.lock();
-      DF_LOG_ERR("MAG Error");
-      ++m_sensor_data.error_counter;
-      m_synchronize.unlock();
-      return;
-    }
-  }
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVRN) {
     //No need to reset as it is configured to be in continuous mode.
@@ -424,10 +393,8 @@ void LSM9DS1::_measure()
 		return;
 	}
 
-
-
 	// Get FIFO byte count to read and floor it to the report size.
-  int fifo_count = get_fifo_count();
+    int fifo_count = get_fifo_count();
 
 	if (fifo_count < 0) {
 		m_synchronize.lock();
