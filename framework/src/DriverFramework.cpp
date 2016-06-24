@@ -477,7 +477,7 @@ void HRTWorkQueue::process(void)
 		now = offsetTime();
 		DF_LOG_DEBUG("now=%" PRIu64, now);
 
-#ifdef __DF_LINUX
+#ifdef __LINUX
 		// This offset removes latency in processing the items on the queue
 		uint64_t TUNING_ADJUSTMENT = 150;
 		next -= TUNING_ADJUSTMENT;

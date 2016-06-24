@@ -30,5 +30,5 @@
 #
 
 add_definitions(
-	-D__DF_LINUX
-	)
+	-D__LINUX
+)

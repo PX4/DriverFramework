@@ -9,7 +9,7 @@
 ############################################################################
 add_definitions(
 	-D__RPI2
-	-D__DF_LINUX
+	-D__LINUX
 )
 
 ######### test DriverFramework for rpi2 ###
