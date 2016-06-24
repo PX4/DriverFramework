@@ -416,27 +416,27 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 	// in-reality 32Mbs is the upper limit of the SPI clock on RPI2.
 	switch (freq_hz) {
 	case SPI_FREQUENCY_1MHZ :
-		DF_LOG_INFO("SPI speed set to 1MHz.");
+		DF_LOG_DEBUG("SPI speed set to 1MHz.");
 		break;
 
 	case SPI_FREQUENCY_5MHZ :
-		DF_LOG_INFO("SPI speed set to 4MHz instead of 5MHz.");
+		DF_LOG_DEBUG("SPI speed set to 4MHz instead of 5MHz.");
 		break;
 
 	case SPI_FREQUENCY_10MHZ :
-		DF_LOG_INFO("SPI speed set to 8MHz instead of 10MHz.");
+		DF_LOG_DEBUG("SPI speed set to 8MHz instead of 10MHz.");
 		break;
 
 	case SPI_FREQUENCY_15MHZ :
-		DF_LOG_INFO("SPI speed set to 8MHz instead of 15MHz.");
+		DF_LOG_DEBUG("SPI speed set to 8MHz instead of 15MHz.");
 		break;
 
 	case SPI_FREQUENCY_20MHZ :
-		DF_LOG_INFO("SPI speed set to 16MHz instead of 20MHz.");
+		DF_LOG_DEBUG("SPI speed set to 16MHz instead of 20MHz.");
 		break;
 
 	default :
-		DF_LOG_INFO("SPI speed value not enum SPI_FREQUENCY.");
+		DF_LOG_ERR("SPI speed value not enum SPI_FREQUENCY.");
 		break;
 	}
 
