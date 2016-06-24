@@ -105,12 +105,12 @@ int PressureTester::run()
 			DF_LOG_INFO("error: unable to read the pressure sensor device.");
 		}
 
-		if ((m_read_counter >= 1000) && (m_read_attempts == m_read_counter)) {
+		if ((m_read_counter >= 100) && (m_read_attempts == m_read_counter)) {
 			// Done test - PASSED
 			m_pass = TEST_PASS;
 			m_done = true;
 
-		} else if (m_read_attempts > 1000) {
+		} else if (m_read_attempts > 100) {
 			DF_LOG_INFO("error: unable to read the pressure sensor device.");
 			m_done = true;
 		}
