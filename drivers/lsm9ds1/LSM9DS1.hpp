@@ -153,7 +153,7 @@ namespace DriverFramework
 #endif
 
 // update frequency 1000 Hz
-#define LSM9DS1_MEASURE_INTERVAL_US 14900
+#define LSM9DS1_MEASURE_INTERVAL_US 1000
 
 #define DRV_DF_DEVTYPE_LSM9DS1 0x44
 #define DRV_DF_DEVTYPE_LSM9DS1M 0x45
@@ -162,7 +162,7 @@ namespace DriverFramework
 
 #pragma pack(push, 1)
 
-struct fifo_packet {
+struct packet {
 	int16_t accel_x;
 	int16_t accel_y;
 	int16_t accel_z;

@@ -5,7 +5,7 @@
 #include "LSM9DS1.hpp"
 
 
-#define G_SI 9.80665
+#define G_SI 9.80665f
 #define PI 3.14159f
 
 #define MIN(_x, _y) (_x) > (_y) ? (_y) : (_x)
@@ -21,15 +21,15 @@ void LSM9DS1::set_gyro_scale(int scale)
 
 	switch (scale) {
 	case BITS_FS_G_245DPS:
-		_gyro_scale = 0.00875;
+		_gyro_scale = PI / 180.0f * 0.00875f;
 		break;
 
 	case BITS_FS_G_500DPS:
-		_gyro_scale = 0.0175;
+		_gyro_scale = PI / 180.0f * 0.0175f;
 		break;
 
 	case BITS_FS_G_2000DPS:
-		_gyro_scale = 0.07;
+		_gyro_scale = PI / 180.0f * 0.07f;
 		break;
 	}
 }
@@ -44,19 +44,19 @@ void LSM9DS1::set_acc_scale(int scale)
 
 	switch (scale) {
 	case BITS_FS_XL_2G:
-		_acc_scale = 0.000061;
+		_acc_scale = 0.000061f * G_SI;
 		break;
 
 	case BITS_FS_XL_4G:
-		_acc_scale = 0.000122;
+		_acc_scale = 0.000122f * G_SI;
 		break;
 
 	case BITS_FS_XL_8G:
-		_acc_scale = 0.000244;
+		_acc_scale = 0.000244f * G_SI;
 		break;
 
 	case BITS_FS_XL_16G:
-		_acc_scale = 0.000732;
+		_acc_scale = 0.000732f * G_SI;
 		break;
 	}
 }
@@ -70,19 +70,19 @@ void LSM9DS1::set_mag_scale(int scale)
 
 	switch (scale) {
 	case BITS_FS_M_4Gs:
-		_mag_scale = 0.00014;
+		_mag_scale = 0.00014f;
 		break;
 
 	case BITS_FS_M_8Gs:
-		_mag_scale = 0.00029;
+		_mag_scale = 0.00029f;
 		break;
 
 	case BITS_FS_M_12Gs:
-		_mag_scale = 0.00043;
+		_mag_scale = 0.00043f;
 		break;
 
 	case BITS_FS_M_16Gs:
-		_mag_scale = 0.00058;
+		_mag_scale = 0.00058f;
 		break;
 	}
 
@@ -111,13 +111,8 @@ int LSM9DS1::lsm9ds1_init()
 
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
-	m_sensor_data.fifo_overflow_counter = 0;
-	m_sensor_data.fifo_corruption_counter = 0;
 	m_sensor_data.gyro_range_hit_counter = 0;
 	m_sensor_data.accel_range_hit_counter = 0;
-
-	m_sensor_data.fifo_sample_interval_us = 0;
-	m_sensor_data.is_last_fifo_sample = false;
 
 	m_synchronize.unlock();
 
@@ -152,16 +147,6 @@ int LSM9DS1::lsm9ds1_init()
 		}
 
 	}
-
-	// Enable/clear the FIFO of any residual data and enable the I2C master clock, if the mag is
-	// enabled.
-	uint8_t ctrl_reg9;
-	_readReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9);
-
-	_writeReg(LSM9DS1XG_CTRL_REG9, ctrl_reg9 |
-		  BITS_USER_CTRL_REG9_FIFO_EN | BITS_USER_CTRL_REG9_FIFO_TEMP_EN);
-
-	reset_fifo();
 
 	set_gyro_scale(BITS_FS_G_2000DPS);
 	set_acc_scale(BITS_FS_XL_16G);
@@ -340,49 +325,6 @@ int LSM9DS1::LSM9DS1M::stop()
 
 }
 
-int LSM9DS1::get_fifo_count()
-{
-
-	// Use 1 MHz for normal registers.
-	_setBusFrequency(SPI_FREQUENCY_1MHZ);
-
-	uint8_t fifo_src;
-	_readReg(LSM9DS1XG_FIFO_SRC, fifo_src);
-
-	int fss = 0;
-
-	if (fifo_src != 0) {
-		fss = swap16(fifo_src & BITS_USER_CTRL_FIFO_SRC_FSS);
-
-	} else {
-		DF_LOG_ERR("FIFO read count failed");
-	}
-
-	return fss;
-}
-
-void LSM9DS1::reset_fifo()
-{
-	// Use 1 MHz for normal registers.
-	_setBusFrequency(SPI_FREQUENCY_1MHZ);
-
-	int result;
-
-	result = _writeReg(LSM9DS1XG_FIFO_CTRL,
-			   BITS_USER_CTRL_FIFO_FMODE_RST);
-
-	if (result != 0) {
-		DF_LOG_ERR("FIFO FMODE reset failed");
-	}
-
-	result = _writeReg(LSM9DS1XG_FIFO_CTRL,
-			   BITS_USER_CTRL_FIFO_FMODE_EN);
-
-	if (result != 0) {
-		DF_LOG_ERR("FIFO FMODE enable failed");
-	}
-}
-
 void LSM9DS1::_measure()
 {
 	// Use 1 MHz for normal registers.
@@ -399,206 +341,120 @@ void LSM9DS1::_measure()
 		return;
 	}
 
-	if (int_status & BITS_INT_STATUS_FIFO_OVRN) {
-		//No need to reset as it is configured to be in continuous mode.
-		m_synchronize.lock();
-		++m_sensor_data.fifo_overflow_counter;
-		DF_LOG_ERR("FIFO overrun");
-		m_synchronize.unlock();
-
-		return;
-	}
-
-	// Get FIFO byte count to read and floor it to the report size.
-	int fifo_count = get_fifo_count();
-
-	if (fifo_count < 0) {
-		m_synchronize.lock();
-		++m_sensor_data.error_counter;
-		m_synchronize.unlock();
-		return;
-	}
-
-	const unsigned read_len = MIN((unsigned)fifo_count, LSM9DS1_MAX_FIFO_LEN);
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
 
-	for (unsigned packet_index = 0; packet_index < read_len; ++packet_index) {
+	struct packet report;
 
-		fifo_packet _report;
-		fifo_packet *report = &_report;
-		uint8_t response[6];
-		int16_t bit_data[3];
+	// Read Temperature
+	_bulkRead(LSM9DS1XG_OUT_TEMP_L, (uint8_t *)&report.temp, 2);
 
-		// Read Temperature
-		_bulkRead(LSM9DS1XG_OUT_TEMP_L, &response[0], 2);
-		report->temp = (((int16_t) response[1] << 8) | response[0]);
+	// Read Accelerometor
+	_bulkRead(LSM9DS1XG_OUT_X_L_XL, (uint8_t *)&report.accel_x, 6);
 
-		// Read Accelerometor
-		_bulkRead(LSM9DS1XG_OUT_X_L_XL, &response[0], 6);
+	// Read gyroscope
+	_bulkRead(LSM9DS1XG_OUT_X_L_G, (uint8_t *)&report.gyro_x, 6);
 
-		for (int i = 0; i < 3; i++) {
-			bit_data[i] = ((int16_t)response[2 * i + 1] << 8) | response[2 * i] ;
-		}
+	/* TODO: add ifdef for endianness, RPi doesn't seem to need it */
+	//report.accel_x = swap16(report.accel_x);
+	//report.accel_y = swap16(report.accel_y);
+	//report.accel_z = swap16(report.accel_z);
+	//report.temp = swap16(report.temp);
+	//report.gyro_x = swap16(report.gyro_x);
+	//report.gyro_y = swap16(report.gyro_y);
+	//report.gyro_z = swap16(report.gyro_z);
 
-		report->accel_x = bit_data[0];
-		report->accel_y = bit_data[1];
-		report->accel_z = bit_data[2];
+	if (_mag_enabled) {
+		_mag->bulkRead(LSM9DS1M_OUT_X_L_M, (uint8_t *)&report.mag_x, 6);
 
-		// Read gyroscope
-		_bulkRead(LSM9DS1XG_OUT_X_L_G, &response[0], 6);
+		/* TODO: add ifdef for endianness */
+		//report.mag_x = swap16(report.mag_x);
+		//report.mag_y = swap16(report.mag_y);
+		//report.mag_z = swap16(report.mag_z);
 
-		for (int i = 0; i < 3; i++) {
-			bit_data[i] = ((int16_t)response[2 * i + 1] << 8) | response[2 * i] ;
-		}
+		DF_LOG_DEBUG("mag x: %d, y: %d, z: %d", report.mag_x, report.mag_y, report.mag_z);
 
-		report->gyro_x = bit_data[0];
-		report->gyro_y = bit_data[1];
-		report->gyro_z = bit_data[2];
+	} else {
+		report.mag_x = 0;
+		report.mag_y = 0;
+		report.mag_z = 0;
+	}
+
+	DF_LOG_DEBUG("accel x: %d, y: %d, z: %d", report.accel_x, report.accel_y, report.accel_z);
+	DF_LOG_DEBUG("gyro x: %d, y: %d, z: %d", report.gyro_x, report.gyro_y, report.gyro_z);
+
+
+	m_synchronize.lock();
+
+	// Check if the full accel range of the accel has been used. If this occurs, it is
+	// either a spike due to a crash/landing or a sign that the vibrations levels
+	// measured are excessive.
+	if (report.accel_x == INT16_MIN || report.accel_x == INT16_MAX ||
+	    report.accel_y == INT16_MIN || report.accel_y == INT16_MAX ||
+	    report.accel_z == INT16_MIN || report.accel_z == INT16_MAX) {
+		++m_sensor_data.accel_range_hit_counter;
+	}
+
+	// Also check the full gyro range, however, this is very unlikely to happen.
+	if (report.gyro_x == INT16_MIN || report.gyro_x == INT16_MAX ||
+	    report.gyro_y == INT16_MIN || report.gyro_y == INT16_MAX ||
+	    report.gyro_z == INT16_MIN || report.gyro_z == INT16_MAX) {
+		++m_sensor_data.gyro_range_hit_counter;
+	}
+
+	// TODO XXX: Inverting z to make the coordinate system right handed, not sure why this is needed.
+
+	m_sensor_data.accel_m_s2_x = report.accel_x * _acc_scale;
+	m_sensor_data.accel_m_s2_y = report.accel_y * _acc_scale;
+	m_sensor_data.accel_m_s2_z = -report.accel_z * _acc_scale;
+
+	m_sensor_data.temp_c = float(report.temp) / 16.0f  + 25.0f;
+	m_sensor_data.gyro_rad_s_x = float(report.gyro_x) * _gyro_scale;
+	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) * _gyro_scale;
+	m_sensor_data.gyro_rad_s_z = -float(report.gyro_z) * _gyro_scale;
+
+	m_sensor_data.mag_ga_x = float(report.mag_x) * _mag_scale;
+	m_sensor_data.mag_ga_y = float(report.mag_y) * _mag_scale;
+	m_sensor_data.mag_ga_z = -float(report.mag_z) * _mag_scale;
+
+	// We need to fake this at 1000 us.
+	m_sensor_data.fifo_sample_interval_us = 1000;
+
+
+	++m_sensor_data.read_counter;
+
+	// Generate debug output every second, assuming that a sample is generated every
+	// 1000 usecs
+#ifdef LSM9DS1_DEBUG
+
+	if (++m_sensor_data.read_counter % (1000000 / 1000) == 0) {
+
+		DF_LOG_INFO("IMU: accel: [%f, %f, %f] m/s^2",
+			    (double)m_sensor_data.accel_m_s2_x,
+			    (double)m_sensor_data.accel_m_s2_y,
+			    (double)m_sensor_data.accel_m_s2_z);
+		DF_LOG_INFO("     gyro:  [%f, %f, %f] rad/s",
+			    (double)m_sensor_data.gyro_rad_s_x,
+			    (double)m_sensor_data.gyro_rad_s_y,
+			    (double)m_sensor_data.gyro_rad_s_z);
 
 		if (_mag_enabled) {
-			_mag->bulkRead(LSM9DS1M_OUT_X_L_M, &response[0], 6);
-
-			for (int i = 0; i < 3; i++) {
-				bit_data[i] = ((int16_t)response[2 * i + 1] << 8) | response[2 * i];
-			}
-
-			report->mag_x = bit_data[0];
-			report->mag_y = bit_data[1];
-			report->mag_z = bit_data[2];
-
-		} else {
-			report->mag_x = 0;
-			report->mag_y = 0;
-			report->mag_z = 0;
+			DF_LOG_INFO("     mag:  [%f, %f, %f] ga",
+				    (double)m_sensor_data.mag_ga_x,
+				    (double)m_sensor_data.mag_ga_y,
+				    (double)m_sensor_data.mag_ga_z);
 		}
 
-#if 0
-		/* TODO: add ifdef for endianness */
-		report->accel_x = swap16(report->accel_x);
-		report->accel_y = swap16(report->accel_y);
-		report->accel_z = swap16(report->accel_z);
-		report->temp = swap16(report->temp);
-		report->gyro_x = swap16(report->gyro_x);
-		report->gyro_y = swap16(report->gyro_y);
-		report->gyro_z = swap16(report->gyro_z);
-#endif
-
-		// Check if the full accel range of the accel has been used. If this occurs, it is
-		// either a spike due to a crash/landing or a sign that the vibrations levels
-		// measured are excessive.
-		if (report->accel_x == INT16_MIN || report->accel_x == INT16_MAX ||
-		    report->accel_y == INT16_MIN || report->accel_y == INT16_MAX ||
-		    report->accel_z == INT16_MIN || report->accel_z == INT16_MAX) {
-			m_synchronize.lock();
-			++m_sensor_data.accel_range_hit_counter;
-			m_synchronize.unlock();
-		}
-
-		// Also check the full gyro range, however, this is very unlikely to happen.
-		if (report->gyro_x == INT16_MIN || report->gyro_x == INT16_MAX ||
-		    report->gyro_y == INT16_MIN || report->gyro_y == INT16_MAX ||
-		    report->gyro_z == INT16_MIN || report->gyro_z == INT16_MAX) {
-			m_synchronize.lock();
-			++m_sensor_data.gyro_range_hit_counter;
-			m_synchronize.unlock();
-		}
-
-		const float temp_c = float(report->temp) / 256.0f + 25.0f;
-
-		// Use the temperature field to try to detect if we (ever) fall out of sync with
-		// the FIFO buffer. If the temperature changes insane amounts, reset the FIFO logic
-		// and return early.
-		if (!_temp_initialized) {
-			// Assume that the temperature should be in a sane range of -40 to 85 deg C which is
-			// the specified temperature range, at least to initialize.
-			if (temp_c > -40.0f && temp_c < 85.0f) {
-
-				// Initialize the temperature logic.
-				_last_temp_c = temp_c;
-				DF_LOG_INFO("IMU temperature initialized to: %f", (double) temp_c);
-				_temp_initialized = true;
-			}
-
-		} else {
-			// Once initialized, check for a temperature change of more than 2 degrees which
-			// points to a FIFO corruption.
-			if (fabsf(temp_c - _last_temp_c) > 2.0f) {
-				DF_LOG_ERR(
-					"FIFO corrupt, temp difference: %f, last temp: %f, current temp: %f",
-					fabs(temp_c - _last_temp_c), (double)_last_temp_c, (double)temp_c);
-				reset_fifo();
-				_temp_initialized = false;
-				m_synchronize.lock();
-				++m_sensor_data.fifo_corruption_counter;
-				m_synchronize.unlock();
-				return;
-			}
-
-			_last_temp_c = temp_c;
-		}
-
-		// TODO XXX: Inverting z to make the coordinate system right handed, not sure why this is needed.
-
-		m_synchronize.lock();
-		m_sensor_data.accel_m_s2_x = double(report->accel_x)
-					     * double(G_SI) * double(_acc_scale);
-		m_sensor_data.accel_m_s2_y = double(report->accel_y)
-					     * double(G_SI) * double(_acc_scale);
-		m_sensor_data.accel_m_s2_z = -double(report->accel_z)
-					     * double(G_SI) * double(_acc_scale);
-
-		m_sensor_data.temp_c = temp_c;
-		m_sensor_data.gyro_rad_s_x = (PI / 180) * float(report->gyro_x) * _gyro_scale;
-		m_sensor_data.gyro_rad_s_y = (PI / 180) * float(report->gyro_y) * _gyro_scale;
-		m_sensor_data.gyro_rad_s_z = -(PI / 180) * float(report->gyro_z) * _gyro_scale;
-
-		m_sensor_data.mag_ga_x = 100.0 * (double(report->mag_x) * double(_mag_scale));
-		m_sensor_data.mag_ga_y = 100.0 * (double(report->mag_y) * double(_mag_scale));
-		m_sensor_data.mag_ga_z = -100.0 * (double(report->mag_z) * double(_mag_scale));
-
-		// Pass on the sampling interval between FIFO samples at 8kHz.
-		m_sensor_data.fifo_sample_interval_us = 125;
-
-		// Flag if this is the last sample, and _publish() should wrap up the data it has received.
-		m_sensor_data.is_last_fifo_sample = ((packet_index + 1) == (read_len));
-
-		++m_sensor_data.read_counter;
-
-		// Generate debug output every second, assuming that a sample is generated every
-		// 125 usecs
-#ifdef LSM9DS1_DEBUG
-
-		if (++m_sensor_data.read_counter % (1000000 / 125) == 0) {
-
-			DF_LOG_INFO("IMU: accel: [%f, %f, %f]",
-				    (double)m_sensor_data.accel_m_s2_x,
-				    (double)m_sensor_data.accel_m_s2_y,
-				    (double)m_sensor_data.accel_m_s2_z);
-			DF_LOG_INFO("     gyro:  [%f, %f, %f]",
-				    (double)m_sensor_data.gyro_rad_s_x,
-				    (double)m_sensor_data.gyro_rad_s_y,
-				    (double)m_sensor_data.gyro_rad_s_z);
-			DF_LOG_INFO("    temp:  %f C", (double)m_sensor_data.temp_c);
-		}
-
-#endif
-
-#ifdef LSM9DS1_DEBUG
-
-		if (_mag_enabled && mag_error == 0) {
-			if ((m_sensor_data.read_counter % 10000) == 0) {
-				DF_LOG_INFO("     mag:  [%f, %f, %f] ga",
-					    m_sensor_data.mag_ga_x, m_sensor_data.mag_ga_y, m_sensor_data.mag_ga_z);
-			}
-		}
-
-#endif
-
-		_publish(m_sensor_data);
-
-		m_synchronize.signal();
-		m_synchronize.unlock();
+		DF_LOG_INFO("    temp:  %f C",
+			    (double)m_sensor_data.temp_c);
 	}
+
+
+#endif
+
+	_publish(m_sensor_data);
+
+	m_synchronize.signal();
+	m_synchronize.unlock();
 }
 
 int LSM9DS1::_publish(struct imu_sensor_data &data)
