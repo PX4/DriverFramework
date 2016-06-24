@@ -41,5 +41,7 @@ before_script:
   - export PATH=~/bin:$PATH
 
 script:
-  - make check-style
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      make check-style
+    fi
   - make run
