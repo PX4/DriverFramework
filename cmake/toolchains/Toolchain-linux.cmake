@@ -29,6 +29,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+# Without this check, we get the __LINUX define in Darwin.
+if("${DF_TARGET}" STREQUAL "linux")
 add_definitions(
 	-D__LINUX
 )
+endif()
