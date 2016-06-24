@@ -382,7 +382,6 @@ void LSM9DS1::_measure()
 	DF_LOG_DEBUG("accel x: %d, y: %d, z: %d", report.accel_x, report.accel_y, report.accel_z);
 	DF_LOG_DEBUG("gyro x: %d, y: %d, z: %d", report.gyro_x, report.gyro_y, report.gyro_z);
 
-
 	m_synchronize.lock();
 
 	// Check if the full accel range of the accel has been used. If this occurs, it is
@@ -447,7 +446,6 @@ void LSM9DS1::_measure()
 		DF_LOG_INFO("    temp:  %f C",
 			    (double)m_sensor_data.temp_c);
 	}
-
 
 #endif
 
