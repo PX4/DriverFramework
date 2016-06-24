@@ -537,22 +537,24 @@ void LSM9DS1::_measure()
 			_last_temp_c = temp_c;
 		}
 
+		// TODO XXX: Inverting z to make the coordinate system right handed, not sure why this is needed.
+
 		m_synchronize.lock();
 		m_sensor_data.accel_m_s2_x = double(report->accel_x)
 					     * double(G_SI) * double(_acc_scale);
 		m_sensor_data.accel_m_s2_y = double(report->accel_y)
 					     * double(G_SI) * double(_acc_scale);
-		m_sensor_data.accel_m_s2_z = double(report->accel_z)
+		m_sensor_data.accel_m_s2_z = -double(report->accel_z)
 					     * double(G_SI) * double(_acc_scale);
 
 		m_sensor_data.temp_c = temp_c;
 		m_sensor_data.gyro_rad_s_x = (PI / 180) * float(report->gyro_x) * _gyro_scale;
 		m_sensor_data.gyro_rad_s_y = (PI / 180) * float(report->gyro_y) * _gyro_scale;
-		m_sensor_data.gyro_rad_s_z = (PI / 180) * float(report->gyro_z) * _gyro_scale;
+		m_sensor_data.gyro_rad_s_z = -(PI / 180) * float(report->gyro_z) * _gyro_scale;
 
 		m_sensor_data.mag_ga_x = 100.0 * (double(report->mag_x) * double(_mag_scale));
 		m_sensor_data.mag_ga_y = 100.0 * (double(report->mag_y) * double(_mag_scale));
-		m_sensor_data.mag_ga_z = 100.0 * (double(report->mag_z) * double(_mag_scale));
+		m_sensor_data.mag_ga_z = -100.0 * (double(report->mag_z) * double(_mag_scale));
 
 		// Pass on the sampling interval between FIFO samples at 8kHz.
 		m_sensor_data.fifo_sample_interval_us = 125;
