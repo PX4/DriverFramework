@@ -34,7 +34,6 @@
 include_directories(..)
 
 if("${DF_TARGET}" STREQUAL "qurt")
-	add_subdirectory(qurt)
 else()
 	add_executable(df_ms5611_test
 		main.cpp
