@@ -47,6 +47,7 @@
 #endif
 
 #if defined(__RPI2)
+#include <linux/spi/spidev.h>
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
 #define IMU_DEVICE_MAG "/dev/spidev0.2"
 #else

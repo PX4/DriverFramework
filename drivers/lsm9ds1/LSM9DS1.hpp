@@ -1,6 +1,5 @@
 #pragma once
 
-#include <linux/spi/spidev.h>
 #include "ImuSensor.hpp"
 
 namespace DriverFramework
@@ -237,7 +236,13 @@ private:
 
 		int bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 		{
+
+#if defined(__RPI2)
 			return _bulkRead(address | SPI_NO_CS, out_buffer, length);
+#else
+			// Not implemented/tested.
+			return -1;
+#endif
 		}
 
 		int lsm9ds1m_init();
