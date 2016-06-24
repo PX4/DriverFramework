@@ -43,5 +43,6 @@ before_script:
 script:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
       make check-style
+      ;
     fi
   - make run
