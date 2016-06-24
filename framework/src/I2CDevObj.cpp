@@ -136,7 +136,19 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 
 	return 0;
 #elif defined(__LINUX)
-	return -1;
+	int result = _writeReg(address, nullptr, 0);
+
+	if (result < 0) {
+		return result;
+	}
+
+	result = _simple_read(out_buffer, length);
+
+	if (result < 0) {
+		return result;
+	}
+
+	return 0;
 #else
 	return -1;
 #endif
@@ -151,21 +163,18 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 		return -1;
 	}
 
-#ifdef __QURT
+#if defined(__QURT) || defined(__LINUX)
 	int bytes_read = 0;
 
 	bytes_read = ::read(m_fd, out_buffer, length);
 
 	if (bytes_read != length) {
-		DF_LOG_ERR(
-			"error: read register reports a read of %d bytes, but attempted to set %d bytes",
-			bytes_read, length);
+		DF_LOG_ERR("error: read register reports a read of %d bytes, but attempted to set %d bytes",
+			   bytes_read, length);
 		return -1;
 	}
 
 	return 0;
-#elif defined(__LINUX)
-	return -1;
 #else
 	return -1;
 #endif
@@ -173,7 +182,21 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
+#if defined(__QURT) || defined(__LINUX)
+
+	if (m_fd == 0) {
+		DF_LOG_ERR("error: i2c bus is not yet opened");
+		return -1;
+	}
+
 	uint8_t write_buffer[length + 1];
+
+	if (in_buffer) {
+		memcpy(&write_buffer[1], in_buffer, length);
+	}
+
+	/* Save the address of the register to read from in the write buffer for the combined write. */
+	write_buffer[0] = address;
 
 	/*
 	 * Verify that the length of the caller's buffer does not exceed the local stack
@@ -184,23 +207,24 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 		return -1;
 	}
 
-	if (m_fd == 0) {
-		DF_LOG_ERR("error: i2c bus is not yet opened");
-		return -1;
-	}
+	do {
+		int bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
 
-	/* Save the address of the register to read from in the write buffer for the combined write. */
-	write_buffer[0] = address;
-	memcpy(&write_buffer[1], in_buffer, length);
-	int bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
+		if (bytes_written != length + 1) {
+			DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
+				   bytes_written);
 
-	if (bytes_written != length + 1) {
-		DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
-			   bytes_written);
-		return -1;
-	}
+		} else {
+			return 0;
+		}
 
-	return 0;
+	} while (_retries-- > 0);
+
+	return -1;
+#else
+
+	return -1;
+#endif
 }
 
 int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_khz,
@@ -213,84 +237,10 @@ int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_kh
 	slave_config.bus_frequency_in_khz = bus_frequency_khz;
 	slave_config.byte_transer_timeout_in_usecs = transfer_timeout_usec;
 	return ::ioctl(m_fd, I2C_IOCTL_SLAVE, &slave_config);
+
 #elif defined(__LINUX)
-	return -1;
-#else
-	return -1;
-#endif
-}
+	return ioctl(m_fd, I2C_SLAVE, slave_address);
 
-int I2CDevObj::transfer(DevHandle &h, uint8_t address, uint8_t *send_buffer,
-			uint8_t send_len, uint8_t *receive_buffer, uint8_t receive_len)
-{
-	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
-
-	if (obj) {
-		return obj->_transfer(address, send_buffer, send_len, receive_buffer, receive_len);
-
-	} else {
-		return -1;
-	}
-}
-
-int I2CDevObj::_transfer(uint8_t address, const uint8_t *send_buffer,
-			 uint8_t send_len, uint8_t *receive_buffer, uint8_t receive_len)
-{
-	if (m_fd == 0) {
-		DF_LOG_ERR("error: i2c bus is not yet opened");
-		return -1;
-	}
-
-
-#if defined(__LINUX)
-	struct i2c_msg msgv[2];
-	uint32_t msgs;
-	struct i2c_rdwr_ioctl_data packets;
-	int ret;
-	uint16_t retry_count = 0;
-
-	do {
-		msgs = 0;
-
-		if (send_len > 0) {
-			msgv[msgs].addr = address;
-			msgv[msgs].flags = 0;
-			msgv[msgs].buf = const_cast<uint8_t *>(send_buffer);
-			msgv[msgs].len = send_len;
-			msgs++;
-		}
-
-		if (receive_len > 0) {
-			msgv[msgs].addr = address;
-			msgv[msgs].flags = I2C_M_RD;
-			msgv[msgs].buf = receive_buffer;
-			msgv[msgs].len = receive_len;
-			msgs++;
-		}
-
-		if (msgs == 0) {
-			DF_LOG_ERR("Message empty");
-			return -1;
-		}
-
-		packets.msgs  = msgv;
-		packets.nmsgs = msgs;
-
-		ret = ::ioctl(m_fd, I2C_RDWR, (uint32_t *)&packets);
-
-		if (ret < 0) {
-			DF_LOG_ERR("I2C transfer failed: %s", strerror(errno));
-			return ret;
-		}
-
-		/* success */
-		if (ret >= 0) {
-			break;
-		}
-
-	} while (retry_count++ < _retries);
-
-	return ret;
 #else
 	return -1;
 #endif

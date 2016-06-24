@@ -173,7 +173,7 @@ int MS5611::loadCalibration()
 
 		_retries = 5;
 
-		if (_transfer(MS5611_SLAVE_ADDRESS, &cmd, 1, &prom_buf[0], 2) < 0) {
+		if (_readReg(cmd, &prom_buf[0], 2) < 0) {
 			DF_LOG_ERR("Read calibration error");
 			break;
 		}
@@ -215,7 +215,13 @@ int MS5611::ms5611_init()
 	m_sensor_data.error_counter = 0;
 	m_synchronize.unlock();
 
-	int result;
+	int result = _setSlaveConfig(MS5611_SLAVE_ADDRESS,
+				     MS5611_BUS_FREQUENCY_IN_KHZ,
+				     MS5611_TRANSFER_TIMEOUT_IN_USECS);
+
+	if (result < 0) {
+		DF_LOG_ERR("could not set slave config");
+	}
 
 	/* Reset sensor and load calibration data into internal register */
 	result = reset();
@@ -240,7 +246,7 @@ int MS5611::reset()
 	int result;
 	uint8_t cmd = ADDR_RESET_CMD;
 	_retries = 10;
-	result = _transfer(MS5611_SLAVE_ADDRESS, &cmd, 1, nullptr, 0);
+	result = _writeReg(cmd, nullptr, 0);
 
 	if (result < 0) {
 		DF_LOG_ERR("Unable to reset device: %d", result);
@@ -298,7 +304,7 @@ int MS5611::_request(uint8_t cmd)
 	int ret;
 
 	_retries = 0;
-	ret = _transfer(MS5611_SLAVE_ADDRESS, &cmd, 1, nullptr, 0);
+	ret = _writeReg(cmd, nullptr, 0);
 
 	if (ret < 0) {
 		DF_LOG_ERR("error: request failed");
@@ -320,7 +326,7 @@ int MS5611::_collect(uint32_t *raw)
 
 	_retries = 0;
 	uint8_t cmd = ADDR_CMD_ADC_READ;
-	ret = _transfer(MS5611_SLAVE_ADDRESS, &cmd, 1, &buf[0], 3);
+	ret = _readReg(cmd, &buf[0], 3);
 
 	if (ret < 0) {
 		*raw = 0;
