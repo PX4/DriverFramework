@@ -33,15 +33,19 @@
 
 #pragma once
 
-#define IMU_USE_I2C
+#define __IMU_USE_I2C
 #include "ImuSensor.hpp"
 
 #define DRV_DF_DEVTYPE_MPU6050 0x45 // TODO check settin
 
-#define MPU_WHOAMI_6050		 0x75 // TODO check settin
+#define MPU_WHOAMI_6050		 0x68
+#define MPU6050_SLAVE_ADDRESS 0x68       /* 7-bit slave address */
 
-// update frequency 1000 Hz
-#define MPU6050_MEASURE_INTERVAL_US 1000 // TODO check setting
+// update frequency 2000 Hz
+#define MPU6050_MEASURE_INTERVAL_US 500 // TODO check setting
+
+#define MPU6050_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
+#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 900 // TODO check setting
 
 namespace DriverFramework
 {
