@@ -138,6 +138,13 @@ struct fifo_packet {
 #define BITS_FIFO_ENABLE_GYRO_ZOUT 0x10
 #define BITS_FIFO_ENABLE_ACCEL 0x08
 #define BITS_INT_STATUS_FIFO_OVERFLOW 0x10
+#define BITS_DLPF_CFG_260HZ		0x00
+#define BITS_DLPF_CFG_184HZ		0x01
+#define BITS_DLPF_CFG_94HZ		0x02
+#define BITS_DLPF_CFG_44HZ		0x03
+#define BITS_DLPF_CFG_21HZ		0x04
+#define BITS_DLPF_CFG_10HZ		0x05
+#define BITS_DLPF_CFG_5HZ		0x06
 
 // Length of the FIFO used by the sensor to buffer unread
 // sensor data.
@@ -240,8 +247,8 @@ int MPU6050::mpu6050_init()
 	usleep(1000);
 
   // Set external frame synchronization gyro_xout
-  bits = 0x20;
-	result = _writeReg(MPUREG_CONFIG, &bits, 1); // TODO chekc value
+  bits = BITS_DLPF_CFG_184HZ;
+	result = _writeReg(MPUREG_CONFIG, &bits, 1);
 
 	if (result < 0) {
 		DF_LOG_ERR("Config failed");
