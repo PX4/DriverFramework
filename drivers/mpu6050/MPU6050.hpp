@@ -45,7 +45,7 @@
 #define MPU6050_MEASURE_INTERVAL_US 500 // TODO check setting
 
 #define MPU6050_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
-#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 900 // TODO check setting
+#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 400 // TODO check setting
 
 namespace DriverFramework
 {
