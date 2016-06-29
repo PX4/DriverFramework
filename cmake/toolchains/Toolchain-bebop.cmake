@@ -9,12 +9,11 @@
 add_definitions(
   -D__LINUX
   -D__BEBOP
-  -D__IMU_USE_I2C
 )
 
 ######### test DriverFramework for bebop ###
 # used for debug
-#add_definitions(-DDF_DEBUG)
+# add_definitions(-DDF_DEBUG)
 
 if ("${RPI_TOOLCHAIN_DIR}" STREQUAL "")
 	set(RPI_TOOLCHAIN_DIR /opt/rpi_toolchain)
