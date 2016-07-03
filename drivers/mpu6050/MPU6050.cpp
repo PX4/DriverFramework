@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2016 Julian Oes. All rights reserved.
+ *   Copyright (C) 2016 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -61,7 +61,7 @@ struct fifo_packet {
 #define DIR_READ			0x80
 #define DIR_WRITE			0x00
 
-// MPU 6000 registers
+// MPU 6050 registers
 #define MPUREG_WHOAMI			0x75
 #define MPUREG_SMPLRT_DIV		0x19
 #define MPUREG_CONFIG			0x1A
@@ -97,7 +97,7 @@ struct fifo_packet {
 #define MPUREG_TRIM3			0x0F
 #define MPUREG_TRIM4			0x10
 
-// Configuration bits MPU 3000 and MPU 6000 (not revised)?
+// Configuration bits MPU 6050
 #define BIT_SLEEP			0x40
 #define BIT_H_RESET			0x80
 #define BITS_CLKSEL			0x07
@@ -115,16 +115,6 @@ struct fifo_packet {
 #define BITS_ACCEL_CONFIG_4G 0x08
 #define BITS_ACCEL_CONFIG_8G 0x10
 #define BITS_ACCEL_CONFIG_16G 0x18
-#define BITS_FS_MASK			0x18
-#define BITS_DLPF_CFG_256HZ_NOLPF2	0x00
-#define BITS_DLPF_CFG_188HZ		0x01
-#define BITS_DLPF_CFG_98HZ		0x02
-#define BITS_DLPF_CFG_42HZ		0x03
-#define BITS_DLPF_CFG_20HZ		0x04
-#define BITS_DLPF_CFG_10HZ		0x05
-#define BITS_DLPF_CFG_5HZ		0x06
-#define BITS_DLPF_CFG_2100HZ_NOLPF	0x07
-#define BITS_DLPF_CFG_MASK		0x07
 #define BIT_INT_ANYRD_2CLEAR		0x10
 #define BIT_RAW_RDY_EN			0x01
 #define BIT_I2C_IF_DIS			0x10
@@ -201,7 +191,6 @@ int MPU6050::mpu6050_init()
 
 	usleep(100000);
 
-	DF_LOG_INFO("Reset MPU6050");
 	bits = MPU_CLK_SEL_PLLGYROZ;
 	result = _writeReg(MPUREG_PWR_MGMT_1, &bits, 1);
 
@@ -212,6 +201,7 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
+  // Don't set sensors into standby mode
   bits = 0;
 	result = _writeReg(MPUREG_PWR_MGMT_2, &bits, 1);
 
@@ -222,8 +212,8 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-	// Enable I2C again and start FIFO.
-	bits = BITS_USER_CTRL_FIFO_RST | BITS_USER_CTRL_I2C_MST_EN;
+	// Enable FIFO.
+	bits = BITS_USER_CTRL_FIFO_RST;
 	result = _writeReg(MPUREG_USER_CTRL, &bits, 1);
 
 	if (result < 0) {
@@ -246,7 +236,8 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-  // Set external frame synchronization gyro_xout
+  // Set sample frequency
+  // Using the 260 Hz setting leads to many memory corruptions and errors
   bits = BITS_DLPF_CFG_184HZ;
 	result = _writeReg(MPUREG_CONFIG, &bits, 1);
 
@@ -423,7 +414,7 @@ void MPU6050::_measure()
 		DF_LOG_ERR("FIFO overflow: %d", (int)m_sensor_data.fifo_overflow_counter);
 		m_synchronize.unlock();
 
-		//return;
+		return;
 	}
 
 	int size_of_fifo_packet = sizeof(fifo_packet);
@@ -535,8 +526,8 @@ void MPU6050::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
-		// Pass on the sampling interval between FIFO samples at 8kHz.
-		m_sensor_data.fifo_sample_interval_us = 125;
+		// Pass on the sampling interval between FIFO samples at 184Hz.
+		m_sensor_data.fifo_sample_interval_us = 5434;
 
 		// Flag if this is the last sample, and _publish() should wrap up the data it has received.
 		m_sensor_data.is_last_fifo_sample = ((packet_index + 1) == (read_len / size_of_fifo_packet));
