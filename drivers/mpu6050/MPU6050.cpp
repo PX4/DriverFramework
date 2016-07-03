@@ -178,10 +178,10 @@ int MPU6050::mpu6050_init()
 				     MPU6050_TRANSFER_TIMEOUT_IN_USECS);
 
 	if (result < 0) {
-	  DF_LOG_ERR("Could not set slave config");
+		DF_LOG_ERR("Could not set slave config");
 	}
-	  
-  uint8_t bits = BIT_H_RESET;
+
+	uint8_t bits = BIT_H_RESET;
 	result = _writeReg(MPUREG_PWR_MGMT_1, &bits, 1);
 
 	if (result < 0) {
@@ -201,8 +201,8 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-  // Don't set sensors into standby mode
-  bits = 0;
+	// Don't set sensors into standby mode
+	bits = 0;
 	result = _writeReg(MPUREG_PWR_MGMT_2, &bits, 1);
 
 	if (result < 0) {
@@ -223,11 +223,11 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-  bits = BITS_FIFO_ENABLE_TEMP_OUT | BITS_FIFO_ENABLE_GYRO_XOUT
-          | BITS_FIFO_ENABLE_GYRO_YOUT
-          | BITS_FIFO_ENABLE_GYRO_ZOUT | BITS_FIFO_ENABLE_ACCEL;
-  result = _writeReg(MPUREG_FIFO_EN,
-          &bits, 1);
+	bits = BITS_FIFO_ENABLE_TEMP_OUT | BITS_FIFO_ENABLE_GYRO_XOUT
+	       | BITS_FIFO_ENABLE_GYRO_YOUT
+	       | BITS_FIFO_ENABLE_GYRO_ZOUT | BITS_FIFO_ENABLE_ACCEL;
+	result = _writeReg(MPUREG_FIFO_EN,
+			   &bits, 1);
 
 	if (result < 0) {
 		DF_LOG_ERR("FIFO enable failed");
@@ -236,9 +236,9 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-  // Set sample frequency
-  // Using the 260 Hz setting leads to many memory corruptions and errors
-  bits = BITS_DLPF_CFG_184HZ;
+	// Set sample frequency
+	// Using the 260 Hz setting leads to many memory corruptions and errors
+	bits = BITS_DLPF_CFG_184HZ;
 	result = _writeReg(MPUREG_CONFIG, &bits, 1);
 
 	if (result < 0) {
@@ -248,8 +248,8 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-  // Set the gyro resolution
-  bits = BITS_FS_2000DPS;
+	// Set the gyro resolution
+	bits = BITS_FS_2000DPS;
 	result = _writeReg(MPUREG_GYRO_CONFIG, &bits, 1);
 
 	if (result < 0) {
@@ -259,8 +259,8 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-  // Set the accel resolution
-  bits = BITS_ACCEL_CONFIG_16G;
+	// Set the accel resolution
+	bits = BITS_ACCEL_CONFIG_16G;
 	result = _writeReg(MPUREG_ACCEL_CONFIG, &bits, 1);
 
 	if (result < 0) {
@@ -302,13 +302,13 @@ int MPU6050::start()
 	}
 
 	result = _setSlaveConfig(MPU6050_SLAVE_ADDRESS,
-				     MPU6050_BUS_FREQUENCY_IN_KHZ,
-				     MPU6050_TRANSFER_TIMEOUT_IN_USECS);
+				 MPU6050_BUS_FREQUENCY_IN_KHZ,
+				 MPU6050_TRANSFER_TIMEOUT_IN_USECS);
 
 	if (result < 0) {
-	  DF_LOG_ERR("Could not set slave config");
+		DF_LOG_ERR("Could not set slave config");
 	}
-	  
+
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
 	result = _readReg(MPUREG_WHOAMI, &sensor_id, 1);
@@ -386,7 +386,7 @@ int MPU6050::get_fifo_count()
 
 void MPU6050::reset_fifo()
 {
-  uint8_t bits = BITS_USER_CTRL_FIFO_RST | BITS_USER_CTRL_FIFO_EN;
+	uint8_t bits = BITS_USER_CTRL_FIFO_RST | BITS_USER_CTRL_FIFO_EN;
 	int result = _writeReg(MPUREG_USER_CTRL, &bits, 1);
 
 	if (result < 0) {
