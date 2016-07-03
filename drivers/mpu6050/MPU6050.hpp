@@ -36,16 +36,16 @@
 #define __IMU_USE_I2C
 #include "ImuSensor.hpp"
 
-#define DRV_DF_DEVTYPE_MPU6050 0x45 // TODO check settin
+#define DRV_DF_DEVTYPE_MPU6050 0x45
 
 #define MPU_WHOAMI_6050		 0x68
 #define MPU6050_SLAVE_ADDRESS 0x68       /* 7-bit slave address */
 
 // update frequency 2000 Hz
-#define MPU6050_MEASURE_INTERVAL_US 500 // TODO check setting
+#define MPU6050_MEASURE_INTERVAL_US 500
 
-#define MPU6050_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
-#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 400 // TODO check setting
+#define MPU6050_BUS_FREQUENCY_IN_KHZ 400
+#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 400
 
 namespace DriverFramework
 {
@@ -59,8 +59,7 @@ public:
 		_temp_initialized(false)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU6050;
-		// TODO: does the WHOAMI make sense as an address?
-		m_id.dev_id_s.address = MPU_WHOAMI_6050;
+		m_id.dev_id_s.address = MPU6050_SLAVE_ADDRESS;
 	}
 
 	// @return 0 on success, -errno on failure
