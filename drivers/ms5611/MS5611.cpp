@@ -238,6 +238,12 @@ int MS5611::ms5611_init()
 		return -EIO;
 	}
 
+	// Request to convert the temperature
+	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+		DF_LOG_ERR("error: temp measure failed");
+		return -EIO;
+	}
+
 	return 0;
 }
 
@@ -313,7 +319,7 @@ int MS5611::_request(uint8_t cmd)
 	return ret;
 }
 
-int MS5611::_collect(uint32_t *raw)
+int MS5611::_collect(uint32_t &raw)
 {
 	int ret;
 
@@ -329,7 +335,7 @@ int MS5611::_collect(uint32_t *raw)
 	ret = _readReg(cmd, &buf[0], 3);
 
 	if (ret < 0) {
-		*raw = 0;
+		raw = 0;
 		return -1;
 	}
 
@@ -337,58 +343,70 @@ int MS5611::_collect(uint32_t *raw)
 	cvt.b[1] = buf[1];
 	cvt.b[2] = buf[0];
 	cvt.b[3] = 0;
-	*raw = cvt.w;
+	raw = cvt.w;
 
 	return 0;
 }
 
 void MS5611::_measure(void)
 {
+	if (_measure_phase == 0) {
+		if (_collect(temperature_from_sensor) < 0) {
+			DF_LOG_ERR("error: temp collect failed");
+			reset();
 
-	// Request to convert the temperature
-	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
-		DF_LOG_ERR("error: temp measure failed");
-		return;
+			/* collect fails, re-initiate a temperature read command
+			 * or we are stuck.
+			 */
+			if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+				DF_LOG_ERR("error: temp measure failed");
+			}
+
+			return;
+		}
+
+		// Request to convert the pressure
+		if (_request(ADDR_CMD_CONVERT_D1) < 0) {
+			DF_LOG_ERR("error: pressure measure failed");
+		}
+
+		_measure_phase++;
+
+	} else {
+		if (_collect(pressure_from_sensor) < 0) {
+			DF_LOG_ERR("error: pressure collect failed");
+			reset();
+
+			/* collect fails, re-initiate a pressure read command
+			 * or we are stuck.
+			 */
+			if (_request(ADDR_CMD_CONVERT_D1) < 0) {
+				DF_LOG_ERR("error: pressure measure failed");
+				return;
+			}
+		}
+
+		// Request to convert the temperature
+		if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+			DF_LOG_ERR("error: temp measure failed");
+		}
+
+		_measure_phase = 0;
+
+
+		m_synchronize.lock();
+
+		m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
+		m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor);
+		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+		m_sensor_data.read_counter++;
+		_publish(m_sensor_data);
+
+		m_synchronize.signal();
+		m_synchronize.unlock();
+
 	}
 
-	usleep(MS5611_CONVERSION_INTERVAL_US);
-
-	// read the result
-	uint32_t temperature_from_sensor;
-
-	if (_collect(&temperature_from_sensor) < 0) {
-		DF_LOG_ERR("error: temp collect failed");
-		reset();
-		return;
-	}
-
-	// Request to convert the pressure
-	if (_request(ADDR_CMD_CONVERT_D1) < 0) {
-		DF_LOG_ERR("error: pressure measure failed");
-		return;
-	}
-
-	usleep(MS5611_CONVERSION_INTERVAL_US);
-
-	// read the result
-	uint32_t pressure_from_sensor;
-
-	if (_collect(&pressure_from_sensor) < 0) {
-		DF_LOG_ERR("error: pressure collect failed");
-		return;
-	}
-
-	m_synchronize.lock();
-
-	m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
-	m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor);
-	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-	m_sensor_data.read_counter++;
-
-	_publish(m_sensor_data);
-
-	m_synchronize.signal();
-	m_synchronize.unlock();
 }
 
 int MS5611::_publish(struct baro_sensor_data &data)
