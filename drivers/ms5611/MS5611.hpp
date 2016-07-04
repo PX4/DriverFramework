@@ -73,11 +73,15 @@ struct ms5611_sensor_measurement {
 
 #define MS5611_SLAVE_ADDRESS 0x77       /* 7-bit slave address */
 
+#if MS5611_MEASURE_INTERVAL_US < (MS5611_CONVERSION_INTERVAL_US * 2)
+#error "MS5611_MEASURE_INTERVAL_US Must >= MS5611_CONVERSION_INTERVAL_US * 2"
+#endif
+
 class MS5611 : public BaroSensor
 {
 public:
 	MS5611(const char *device_path) :
-		BaroSensor(device_path, MS5611_MEASURE_INTERVAL_US)
+		BaroSensor(device_path, MS5611_MEASURE_INTERVAL_US / 2)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MS5611;
 		m_id.dev_id_s.address = MS5611_SLAVE_ADDRESS;
@@ -108,7 +112,7 @@ private:
 	// Request to convert pressure or temperature data
 	int _request(uint8_t phase);
 	// Read out the requested sensor data
-	int _collect(uint32_t *raw);
+	int _collect(uint32_t &raw);
 
 	bool crc4(uint16_t *n_prom);
 
@@ -119,7 +123,12 @@ private:
 	int reset();
 
 	struct ms5611_sensor_calibration	m_sensor_calibration;
-	struct ms5611_sensor_measurement m_raw_sensor_convertion;;
+	struct ms5611_sensor_measurement m_raw_sensor_convertion;
+
+	uint32_t temperature_from_sensor;
+	uint32_t pressure_from_sensor;
+
+	int _measure_phase;
 };
 
 }; // namespace DriverFramework
