@@ -114,11 +114,10 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-	// Enable I2C again and start FIFO.
+	// Reset and enable FIFO.
 	result = _writeReg(MPUREG_USER_CTRL,
 			   BITS_USER_CTRL_FIFO_RST |
-			   BITS_USER_CTRL_FIFO_EN |
-			   BITS_USER_CTRL_I2C_MST_EN);
+			   BITS_USER_CTRL_FIFO_EN);
 
 	if (result != 0) {
 		DF_LOG_ERR("user ctrl 2 failed");
@@ -212,9 +211,11 @@ int MPU9250::mpu9250_init()
 		}
 	}
 
-	// Enable/clear the FIFO of any residual data and enable the I2C master clock, if the mag is
-	// enabled.
+	// Enable/clear the FIFO of any residual data
 	reset_fifo();
+
+	// Clear Interrupt Status
+	clear_int_status();
 
 	return 0;
 }
@@ -343,20 +344,25 @@ void MPU9250::reset_fifo()
 
 	int result;
 
-	if (_mag_enabled) {
-		result = _writeReg(MPUREG_USER_CTRL,
-				   BITS_USER_CTRL_FIFO_RST |
-				   BITS_USER_CTRL_FIFO_EN |
-				   BITS_USER_CTRL_I2C_MST_EN);
-
-	} else {
-		result = _writeReg(MPUREG_USER_CTRL,
-				   BITS_USER_CTRL_FIFO_RST |
-				   BITS_USER_CTRL_FIFO_EN);
-	}
+	result = _modifyReg(MPUREG_USER_CTRL,
+			    0,
+			    BITS_USER_CTRL_FIFO_RST |
+			    BITS_USER_CTRL_FIFO_EN);
 
 	if (result != 0) {
 		DF_LOG_ERR("FIFO reset failed");
+	}
+}
+
+void MPU9250::clear_int_status()
+{
+	int result;
+	uint8_t int_status = 0;
+
+	result = _readReg(MPUREG_INT_STATUS, int_status);
+
+	if (result != 0) {
+		DF_LOG_ERR("Interrupt status clear failed");
 	}
 }
 
@@ -431,6 +437,7 @@ void MPU9250::_measure()
 	// Luckily 10 MHz seems to work fine.
 
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
+
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 
 	if (result != 0) {

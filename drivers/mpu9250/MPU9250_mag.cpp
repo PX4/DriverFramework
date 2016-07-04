@@ -59,7 +59,7 @@ int MPU9250_mag::_initialize(int output_data_rate_in_hz)
 {
 
 	// Configure the IMU as an I2C master at 400 KHz.
-	int result = _imu.writeReg(MPUREG_USER_CTRL, BITS_USER_CTRL_I2C_MST_EN);
+	int result = _imu.modifyReg(MPUREG_USER_CTRL, 0, BITS_USER_CTRL_I2C_MST_EN);
 
 	if (result != 0) {
 		DF_LOG_ERR("IMU I2C master enable failed.");
@@ -80,6 +80,8 @@ int MPU9250_mag::_initialize(int output_data_rate_in_hz)
 
 	if (result != 0) {
 		DF_LOG_ERR("MPU9250 soft reset failed.");
+		// Reset i2c master.
+		_imu.modifyReg(MPUREG_USER_CTRL, 0, BITS_USER_CTRL_I2C_MST_RST);
 		return -1;
 	}
 

@@ -250,6 +250,11 @@ public:
 		return _readReg(address, val);
 	}
 
+	int modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits)
+	{
+		return _modifyReg(address, clearbits, setbits);
+	}
+
 	// @return 0 on success, -errno on failure
 	virtual int start();
 
@@ -271,6 +276,8 @@ private:
 	int get_fifo_count();
 
 	void reset_fifo();
+
+	void clear_int_status();
 
 	float _last_temp_c;
 	bool _temp_initialized;
