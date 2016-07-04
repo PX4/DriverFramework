@@ -252,6 +252,23 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 #endif
 }
 
+int SPIDevObj::_modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits)
+{
+	int ret;
+	uint8_t	val;
+
+	ret = _readReg(address, val);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	val &= ~clearbits;
+	val |= setbits;
+
+	return _writeReg(address, val);
+}
+
 int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
 #if defined(__RPI2)
