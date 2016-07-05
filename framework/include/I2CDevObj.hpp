@@ -83,7 +83,7 @@ protected:
 			    uint32_t transfer_timeout_usec);
 
 	int m_fd;
-	uint16_t _retries;
+	unsigned _retries;
 };
 
 };
