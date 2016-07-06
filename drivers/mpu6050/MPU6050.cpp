@@ -213,7 +213,7 @@ int MPU6050::mpu6050_init()
 	usleep(1000);
 
 	// Enable FIFO.
-	bits = BITS_USER_CTRL_FIFO_RST;
+	bits = BITS_USER_CTRL_FIFO_RST | BITS_USER_CTRL_FIFO_EN;
 	result = _writeReg(MPUREG_USER_CTRL, &bits, 1);
 
 	if (result < 0) {
@@ -237,13 +237,26 @@ int MPU6050::mpu6050_init()
 	usleep(1000);
 
 	// Set sample frequency
-	// Using the 260 Hz setting leads to many memory corruptions and errors
-	// TODO Check if this could be improved
-	bits = BITS_DLPF_CFG_184HZ;
+	bits = BITS_DLPF_CFG_260HZ;
 	result = _writeReg(MPUREG_CONFIG, &bits, 1);
 
 	if (result < 0) {
 		DF_LOG_ERR("Config failed");
+		return -1;
+	}
+
+	usleep(1000);
+
+	// Set the sample rate divider
+	// sample rate = Gyroscope_Output_Rate / (1 + sample_divider)
+	//
+	// If DLPF is disabled (0 or 7) Gyroscope_Output_Rate = 8 kHz
+	// otherwise Gyroscope_Output_Rate = 1kHz
+	bits = 7;
+	result = _writeReg(MPUREG_SMPLRT_DIV, &bits, 1);
+
+	if (result < 0) {
+		DF_LOG_ERR("Set sample divider failed");
 		return -1;
 	}
 
@@ -448,7 +461,7 @@ void MPU6050::_measure()
 		return;
 	}
 
-	for (unsigned packet_index = 0; packet_index < read_len / size_of_fifo_packet; ++packet_index) {
+	for (unsigned packet_index = 0; packet_index < (read_len / size_of_fifo_packet); ++packet_index) {
 
 		fifo_packet *report = (fifo_packet *)(&fifo_read_buf[packet_index	* size_of_fifo_packet]);
 
