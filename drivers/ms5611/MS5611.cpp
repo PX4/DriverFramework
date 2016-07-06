@@ -350,8 +350,8 @@ int MS5611::_collect(uint32_t &raw)
 
 void MS5611::_measure(void)
 {
-	if (_measure_phase == 0) {
-		if (_collect(temperature_from_sensor) < 0) {
+	if (m_measure_phase == 0) {
+		if (_collect(m_temperature_from_sensor) < 0) {
 			DF_LOG_ERR("error: temp collect failed");
 			reset();
 
@@ -370,10 +370,10 @@ void MS5611::_measure(void)
 			DF_LOG_ERR("error: pressure measure failed");
 		}
 
-		_measure_phase++;
+		m_measure_phase++;
 
 	} else {
-		if (_collect(pressure_from_sensor) < 0) {
+		if (_collect(m_pressure_from_sensor) < 0) {
 			DF_LOG_ERR("error: pressure collect failed");
 			reset();
 
@@ -382,8 +382,9 @@ void MS5611::_measure(void)
 			 */
 			if (_request(ADDR_CMD_CONVERT_D1) < 0) {
 				DF_LOG_ERR("error: pressure measure failed");
-				return;
 			}
+
+			return;
 		}
 
 		// Request to convert the temperature
@@ -391,13 +392,13 @@ void MS5611::_measure(void)
 			DF_LOG_ERR("error: temp measure failed");
 		}
 
-		_measure_phase = 0;
+		m_measure_phase = 0;
 
 
 		m_synchronize.lock();
 
-		m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
-		m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor);
+		m_sensor_data.temperature_c = convertTemperature(m_temperature_from_sensor) / 100.0;
+		m_sensor_data.pressure_pa = convertPressure(m_pressure_from_sensor);
 		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
 		m_sensor_data.read_counter++;
 		_publish(m_sensor_data);
