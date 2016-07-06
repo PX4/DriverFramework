@@ -41,21 +41,21 @@ namespace DriverFramework
 #define MAG_DEVICE_PATH "/dev/i2c-akm8963"
 
 // 100Hz measurement frequency
-#define AKM8963_MEASURE_INTERVAL_US 10000 // TODO check setting
+#define AK8963_MEASURE_INTERVAL_US 10000 // TODO check setting
 
-#define DRV_DF_DEVTYPE_AKM8963 0x46 // TODO check setting
+#define DRV_DF_DEVTYPE_AK8963 0x46 // TODO check setting
 
-#define AKM8963_SLAVE_ADDRESS 0xCH // TODO check setting
+#define AK8963_SLAVE_ADDRESS 0x0C // TODO check setting
 
 
-class AKM8963 : public MagSensor
+class AK8963 : public MagSensor
 {
 public:
-	AKM8963(const char *device_path) :
-		MagSensor(device_path, AKM8963_MEASURE_INTERVAL_US)
+	AK8963(const char *device_path) :
+		MagSensor(device_path, AK8963_MEASURE_INTERVAL_US)
 	{
-		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_AKM8963;
-		m_id.dev_id_s.address = AKM8963_SLAVE_ADDRESS;
+		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_AK8963;
+		m_id.dev_id_s.address = AK8963_SLAVE_ADDRESS;
 	}
 
 	// @return 0 on success, -errno on failure
@@ -72,7 +72,7 @@ private:
 	int loadCalibration();
 
 	// returns 0 on success, -errno on failure
-	int akm8963_init();
+	int ak8963_init();
 };
 
 }; // namespace DriverFramework

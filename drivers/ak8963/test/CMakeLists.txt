@@ -36,14 +36,14 @@ include_directories(..)
 if("${DF_TARGET}" STREQUAL "qurt")
 	# Don't compile this driver for Snapdragon.
 else()
-	add_executable(df_akm8963_test
+	add_executable(df_ak8963_test
 		main.cpp
 		test.cpp
 		)
 
-	target_link_libraries(df_akm8963_test
+	target_link_libraries(df_ak8963_test
 		df_driver_framework
-		df_akm8963
+		df_ak8963
 		${df_link_libs}
 		)
 endif()

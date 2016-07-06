@@ -37,7 +37,7 @@ include_directories(../../framework/include)
 
 get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 df_add_library(df_${drivername}
-	AKM8963.cpp
+	AK8963.cpp
 	)
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")

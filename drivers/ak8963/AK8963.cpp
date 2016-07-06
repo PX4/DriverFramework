@@ -33,17 +33,17 @@
 
 #include <string.h>
 #include "DriverFramework.hpp"
-#include "AKM8963.hpp"
+#include "AK8963.hpp"
 
 
-#define AKM8963_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
+#define AK8963_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
 
-#define AKM8963_TRANSFER_TIMEOUT_IN_USECS 100 // TODO check setting
+#define AK8963_TRANSFER_TIMEOUT_IN_USECS 100 // TODO check setting
 
 using namespace DriverFramework;
 
 
-int AKM8963::akm8963_init()
+int AK8963::ak8963_init()
 {
 
 	/* Zero the struct */
@@ -60,7 +60,7 @@ int AKM8963::akm8963_init()
 	return 0;
 }
 
-int AKM8963::start()
+int AK8963::start()
 {
 	int result = I2CDevObj::start();
 
@@ -70,9 +70,9 @@ int AKM8963::start()
 	}
 
 	/* Configure the I2C bus parameters for the mag sensor. */
-	result = _setSlaveConfig(AKM8963_SLAVE_ADDRESS,
-				 AKM8963_BUS_FREQUENCY_IN_KHZ,
-				 AKM8963_TRANSFER_TIMEOUT_IN_USECS);
+	result = _setSlaveConfig(AK8963_SLAVE_ADDRESS,
+				 AK8963_BUS_FREQUENCY_IN_KHZ,
+				 AK8963_TRANSFER_TIMEOUT_IN_USECS);
 
 	if (result != 0) {
 		DF_LOG_ERR("I2C slave configuration failed");
@@ -80,7 +80,7 @@ int AKM8963::start()
 	}
 
 	/* Initialize the mag sensor. */
-	result = akm8963_init();
+	result = ak8963_init();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: mag sensor initialization failed, sensor read thread not started");
@@ -99,7 +99,7 @@ exit:
 	return result;
 }
 
-int AKM8963::stop()
+int AK8963::stop()
 {
 	int result = DevObj::stop();
 
@@ -113,12 +113,12 @@ int AKM8963::stop()
 	return 0;
 }
 
-void AKM8963::_measure(void)
+void AK8963::_measure(void)
 {
 	// TODO Add implementation
 }
 
-int AKM8963::_publish(struct mag_sensor_data &data)
+int AK8963::_publish(struct mag_sensor_data &data)
 {
 	// TBD
 	return -1;

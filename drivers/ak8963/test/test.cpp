@@ -32,7 +32,7 @@
  ****************************************************************************/
 #include <unistd.h>
 #include "DriverFramework.hpp"
-#include "AKM8963.hpp"
+#include "AK8963.hpp"
 
 
 using namespace DriverFramework;
@@ -55,7 +55,7 @@ private:
 	void readSensor();
 	void wait();
 
-	AKM8963		m_sensor;
+	AK8963		m_sensor;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
 	struct mag_sensor_data m_sensor_data;
