@@ -40,8 +40,110 @@
 
 #define AK8963_TRANSFER_TIMEOUT_IN_USECS 100 // TODO check setting
 
+#define AK8963_DEV_ID 0x48
+
+#define AK8963_REG_WIA 0x00
+#define AK8963_REG_CNTL1 0x0A
+#define AK8963_REG_CNTL2 0x0B
+#define AK8903_REG_ASAX 0x00
+#define AK8903_REG_ASAY 0x01
+#define AK8903_REG_ASAZ 0x02
+#define AK8963_REG_ST1 0x02
+#define AK8963_REG_ST2 0x09
+#define AK8963_REG_DATA_X_MSB 0x03
+
+#define AK8963_BITS_CNTL1_MODE_POWER_DOWN 0x00
+#define AK8963_BITS_CNTL1_MODE_SINGLE 0x01
+#define AK8963_BITS_CNTL1_MODE_CONTINOUS1 0x02
+#define AK8963_BITS_CNTL1_MODE_EXTERNAL 0x04
+#define AK8963_BITS_CNTL1_MODE_CONTINOUS2 0x06
+#define AK8963_BITS_CNTL1_MODE_SELF_TEST 0x08
+#define AK8963_BITS_CNTL1_MODE_ROM_ACCESS 0xFF
+#define AK8963_BITS_CNTL1_OUTPUT_14BIT 0x00
+#define AK8963_BITS_CNTL1_OUTPUT_16BIT 0x10
+#define AK8963_BITS_CNTL2_SOFT_RESET 0x01
+
+#define AK8963_BITS_ST1_DRDY 0x01
+#define AK8963_BITS_ST1_DOR 0x02
+
+#define AK8963_BITS_ST2_HOFL 0x08
+#define AK8963_BITS_ST2_BITM 0x10
+
+// 16bit mode: 0.15uTesla/LSB, 100 uTesla == 1 Gauss
+#define MAG_RAW_TO_GAUSS 	 (0.15f / 100.0f)
+
 using namespace DriverFramework;
 
+
+int AK8963::detect()
+{
+	uint8_t b = 0;
+
+	// get mag version ID
+	int retVal = _readReg(AK8963_REG_WIA, &b, 1);
+
+	if (retVal != 0) {
+		DF_LOG_ERR("error reading mag whoami reg: %d", retVal);
+		return -1;
+	}
+
+	if (b != AK8963_DEV_ID) {
+		DF_LOG_ERR("wrong mag ID %u (expected %u)", b, AK8963_DEV_ID);
+		return -1;
+	}
+
+	return 0;
+}
+
+int AK8963::get_sensitivity_adjustment()
+{
+	// First set power-down mode
+	uint8_t bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		return -1;
+	}
+
+	usleep(10000);
+
+	// Enable FUSE ROM, since the sensitivity adjustment data is stored in
+	// compass registers 0x10, 0x11 and 0x12 which is only accessible in Fuse
+	// access mode.
+	bits = AK8963_BITS_CNTL1_OUTPUT_16BIT | AK8963_BITS_CNTL1_MODE_ROM_ACCESS;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		return -1;
+	}
+
+	usleep(10000);
+
+	// Get compass calibration register 0x10, 0x11, 0x12
+	// store into context.
+	for (int i = 0; i < 3; ++i) {
+
+		uint8_t asa;
+
+		if (_readReg(AK8903_REG_ASAX + i, &asa, 1) != 0) {
+			return -1;
+		}
+
+		// H_adj = H * ((ASA-128)*0.5/128 + 1)
+		//       = H * ((ASA-128) / 256 + 1)
+		// H is the raw compass reading.
+		_mag_sens_adj[i] = (((float)asa - 128.0f) / 256.0f) + 1.0f;
+	}
+
+	// Leave in a power-down mode
+	bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		return -1;
+	}
+
+	usleep(10000);
+
+	return 0;
+}
 
 int AK8963::ak8963_init()
 {
@@ -54,7 +156,36 @@ int AK8963::ak8963_init()
 	m_sensor_data.error_counter = 0;
 	m_synchronize.unlock();
 
-	// TODO Add implementation
+	// Perform soft-reset
+	uint8_t bits = AK8963_BITS_CNTL2_SOFT_RESET;;
+	int result = _writeReg(AK8963_REG_CNTL2, &bits, 1);
+
+	if (result < 0) {
+		DF_LOG_ERR("AK8963 soft reset failed.");
+		return -1;
+	}
+
+	usleep(1000);
+
+	// Detect mag presence by reading whoami register
+	if (detect() != 0) {
+		DF_LOG_ERR("AK8963 mag not detected.");
+		return -1;
+	}
+
+	// Get mag calibraion data from Fuse ROM
+	if (get_sensitivity_adjustment() != 0) {
+		DF_LOG_ERR("Unable to read mag sensitivity adjustment");
+		return -1;
+	}
+
+	// Power on and configure the mag to produce 16 bit data in continuous measurement mode.
+	bits = AK8963_BITS_CNTL1_OUTPUT_16BIT | AK8963_BITS_CNTL1_MODE_CONTINOUS2;
+	result = _writeReg(AK8963_REG_CNTL1, &bits, 1);
+
+	if (result != 0) {
+		DF_LOG_ERR("Unable to configure the magnetometer mode.");
+	}
 
 	usleep(1000);
 	return 0;
@@ -115,11 +246,87 @@ int AK8963::stop()
 
 void AK8963::_measure(void)
 {
-	// TODO Add implementation
+#pragma pack(push, 1)
+	struct { /* status register and data as read back from the device */
+		int16_t		x;
+		int16_t		z;
+		int16_t		y;
+	}	ak8963_report;
+#pragma pack(pop)
+
+	uint8_t bits = 0;
+	int result = _readReg(AK8963_REG_ST1, &bits , 1);
+
+	if (result != 0) {
+		DF_LOG_ERR("Error reading status");
+		m_synchronize.lock();
+		m_sensor_data.error_counter++;
+		m_synchronize.unlock();
+		return;
+	}
+
+	if (bits & AK8963_BITS_ST1_DRDY) {
+
+		if (bits & AK8963_BITS_ST1_DOR) {
+			DF_LOG_INFO("Skipped data");
+		}
+
+		result = _readReg(AK8963_REG_DATA_X_MSB, (uint8_t *)&ak8963_report, sizeof(ak8963_report));
+
+		if (result != 0) {
+			DF_LOG_ERR("Error reading data");
+			m_synchronize.lock();
+			m_sensor_data.error_counter++;
+			m_synchronize.unlock();
+			return;
+		}
+
+		bits = 0;
+		result = _readReg(AK8963_REG_ST2, &bits, 1);
+
+		if (result != 0) {
+			DF_LOG_ERR("Error reading status 2");
+			m_synchronize.lock();
+			m_sensor_data.error_counter++;
+			m_synchronize.unlock();
+			return;
+		}
+
+		if (bits & AK8963_BITS_ST2_HOFL) {
+			DF_LOG_ERR("Magnetic sensor overflow");
+			m_synchronize.lock();
+			m_sensor_data.error_counter++;
+			m_synchronize.unlock();
+			return;
+		}
+
+		//ak8963_report.x = swap16(ak8963_report.x);
+		//ak8963_report.y = swap16(ak8963_report.y);
+		//ak8963_report.z = swap16(ak8963_report.z);
+
+		m_synchronize.lock();
+
+		m_sensor_data.field_x_ga = ak8963_report.x * _mag_sens_adj[0] * MAG_RAW_TO_GAUSS;
+		m_sensor_data.field_y_ga = ak8963_report.y * _mag_sens_adj[1] * MAG_RAW_TO_GAUSS;
+		m_sensor_data.field_z_ga = ak8963_report.z * _mag_sens_adj[2] * MAG_RAW_TO_GAUSS;
+		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+		m_sensor_data.read_counter++;
+
+		_publish(m_sensor_data);
+
+		m_synchronize.signal();
+		m_synchronize.unlock();
+
+	} else {
+		DF_LOG_ERR("No data ready");
+		return;
+	}
+
+	return;
 }
 
 int AK8963::_publish(struct mag_sensor_data &data)
 {
-	// TBD
+	//TBD
 	return -1;
 }

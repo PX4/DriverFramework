@@ -45,7 +45,7 @@ namespace DriverFramework
 
 #define DRV_DF_DEVTYPE_AK8963 0x46 // TODO check setting
 
-#define AK8963_SLAVE_ADDRESS 0x0C // TODO check setting
+#define AK8963_SLAVE_ADDRESS 0x0D
 
 
 class AK8963 : public MagSensor
@@ -69,10 +69,14 @@ protected:
 	virtual int _publish(struct mag_sensor_data &data);
 
 private:
+	float _mag_sens_adj[3];
+
 	int loadCalibration();
 
 	// returns 0 on success, -errno on failure
 	int ak8963_init();
+	int detect();
+	int get_sensitivity_adjustment();
 };
 
 }; // namespace DriverFramework
