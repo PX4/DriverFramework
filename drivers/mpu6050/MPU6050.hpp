@@ -40,11 +40,11 @@
 #define MPU_WHOAMI_6050		 0x68
 #define MPU6050_SLAVE_ADDRESS 0x68       /* 7-bit slave address */
 
-// update frequency 2000 Hz
-#define MPU6050_MEASURE_INTERVAL_US 500
+// update frequency 1000 Hz
+#define MPU6050_MEASURE_INTERVAL_US 1000
 
 #define MPU6050_BUS_FREQUENCY_IN_KHZ 400
-#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 400
+#define MPU6050_TRANSFER_TIMEOUT_IN_USECS 900
 
 namespace DriverFramework
 {
