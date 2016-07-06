@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include "SyncObj.hpp"
 
-#if defined(__IMU_USE_I2C)
+#if defined(__BEBOP)
 #include "I2CDevObj.hpp"
 #else
 #include "SPIDevObj.hpp"
@@ -92,7 +92,7 @@ struct imu_sensor_data {
 	bool		is_last_fifo_sample;
 };
 
-#if defined(__IMU_USE_I2C)
+#if defined(__BEBOP)
 class ImuSensor : public I2CDevObj
 #else
 class ImuSensor : public SPIDevObj
@@ -100,7 +100,7 @@ class ImuSensor : public SPIDevObj
 {
 public:
 	ImuSensor(const char *device_path, unsigned int sample_interval_usec, bool mag_enabled = false) :
-#if defined(__IMU_USE_I2C)
+#if defined(__BEBOP)
 		I2CDevObj("ImuSensor", device_path, IMU_CLASS_PATH, sample_interval_usec),
 #else
 		SPIDevObj("ImuSensor", device_path, IMU_CLASS_PATH, sample_interval_usec),

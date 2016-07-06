@@ -33,7 +33,6 @@
 
 #pragma once
 
-#define __IMU_USE_I2C
 #include "ImuSensor.hpp"
 
 #define DRV_DF_DEVTYPE_MPU6050 0x45
