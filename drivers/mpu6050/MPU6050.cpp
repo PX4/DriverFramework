@@ -138,7 +138,7 @@ struct fifo_packet {
 
 // Length of the FIFO used by the sensor to buffer unread
 // sensor data.
-#define MPU_MAX_LEN_FIFO_IN_BYTES 512
+#define MPU_MAX_LEN_FIFO_IN_BYTES 1024
 
 // Uncomment to allow additional debug output to be generated.
 // #define MPU6050_DEBUG 1
@@ -238,6 +238,7 @@ int MPU6050::mpu6050_init()
 
 	// Set sample frequency
 	// Using the 260 Hz setting leads to many memory corruptions and errors
+	// TODO Check if this could be improved
 	bits = BITS_DLPF_CFG_184HZ;
 	result = _writeReg(MPUREG_CONFIG, &bits, 1);
 
