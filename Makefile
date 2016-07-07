@@ -1,10 +1,10 @@
-all: linux qurt rpi2
+all: linux qurt rpi2 edison
 
 define df_cmake_generate
 mkdir -p build_$(1) && cd build_$(1) && cmake .. -DOS=$(2) -DCMAKE_TOOLCHAIN_FILE=$(3) -DDF_ENABLE_TESTS=1
 endef
 
-rpi2 linux bebop:
+rpi2 linux bebop edison:
 	$(call df_cmake_generate,$@,posix,cmake/toolchains/Toolchain-$@.cmake)
 	cd build_$@ && make
 
@@ -22,6 +22,6 @@ clean:
 	rm -rf build_*
 
 fix-style:
-	@./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_rpi2"
+	@./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_rpi2 build_edison"
 check-style:
-	@./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_rpi2" --check
+	@./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_rpi2 build_edison" --check

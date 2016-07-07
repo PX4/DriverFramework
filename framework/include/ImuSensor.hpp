@@ -49,6 +49,8 @@
 #define IMU_DEVICE_PATH "/dev/i2c-mpu6050"
 #elif defined(__RPI2)
 #define IMU_DEVICE_PATH "/dev/spidev0.1"
+#elif defined(__EDISON)
+#define IMU_DEVICE_PATH "/dev/spidev5.1"
 #else
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
