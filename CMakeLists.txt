@@ -70,6 +70,8 @@ if ("$ENV{CI}")
 	add_definitions(-DCI)
 endif()
 
+add_definitions(-D__STDC_FORMAT_MACROS)
+
 set(df_link_libs CACHE STRING "DF_LINK_LIBS")
 
 # set DF_TARGET
