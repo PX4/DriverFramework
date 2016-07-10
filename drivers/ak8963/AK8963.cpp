@@ -38,7 +38,7 @@
 
 #define AK8963_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
 
-#define AK8963_TRANSFER_TIMEOUT_IN_USECS 100 // TODO check setting
+#define AK8963_TRANSFER_TIMEOUT_IN_USECS 500 // TODO check setting
 
 #define AK8963_DEV_ID 0x48
 
@@ -318,7 +318,7 @@ void AK8963::_measure(void)
 		m_synchronize.unlock();
 
 	} else {
-		DF_LOG_ERR("No data ready");
+    //DF_LOG_ERR("No data ready");
 		return;
 	}
 

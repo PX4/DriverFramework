@@ -40,8 +40,8 @@ namespace DriverFramework
 
 #define MAG_DEVICE_PATH "/dev/i2c-akm8963"
 
-// 100Hz measurement frequency
-#define AK8963_MEASURE_INTERVAL_US 10000 // TODO check setting
+// 200Hz measurement frequency
+#define AK8963_MEASURE_INTERVAL_US 5000 // TODO check setting
 
 #define DRV_DF_DEVTYPE_AK8963 0x46 // TODO check setting
 
