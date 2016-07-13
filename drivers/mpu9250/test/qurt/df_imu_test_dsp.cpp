@@ -33,9 +33,9 @@
 
 #include "df_imu_test.h"
 
-extern int do_test();
+extern int do_test(unsigned int num_read_attempts);
 
-int32 df_imu_test_do_test()
+int32 df_imu_test_do_test(uint32 num_read_attempts)
 {
-	return do_test();
+	return do_test(num_read_attempts);
 }

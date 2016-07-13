@@ -31,9 +31,15 @@
  *
  ****************************************************************************/
 
+#include <stdlib.h>
+
 #include "df_imu_test.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-	return df_imu_test_do_test();
+	unsigned int num_read_attempts = 1000;
+	if (argc > 1) {
+		num_read_attempts = atoi(argv[1]);
+	}
+	return df_imu_test_do_test(num_read_attempts);
 }
