@@ -42,15 +42,13 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
-	static constexpr unsigned num_read_attempts = 1000;
-
 	ImuTester() :
 		m_sensor(IMU_DEVICE_PATH, true)
 	{}
 
 	static void readSensorCallback(void *arg);
 
-	int run(void);
+	int run(unsigned int num_read_attempts);
 
 private:
 	void readSensor();
@@ -64,7 +62,7 @@ private:
 	bool		m_done = false;
 };
 
-int ImuTester::run()
+int ImuTester::run(unsigned int num_read_attempts)
 {
 	// Default is fail unless pass critera met
 	m_pass = TEST_FAIL;
@@ -123,8 +121,8 @@ int ImuTester::run()
 	return m_pass;
 }
 
-extern int do_test();
-int do_test()
+extern int do_test(unsigned int num_read_attempts);
+int do_test(unsigned int num_read_attempts)
 {
 	int ret = Framework::initialize();
 
@@ -135,7 +133,7 @@ int do_test()
 	ImuTester pt;
 
 	DF_LOG_INFO("Run it");
-	ret = pt.run();
+	ret = pt.run(num_read_attempts);
 
 	Framework::shutdown();
 

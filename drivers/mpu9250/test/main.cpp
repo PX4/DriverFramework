@@ -31,9 +31,9 @@
  *
  ****************************************************************************/
 
-extern int do_test();
+extern int do_test(unsigned int num_read_attempts);
 
 int main()
 {
-	return do_test();
+	return do_test(1000);
 }

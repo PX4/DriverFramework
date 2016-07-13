@@ -35,5 +35,5 @@
 #include "AEEStdDef.idl"
 
 interface df_imu_test{
-    int32 do_test();
+    int32 do_test(in uint32 num_read_attempts);
 };
