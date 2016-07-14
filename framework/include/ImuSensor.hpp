@@ -47,7 +47,7 @@
 #define IMU_DEVICE_PATH "/dev/spi-1"
 #elif defined(__BEBOP)
 #define IMU_DEVICE_PATH "/dev/i2c-mpu6050"
-#elif defined(__RPI2)
+#elif defined(__RPI)
 #define IMU_DEVICE_PATH "/dev/spidev0.1"
 #elif defined(__EDISON)
 #define IMU_DEVICE_PATH "/dev/spidev5.1"
@@ -55,7 +55,7 @@
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
-#if defined(__RPI2)
+#if defined(__RPI)
 #include <linux/spi/spidev.h>
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
 #define IMU_DEVICE_MAG "/dev/spidev0.2"

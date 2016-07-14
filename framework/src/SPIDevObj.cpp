@@ -39,7 +39,7 @@
 #include "SPIDevObj.hpp"
 #include "DevIOCTL.h"
 
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <alloca.h>
@@ -99,7 +99,7 @@ int SPIDevObj::readReg(DevHandle &h, uint8_t address, uint8_t &val)
 
 int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 	/* implement sensor interface via rpi2 spi */
 	// constexpr int transfer_bytes = 1 + 1; // first byte is address
 	uint8_t write_buffer[2] = {0}; // automatic write buffer
@@ -207,7 +207,7 @@ int SPIDevObj::writeRegVerified(DevHandle &h, uint8_t address, uint8_t val)
 
 int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 	/* implement sensor interface via rpi2 spi */
 	uint8_t write_buffer[2] = {0}; // automatic write buffer: first byte is address
 	uint8_t read_buffer[2] = {0}; // automatic read buffer
@@ -271,7 +271,7 @@ int SPIDevObj::_modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits)
 
 int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 	/* implement sensor interface via rpi2 spi */
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
 
@@ -311,9 +311,9 @@ int SPIDevObj::bulkRead(DevHandle &h, uint8_t address, uint8_t *out_buffer, int 
 
 int SPIDevObj::_bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 	DF_LOG_DEBUG("_bulkRead: length = %d", length);
-	/* implement sensor interface via rpi2 spi */
+	/* implement sensor interface via rpi spi */
 	int transfer_bytes = 1 + length; // first byte is address
 
 	// automatic write buffer
@@ -387,7 +387,7 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 
 int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 	/* implement sensor interface via rpi2 spi */
 	DF_LOG_ERR("ERROR: attempt to set loopback mode in software fails.");
 	return -1;
@@ -404,7 +404,7 @@ int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 
 int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 	/* implement sensor interface via rpi2 spi */
 	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
 
@@ -425,12 +425,12 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 
 int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 {
-#if defined(__RPI2) || defined(__EDISON)
+#if defined(__RPI) || defined(__EDISON)
 
-	/* implement sensor interface via rpi2 spi */
-	// RPI2 rounds down freq_hz to powers of 2
+	/* implement sensor interface via rpi spi */
+	// RPI rounds down freq_hz to powers of 2
 	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
-	// in-reality 32Mbs is the upper limit of the SPI clock on RPI2.
+	// in-reality 32Mbs is the upper limit of the SPI clock on RPI.
 	switch (freq_hz) {
 	case SPI_FREQUENCY_1MHZ :
 		DF_LOG_DEBUG("SPI speed set to 1MHz.");

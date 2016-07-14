@@ -8,11 +8,11 @@
 #
 ############################################################################
 add_definitions(
-	-D__RPI2
+	-D__RPI
 	-D__LINUX
 )
 
-######### test DriverFramework for rpi2 ###
+######### test DriverFramework for rpi ###
 # used for debug
 #add_definitions(-DDF_DEBUG)
 
