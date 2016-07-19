@@ -21,6 +21,9 @@ helgrind: linux
 clean:
 	rm -rf build_*
 
+load:
+	cd build_qurt && make df_imu_test-load
+
 fix-style:
 	@./dspal/tools/fix_code_style.sh -p ".git dspal build_qurt build_linux build_rpi build_edison"
 check-style:
