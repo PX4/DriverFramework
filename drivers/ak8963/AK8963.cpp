@@ -138,7 +138,6 @@ int AK8963::get_sensitivity_adjustment()
 		//       = H * ((ASA-128) / 256 + 1)
 		// H is the raw compass reading.
 		_mag_sens_adj[i] = (value - 128.0f) / 256.0f + 1.0f;
-		DF_LOG_INFO("%d,: %f", i, (double)_mag_sens_adj[i]);
 	}
 
 	// Leave in a power-down mode
@@ -283,11 +282,6 @@ int AK8963::ak8963_init()
 	// Get mag calibraion data from Fuse ROM
 	if (get_sensitivity_adjustment() != 0) {
 		DF_LOG_ERR("Unable to read mag sensitivity adjustment");
-		return -1;
-	}
-
-	if (run_self_test() != 0) {
-		DF_LOG_ERR("Unable to perform self test");
 		return -1;
 	}
 
