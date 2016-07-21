@@ -36,18 +36,19 @@
 #include "AK8963.hpp"
 
 
-#define AK8963_BUS_FREQUENCY_IN_KHZ 400 // TODO check setting
+#define AK8963_BUS_FREQUENCY_IN_KHZ 400
 
-#define AK8963_TRANSFER_TIMEOUT_IN_USECS 500 // TODO check setting
+#define AK8963_TRANSFER_TIMEOUT_IN_USECS 500
 
 #define AK8963_DEV_ID 0x48
 
 #define AK8963_REG_WIA 0x00
 #define AK8963_REG_CNTL1 0x0A
 #define AK8963_REG_CNTL2 0x0B
-#define AK8903_REG_ASAX 0x00
-#define AK8903_REG_ASAY 0x01
-#define AK8903_REG_ASAZ 0x02
+#define AK8963_REG_ASTC 0x0C
+#define AK8963_REG_ASAX 0x10
+#define AK8963_REG_ASAY 0x11
+#define AK8963_REG_ASAZ 0x12
 #define AK8963_REG_ST1 0x02
 #define AK8963_REG_ST2 0x09
 #define AK8963_REG_DATA_X_MSB 0x03
@@ -58,10 +59,13 @@
 #define AK8963_BITS_CNTL1_MODE_EXTERNAL 0x04
 #define AK8963_BITS_CNTL1_MODE_CONTINOUS2 0x06
 #define AK8963_BITS_CNTL1_MODE_SELF_TEST 0x08
-#define AK8963_BITS_CNTL1_MODE_ROM_ACCESS 0xFF
+#define AK8963_BITS_CNTL1_MODE_ROM_ACCESS 0x0F
 #define AK8963_BITS_CNTL1_OUTPUT_14BIT 0x00
 #define AK8963_BITS_CNTL1_OUTPUT_16BIT 0x10
 #define AK8963_BITS_CNTL2_SOFT_RESET 0x01
+
+#define AK8963_BITS_ASTC_NORMAL 0x00
+#define AK8963_BITS_ASTC_SELF_TEST 0x40
 
 #define AK8963_BITS_ST1_DRDY 0x01
 #define AK8963_BITS_ST1_DOR 0x02
@@ -101,6 +105,7 @@ int AK8963::get_sensitivity_adjustment()
 	uint8_t bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
 
 	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Sensitivity: Set power down mode");
 		return -1;
 	}
 
@@ -109,9 +114,10 @@ int AK8963::get_sensitivity_adjustment()
 	// Enable FUSE ROM, since the sensitivity adjustment data is stored in
 	// compass registers 0x10, 0x11 and 0x12 which is only accessible in Fuse
 	// access mode.
-	bits = AK8963_BITS_CNTL1_OUTPUT_16BIT | AK8963_BITS_CNTL1_MODE_ROM_ACCESS;
+	bits = AK8963_BITS_CNTL1_MODE_ROM_ACCESS;
 
 	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Sensitivity: Set ROM access mode");
 		return -1;
 	}
 
@@ -119,30 +125,131 @@ int AK8963::get_sensitivity_adjustment()
 
 	// Get compass calibration register 0x10, 0x11, 0x12
 	// store into context.
+	uint8_t asa[3] = {0};
+
+	if (_readReg(AK8963_REG_ASAX, asa, sizeof(asa)) != 0) {
+		return -1;
+	}
+
 	for (int i = 0; i < 3; ++i) {
 
-		uint8_t asa;
-
-		if (_readReg(AK8903_REG_ASAX + i, &asa, 1) != 0) {
-			return -1;
-		}
-
+		float value = asa[i];
 		// H_adj = H * ((ASA-128)*0.5/128 + 1)
 		//       = H * ((ASA-128) / 256 + 1)
 		// H is the raw compass reading.
-		_mag_sens_adj[i] = (((float)asa - 128.0f) / 256.0f) + 1.0f;
+		_mag_sens_adj[i] = (value - 128.0f) / 256.0f + 1.0f;
+		DF_LOG_INFO("%d,: %f", i, (double)_mag_sens_adj[i]);
 	}
 
 	// Leave in a power-down mode
 	bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
 
 	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Sensitivity: Set power down mode");
 		return -1;
 	}
 
 	usleep(10000);
 
 	return 0;
+}
+
+bool AK8963::in_range(float value, float min, float max)
+{
+	return (min <= value) && (value <= max);
+}
+
+int AK8963::run_self_test()
+{
+
+	uint8_t bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Test: Set power down mode");
+		return -1;
+	}
+
+	usleep(1000);
+	bits = AK8963_BITS_ASTC_SELF_TEST;
+
+	if (_writeReg(AK8963_REG_ASTC, &bits, 1) != 0) {
+		DF_LOG_ERR("Test: Set self test");
+		return -1;
+	}
+
+	usleep(1000);
+	bits = AK8963_BITS_CNTL1_MODE_SELF_TEST | AK8963_BITS_CNTL1_OUTPUT_16BIT;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Sensitivity: Set self test mode");
+		return -1;
+	}
+
+	usleep(1000);
+
+#pragma pack(push, 1)
+	struct { /* status register and data as read back from the device */
+		int16_t		x;
+		int16_t		y;
+		int16_t		z;
+	}	ak8963_report;
+#pragma pack(pop)
+
+	bool ready = false;
+
+	while (!ready) {
+		int result = _readReg(AK8963_REG_ST1, &bits , 1);
+
+		if (result != 0) {
+			DF_LOG_ERR("Error reading status");
+			return -1;
+		}
+
+		if (bits & AK8963_BITS_ST1_DRDY) {
+			ready = true;
+		}
+
+		usleep(100);
+	}
+
+	int result = _readReg(AK8963_REG_DATA_X_MSB, (uint8_t *)&ak8963_report, sizeof(ak8963_report));
+
+	// Check if the measurements are in reasonable range (see the data sheet)
+	int passed_test = -1;
+
+	if (in_range(ak8963_report.x * _mag_sens_adj[0], -200.0, 200.0)
+	    && in_range(ak8963_report.y * _mag_sens_adj[1], -200.0, 200.0)
+	    && in_range(ak8963_report.z * _mag_sens_adj[2], -3200.0, -800.0)) {
+		DF_LOG_INFO("Selftest passed!");
+		passed_test = 0;
+
+	} else {
+		DF_LOG_ERR("Selftest failed!");
+		passed_test = -1;
+	}
+
+	if (result != 0) {
+		DF_LOG_ERR("Error reading data");
+		return -1;
+	}
+
+	bits = AK8963_BITS_ASTC_NORMAL;
+
+	if (_writeReg(AK8963_REG_ASTC, &bits, 1) != 0) {
+		DF_LOG_ERR("Test: Set self test");
+		return -1;
+	}
+
+	usleep(1000);
+	bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Test: Set power down mode");
+		return -1;
+	}
+
+	usleep(1000);
+	return passed_test;
 }
 
 int AK8963::ak8963_init()
@@ -176,6 +283,11 @@ int AK8963::ak8963_init()
 	// Get mag calibraion data from Fuse ROM
 	if (get_sensitivity_adjustment() != 0) {
 		DF_LOG_ERR("Unable to read mag sensitivity adjustment");
+		return -1;
+	}
+
+	if (run_self_test() != 0) {
+		DF_LOG_ERR("Unable to perform self test");
 		return -1;
 	}
 
@@ -239,6 +351,14 @@ int AK8963::stop()
 		return result;
 	}
 
+	// Leave in a power-down mode
+	uint8_t bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
+
+	if (_writeReg(AK8963_REG_CNTL1, &bits, 1) != 0) {
+		DF_LOG_ERR("Sensitivity: Set power down mode");
+		return -1;
+	}
+
 	usleep(100000);
 
 	return 0;
@@ -247,12 +367,12 @@ int AK8963::stop()
 void AK8963::_measure(void)
 {
 #pragma pack(push, 1)
-	struct { /* status register and data as read back from the device */
-		int16_t		x;
-		int16_t		z;
-		int16_t		y;
-	}	ak8963_report;
+	struct sample {
+		int16_t val[3];
+		uint8_t st2;
+	};
 #pragma pack(pop)
+	struct sample ak8963_report;
 
 	uint8_t bits = 0;
 	int result = _readReg(AK8963_REG_ST1, &bits , 1);
@@ -281,18 +401,7 @@ void AK8963::_measure(void)
 			return;
 		}
 
-		bits = 0;
-		result = _readReg(AK8963_REG_ST2, &bits, 1);
-
-		if (result != 0) {
-			DF_LOG_ERR("Error reading status 2");
-			m_synchronize.lock();
-			m_sensor_data.error_counter++;
-			m_synchronize.unlock();
-			return;
-		}
-
-		if (bits & AK8963_BITS_ST2_HOFL) {
+		if (ak8963_report.st2 & AK8963_BITS_ST2_HOFL) {
 			DF_LOG_ERR("Magnetic sensor overflow");
 			m_synchronize.lock();
 			m_sensor_data.error_counter++;
@@ -300,15 +409,11 @@ void AK8963::_measure(void)
 			return;
 		}
 
-		//ak8963_report.x = swap16(ak8963_report.x);
-		//ak8963_report.y = swap16(ak8963_report.y);
-		//ak8963_report.z = swap16(ak8963_report.z);
-
 		m_synchronize.lock();
 
-		m_sensor_data.field_x_ga = ak8963_report.x * _mag_sens_adj[0] * MAG_RAW_TO_GAUSS;
-		m_sensor_data.field_y_ga = ak8963_report.y * _mag_sens_adj[1] * MAG_RAW_TO_GAUSS;
-		m_sensor_data.field_z_ga = ak8963_report.z * _mag_sens_adj[2] * MAG_RAW_TO_GAUSS;
+		m_sensor_data.field_x_ga = static_cast<float>(ak8963_report.val[0]) * _mag_sens_adj[0] * MAG_RAW_TO_GAUSS;
+		m_sensor_data.field_y_ga = static_cast<float>(ak8963_report.val[1]) * _mag_sens_adj[1] * MAG_RAW_TO_GAUSS;
+		m_sensor_data.field_z_ga = static_cast<float>(ak8963_report.val[2]) * _mag_sens_adj[2] * MAG_RAW_TO_GAUSS;
 		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
 		m_sensor_data.read_counter++;
 
@@ -318,7 +423,6 @@ void AK8963::_measure(void)
 		m_synchronize.unlock();
 
 	} else {
-    //DF_LOG_ERR("No data ready");
 		return;
 	}
 

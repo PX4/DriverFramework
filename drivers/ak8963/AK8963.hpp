@@ -77,6 +77,8 @@ private:
 	int ak8963_init();
 	int detect();
 	int get_sensitivity_adjustment();
+	int run_self_test();
+	bool in_range(float value, float min, float max);
 };
 
 }; // namespace DriverFramework
