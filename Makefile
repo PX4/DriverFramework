@@ -21,7 +21,7 @@ helgrind: linux
 clean:
 	rm -rf build_*
 
-load:
+qurt_load: qurt
 	cd build_qurt && make df_imu_test-load
 
 fix-style:
