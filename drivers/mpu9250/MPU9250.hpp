@@ -232,6 +232,7 @@ public:
 		_last_temp_c(0.0f),
 		_temp_initialized(false),
 		_mag_enabled(mag_enabled),
+		_packets_per_cycle_filtered(8.0f), // The FIFO is supposed to run at 8kHz and we sample at 1kHz.
 		_mag(nullptr)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
@@ -282,6 +283,8 @@ private:
 	float _last_temp_c;
 	bool _temp_initialized;
 	bool _mag_enabled;
+	float _packets_per_cycle_filtered;
+
 	MPU9250_mag *_mag;
 };
 
