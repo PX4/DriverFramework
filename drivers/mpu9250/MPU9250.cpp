@@ -404,6 +404,12 @@ void MPU9250::_measure()
 	int bytes_to_read = get_fifo_count() / size_of_fifo_packet
 			    * size_of_fifo_packet;
 
+	// It looks like the FIFO doesn't actually deliver at 8kHz like it is supposed to.
+	// Therefore, we need to adapt the interval which we pass on to the integrator.
+	// The filtering is to lower the jitter that could result through the calculation
+	// because of the fact that the bytes we fetch per _measure() cycle varies.
+	_packets_per_cycle_filtered = (0.95f * _packets_per_cycle_filtered) + (0.05f * (bytes_to_read / size_of_fifo_packet));
+
 	if (bytes_to_read < 0) {
 		m_synchronize.lock();
 		++m_sensor_data.error_counter;
@@ -541,7 +547,8 @@ void MPU9250::_measure()
 		}
 
 		// Pass on the sampling interval between FIFO samples at 8kHz.
-		m_sensor_data.fifo_sample_interval_us = 125;
+		m_sensor_data.fifo_sample_interval_us = 1000000 / MPU9250_MEASURE_INTERVAL_US
+							/ _packets_per_cycle_filtered;
 
 		// Flag if this is the last sample, and _publish() should wrap up the data it has received.
 		m_sensor_data.is_last_fifo_sample = ((packet_index + 1) == (read_len / size_of_fifo_packet));
@@ -552,7 +559,7 @@ void MPU9250::_measure()
 		// 125 usecs
 #ifdef MPU9250_DEBUG
 
-		if (++m_sensor_data.read_counter % (1000000 / 125) == 0) {
+		if (++m_sensor_data.read_counter % (1000000 / m_sensor_data.fifo_sample_interval_us) == 0) {
 
 			DF_LOG_INFO("IMU: accel: [%f, %f, %f]",
 				    (double)m_sensor_data.accel_m_s2_x,
