@@ -160,8 +160,17 @@ int MPU9250::mpu9250_init()
 	//	DF_LOG_ERR("sample rate config failed");
 	//}
 	//usleep(1000);
+
+#if defined(__EDISON)
+	//Setting the gyro bandwidth to 250 Hz corresponds to
+	//8kHz sampling frequency which is too high for the Edison.
+	//Therefore, we use the gyro bandwith of 184 Hz which corresponds to 1kHz sampling frequency.
+	result = _writeReg(MPUREG_CONFIG,
+			   BITS_DLPF_CFG_184HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
+#else
 	result = _writeReg(MPUREG_CONFIG,
 			   BITS_DLPF_CFG_250HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
+#endif
 
 	if (result != 0) {
 		DF_LOG_ERR("config failed");
@@ -442,7 +451,12 @@ void MPU9250::_measure()
 	//
 	// Luckily 10 MHz seems to work fine.
 
+#if defined(__EDISON)
+	//FIFO corrupt at 10MHz.
+	_setBusFrequency(SPI_FREQUENCY_5MHZ);
+#else
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
+#endif
 
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 
