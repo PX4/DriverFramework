@@ -178,8 +178,13 @@ namespace DriverFramework
 #define M_PI_F 3.14159265358979323846f
 #endif
 
+#if defined(__EDISON)
+// update frequency 100 Hz
+#define MPU9250_MEASURE_INTERVAL_US 10000
+#else
 // update frequency 1000 Hz
 #define MPU9250_MEASURE_INTERVAL_US 1000
+#endif
 
 // -2000 to 2000 degrees/s, 16 bit signed register, deg to rad conversion
 #define GYRO_RAW_TO_RAD_S 	 (2000.0f / 32768.0f * M_PI_F / 180.0f)
@@ -232,7 +237,11 @@ public:
 		_last_temp_c(0.0f),
 		_temp_initialized(false),
 		_mag_enabled(mag_enabled),
+#if defined(__EDISON)
+		_packets_per_cycle_filtered(1.0f), // The FIFO is supposed to run at 1kHz and we sample at 100Hz.
+#else
 		_packets_per_cycle_filtered(8.0f), // The FIFO is supposed to run at 8kHz and we sample at 1kHz.
+#endif
 		_mag(nullptr)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;

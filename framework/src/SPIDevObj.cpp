@@ -425,7 +425,7 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 
 int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 {
-#if defined(__RPI) || defined(__EDISON)
+#if defined(__RPI)
 
 	/* implement sensor interface via rpi spi */
 	// RPI rounds down freq_hz to powers of 2
@@ -457,6 +457,10 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 		break;
 	}
 
+	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
+
+#elif defined(__EDISON)
+	//Speeds available: many values less 8MHz and 12.5MHz, 25MHz.
 	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
 
 #elif defined(__QURT)
