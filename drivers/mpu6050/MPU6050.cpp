@@ -56,7 +56,7 @@ struct fifo_packet {
 #endif
 
 // -2000 to 2000 degrees/s, 16 bit signed register, deg to rad conversion
-#define GYRO_RAW_TO_RAD_S 	 (2000.0f / 32768.0f * M_PI_F / 180.0f)
+#define GYRO_RAW_TO_RAD_S 	 (M_PI_F / 180.0f / 16.4f)
 
 #define DIR_READ			0x80
 #define DIR_WRITE			0x00
@@ -138,7 +138,7 @@ struct fifo_packet {
 
 // Length of the FIFO used by the sensor to buffer unread
 // sensor data.
-#define MPU_MAX_LEN_FIFO_IN_BYTES 1024
+#define MPU_MAX_LEN_FIFO_IN_BYTES (4 * sizeof(fifo_packet))
 
 // Uncomment to allow additional debug output to be generated.
 // #define MPU6050_DEBUG 1
@@ -434,8 +434,8 @@ void MPU6050::_measure()
 	int size_of_fifo_packet = sizeof(fifo_packet);
 
 	// Get FIFO byte count to read and floor it to the report size.
-	int bytes_to_read = get_fifo_count() / size_of_fifo_packet
-			    * size_of_fifo_packet;
+	int bytes_to_read = get_fifo_count() / size_of_fifo_packet * size_of_fifo_packet;
+	_packets_per_cycle_filtered = (0.95f * _packets_per_cycle_filtered) + (0.05f * (bytes_to_read / size_of_fifo_packet));
 
 	if (bytes_to_read <= 0) {
 		m_synchronize.lock();
@@ -540,8 +540,9 @@ void MPU6050::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
-		// Pass on the sampling interval between FIFO samples at 184Hz.
-		m_sensor_data.fifo_sample_interval_us = 5434;
+		// Pass on the sampling interval between FIFO samples at 1kHz.
+		m_sensor_data.fifo_sample_interval_us = 1000000 / MPU6050_MEASURE_INTERVAL_US
+							/ _packets_per_cycle_filtered;
 
 		// Flag if this is the last sample, and _publish() should wrap up the data it has received.
 		m_sensor_data.is_last_fifo_sample = ((packet_index + 1) == (read_len / size_of_fifo_packet));

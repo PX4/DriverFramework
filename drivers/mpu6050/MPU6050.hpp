@@ -56,7 +56,8 @@ public:
 	MPU6050(const char *device_path) :
 		ImuSensor(device_path, MPU6050_MEASURE_INTERVAL_US, false), // false = sensor has no mag
 		_last_temp_c(0.0f),
-		_temp_initialized(false)
+		_temp_initialized(false),
+		_packets_per_cycle_filtered(1.0)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU6050;
 		m_id.dev_id_s.address = MPU6050_SLAVE_ADDRESS;
@@ -86,6 +87,7 @@ private:
 
 	float _last_temp_c;
 	bool _temp_initialized;
+	float _packets_per_cycle_filtered;
 };
 
 }
