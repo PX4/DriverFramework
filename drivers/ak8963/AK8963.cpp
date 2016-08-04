@@ -338,13 +338,6 @@ exit:
 
 int AK8963::stop()
 {
-	int result = DevObj::stop();
-
-	if (result != 0) {
-		DF_LOG_ERR("DevObj stop failed");
-		return result;
-	}
-
 	// Leave in a power-down mode
 	uint8_t bits = AK8963_BITS_CNTL1_MODE_POWER_DOWN;
 
@@ -353,7 +346,14 @@ int AK8963::stop()
 		return -1;
 	}
 
-	usleep(100000);
+	usleep(10000);
+
+	int result = DevObj::stop();
+
+	if (result != 0) {
+		DF_LOG_ERR("DevObj stop failed");
+		return result;
+	}
 
 	return 0;
 }
