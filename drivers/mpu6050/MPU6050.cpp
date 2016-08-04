@@ -55,7 +55,8 @@ struct fifo_packet {
 #define M_PI_F 3.14159265358979323846f
 #endif
 
-// -2000 to 2000 degrees/s, 16 bit signed register, deg to rad conversion
+// LSB sensitivity from the datasheet is 16.4 LSB/degree/s at +-2000 degrees/s
+// and deg to rad conversion
 #define GYRO_RAW_TO_RAD_S 	 (M_PI_F / 180.0f / 16.4f)
 
 #define DIR_READ			0x80
@@ -137,7 +138,10 @@ struct fifo_packet {
 #define BITS_DLPF_CFG_5HZ		0x06
 
 // Length of the FIFO used by the sensor to buffer unread
-// sensor data.
+// sensor data. The FIFO size of the MPU6050 is 1024 bytes.
+// However, we sample and read with 1 kHz, so that most often
+// there is just one packet in the FIFO.
+// Including some slack, we allocate memory for four packets.
 #define MPU_MAX_LEN_FIFO_IN_BYTES (4 * sizeof(fifo_packet))
 
 // Uncomment to allow additional debug output to be generated.

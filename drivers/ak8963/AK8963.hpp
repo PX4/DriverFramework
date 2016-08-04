@@ -71,8 +71,6 @@ protected:
 private:
 	float _mag_sens_adj[3];
 
-	int loadCalibration();
-
 	// returns 0 on success, -errno on failure
 	int ak8963_init();
 	int detect();
