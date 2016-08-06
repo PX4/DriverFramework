@@ -48,17 +48,43 @@ message("Enabling Thread Sanitizer")
 set(CMAKE_C_COMPILER /usr/bin/clang)
 set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 
-set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 -Wall -Werror -Wshadow -g" CACHE STRING "DF_CXX_FLAGS")
+# warnings
+set(warning_list
+	-Wall
+	-Werror
+	-Wextra
+	-Wno-sign-compare
+	-Wshadow
+	-Wfloat-equal
+	-Wpointer-arith
+	-Wmissing-declarations
+	-Wno-unused-parameter
+	-Werror=format-security
+	-Werror=array-bounds
+	-Wfatal-errors
+	-Werror=unused-variable
+	-Werror=reorder
+	-Werror=uninitialized
+	-Werror=init-self
+	# cxx specific
+	-Wno-missing-field-initializers
+	)
+
+string (REPLACE ";" " " _TMP_STR "${warning_list}")
+set(warning_flags ${_TMP_STR})
+
+
+set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 ${warning_flags} -g" CACHE STRING "DF_CXX_FLAGS")
 
 elseif ("$ENV{ENABLE_ASAN}" STREQUAL "1")
 message("Enabling Address Sanitizer")
 
 # Used for unit testing, works with gcc 4.8 or clang
-set(DF_CXX_FLAGS "-O1 -g -fsanitize=address -fno-omit-frame-pointer -std=c++11 -Wall -Werror -Wshadow" CACHE STRING "DF_CXX_FLAGS")
+set(DF_CXX_FLAGS "-O1 -g -fsanitize=address -fno-omit-frame-pointer -std=c++11 ${warning_flags}" CACHE STRING "DF_CXX_FLAGS")
 
 else()
 
-set(DF_CXX_FLAGS "-std=c++11 -Wall -Werror -Wshadow -g" CACHE STRING "DF_CXX_FLAGS")
+	set(DF_CXX_FLAGS "-std=c++11 ${warning_Flags} -g" CACHE STRING "DF_CXX_FLAGS")
 
 endif()
 
