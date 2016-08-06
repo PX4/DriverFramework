@@ -140,7 +140,6 @@ private:
 
 			idx = m_work_items.next(idx);
 		}
-
 		*item = m_work_items.get(idx);
 		return true;
 	}

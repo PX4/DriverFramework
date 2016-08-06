@@ -129,7 +129,7 @@ int WorkItems::_schedule(int index)
 	int ret = 0;
 
 	if (_isValidIndex(index)) {
-		WorkItem *item;
+		WorkItem *item = nullptr;
 
 		if (getAt(index, &item)) {
 			if (item->m_in_use) {
@@ -310,7 +310,7 @@ int WorkItems::_getIndex(WorkCallback cb, void *arg, uint32_t delay_usec, int &i
 
 	if (_isValidIndex(index)) {
 		// Re-use the WorkItem
-		WorkItem *item;
+		WorkItem *item = nullptr;
 		getAt(index, &item);
 
 		item->set(cb, arg, delay_usec);
