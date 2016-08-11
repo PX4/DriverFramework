@@ -183,6 +183,7 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
 #if defined(__QURT) || defined(__LINUX)
+	unsigned retry_count = 0;
 
 	if (m_fd == 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
@@ -218,7 +219,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 			return 0;
 		}
 
-	} while (_retries-- > 0);
+	} while (retry_count++ < _retries);
 
 	return -1;
 #else
