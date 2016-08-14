@@ -59,13 +59,16 @@
 // front right: counterclockwise
 // back right: clockwise
 // back left: counterclockwise
-#define BEBOP_BLDC_RLRL 0xA 
+#define BEBOP_BLDC_RLRL 0b00001010
 // Rotation direction
 // front left: counterclockwise
 // front right: clockwise
 // back right: counterclockwise
 // back left: clockwise
-#define BEBOP_BLDC_LRLR 0x5 // 
+#define BEBOP_BLDC_LRLR 0b00000101 // 
+
+#define BEBOP_BLDC_RPM_MIN 3000
+#define BEBOP_BLDC_RPM_MAX 12200
 
 using namespace DriverFramework;
 
@@ -129,13 +132,18 @@ exit:
 	return result;
 }
 	
-uint8_t BebopBus::_checksum(uint8_t *data, uint16_t packet_size)
+uint8_t BebopBus::_checksum(uint8_t initial, uint8_t *data, uint16_t packet_size)
 {
-  uint8_t checksum = data[0];
-  for(size_t i = 0; i < packet_size; i++){
+  uint8_t checksum = initial;
+  for(size_t i = 0; i < packet_size; i++) {
        checksum = checksum ^ data[i];
   }
   return checksum;
+}
+
+uint16_t BebopBus::_scale_to_rpm(float scale)
+{
+  return scale * (BEBOP_BLDC_RPM_MAX - BEBOP_BLDC_RPM_MIN) + BEBOP_BLDC_RPM_MIN;
 }
 
 int BebopBus::_get_info(struct bebop_bus_info *info)
@@ -149,7 +157,27 @@ int BebopBus::_get_observation_data(struct bebop_bus_observation *obs)
 {
 	memset(obs, 0, sizeof(bebop_bus_observation));
 
-	return _readReg(BEBOP_REG_GET_OBS, (uint8_t *)obs, sizeof(bebop_bus_observation));
+	int ret = _readReg(BEBOP_REG_GET_OBS, (uint8_t *)obs, sizeof(bebop_bus_observation));
+	if (ret != 0)
+	{
+    DF_LOG_ERR("Unable to get obervation data");
+    return -1;
+	}
+
+	if (_checksum(0, (uint8_t*) obs, sizeof(bebop_bus_observation) - 1) != obs->checksum)
+  {
+    DF_LOG_ERR("Incorrect checksum: %u %u", obs->checksum, _checksum(0, (uint8_t*) obs, sizeof(bebop_bus_observation) - 1));
+    return -1;
+  }
+
+  // Endian conversion and remove saturation bit
+  obs->rpm_front_left = swap16(obs->rpm_front_left) & ~(1<<15);
+  obs->rpm_front_right = swap16(obs->rpm_front_right) & ~(1<<15);
+  obs->rpm_back_right = swap16(obs->rpm_back_right) & ~(1<<15);
+  obs->rpm_back_left = swap16(obs->rpm_back_left) & ~(1<<15);
+  obs->battery_voltage_mv = swap16(obs->battery_voltage_mv);
+
+  return 0;
 }
 
 int BebopBus::_start_motors()
@@ -166,7 +194,7 @@ int BebopBus::_start_motors()
 	
 int BebopBus::_stop_motors()
 {
-	if (_writeReg(BEBOP_REG_STOP_BLDC, 0, 1) != 0) {
+	if (_writeReg(BEBOP_REG_STOP_BLDC, nullptr, 0) != 0) {
 		DF_LOG_ERR("Unable to stop BLDCs");
 		return -1;
 	}
@@ -176,9 +204,7 @@ int BebopBus::_stop_motors()
 int BebopBus::_clear_errors()
 {
 
-	uint8_t bits = 0x01;
-
-	if (_writeReg(BEBOP_REG_CLEAR_ERROR, &bits, 1) != 0) {
+	if (_writeReg(BEBOP_REG_CLEAR_ERROR, nullptr, 0) != 0) {
 		DF_LOG_ERR("Unable to clear errors");
 		return -1;
 	}
@@ -207,10 +233,25 @@ int BebopBus::_toggle_gpio(BebopBusGPIO mode)
   return 0;
 }
 
-int BebopBus::_set_esc_speed(struct bebop_bus_esc_speeds *speeds)
+int BebopBus::_set_esc_speed(float speeds[4])
 {
-	// TODO Add implementation
-	return -1;
+  struct bebop_bus_esc_speeds data;
+
+	memset(&data, 0, sizeof(data));
+	data.rpm_front_left = swap16(_scale_to_rpm(speeds[0]));
+	data.rpm_front_right = swap16(_scale_to_rpm(speeds[1]));
+	data.rpm_back_right = swap16(_scale_to_rpm(speeds[2]));
+	data.rpm_back_left = swap16(_scale_to_rpm(speeds[3]));
+
+	data.enable_security = 0x00;
+
+	data.checksum = _checksum(BEBOP_REG_SET_ESC_SPEED, (uint8_t*) &data, sizeof(data) - 1);
+
+	if (_writeReg(BEBOP_REG_SET_ESC_SPEED, (uint8_t*) &data, sizeof(data)) - 1 != 0) {
+		DF_LOG_ERR("Unable to set ESC speed");
+		return -1;
+	}
+  return 0;
 }
 
 int BebopBus::stop()

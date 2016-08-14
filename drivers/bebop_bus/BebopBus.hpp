@@ -66,6 +66,7 @@ struct bebop_bus_observation {
   uint8_t  error;
   uint8_t  motors_in_fault;
   uint8_t  temperatur_c; 
+  uint8_t  checksum;
 } __attribute__ ((packed));
 
 struct bebop_bus_info {
@@ -80,7 +81,6 @@ struct bebop_bus_info {
 } __attribute__ ((packed));
 
 struct bebop_bus_esc_speeds {
-  uint8_t cmd;
   uint16_t rpm_front_left;
   uint16_t rpm_front_right;
   uint16_t rpm_back_right;
@@ -138,12 +138,14 @@ protected:
 	int _clear_errors();
 	int _play_sound(BebopBusSound sound);
 	int _toggle_gpio(BebopBusGPIO mode);
-	int _set_esc_speed(struct bebop_bus_esc_speeds *speeds);
+	int _set_esc_speed(float speeds[4]);
 
 private:
 	int _bebop_bus_init();
 
-	uint8_t _checksum(uint8_t *data, uint16_t packet_size);
+  uint16_t _scale_to_rpm(float scale);
+
+	uint8_t _checksum(uint8_t initial, uint8_t *data, uint16_t packet_size);
 	
 	static uint32_t swap32(uint32_t val) { return (val >> 24) | ((val >> 8) & 0x0000FF00) | ((val << 8) & 0x00FF0000)| (val << 24); }
 };

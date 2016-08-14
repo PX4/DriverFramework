@@ -103,11 +103,11 @@ int BebopBusTester::print_observation()
   }
 
   DF_LOG_INFO("Observation data:");
-  DF_LOG_INFO("  RPM Front-Left: %d", swap16(data.rpm_front_left));
-  DF_LOG_INFO("      Front-Right: %d", swap16(data.rpm_front_right));
-  DF_LOG_INFO("      Back-Right: %d", swap16(data.rpm_back_right));
-  DF_LOG_INFO("      Back-Left: %d", swap16(data.rpm_back_left));
-  DF_LOG_INFO("  Battery Voltage: %d", swap16(data.battery_voltage_mv));
+  DF_LOG_INFO("  RPM Front-Left: %d", data.rpm_front_left);
+  DF_LOG_INFO("      Front-Right: %d", data.rpm_front_right);
+  DF_LOG_INFO("      Back-Right: %d", data.rpm_back_right);
+  DF_LOG_INFO("      Back-Left: %d", data.rpm_back_left);
+  DF_LOG_INFO("  Battery Voltage: %d", data.battery_voltage_mv);
   DF_LOG_INFO("  Status: %s", strstatus(data.status));
   DF_LOG_INFO("  Motors in fault: %X", data.motors_in_fault);
   DF_LOG_INFO("  Errno: %d", data.error);
@@ -171,7 +171,24 @@ int BebopBusTester::test_motors()
     pass += TEST_FAIL;
   }
 
-  usleep(2500000);
+  usleep(2000000);
+  float test_speeds[] = {0.0, 0.25, 0.5, 1.0, 0.5, 0.0};
+  float speeds[4] = {0};
+  for (size_t i = 0; i < (sizeof(test_speeds)/sizeof(float)); ++i)
+  {
+    for (size_t j = 0; j < (sizeof(speeds)/sizeof(float)); ++j)
+    {
+      speeds[j] = test_speeds[i];
+    }
+    DF_LOG_INFO("Speed: %f", (double) test_speeds[i]);
+    _set_esc_speed(speeds);
+    usleep(500000);
+    if (print_observation() != 0)
+    {
+      pass += TEST_FAIL;
+    }
+    usleep(50000);
+  }
 
   if (print_observation() != 0)
   {
