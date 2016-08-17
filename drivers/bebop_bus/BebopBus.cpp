@@ -94,12 +94,13 @@ int BebopBus::start()
 	struct bebop_bus_info info;
 	result = _get_info(&info);
 
+  // TODO make some checks and remove prints
 	DF_LOG_INFO("Software Version: %d.%d", info.version_major, info.version_minor);
 	DF_LOG_INFO("Software Type: %d", info.type);
 	DF_LOG_INFO("Number of controlled motors: %d", info.n_motors_controlled);
-	DF_LOG_INFO("Number of flights: %d", swap16(info.n_flights));
-	DF_LOG_INFO("Last flight time: %d", swap16(info.last_flight_time));
-	DF_LOG_INFO("Total flight time: %d", swap32(info.total_flight_time));
+	DF_LOG_INFO("Number of flights: %d", info.n_flights);
+	DF_LOG_INFO("Last flight time: %d", info.last_flight_time);
+	DF_LOG_INFO("Total flight time: %d", info.total_flight_time);
 	DF_LOG_INFO("Last Error: %d\n", info.last_error);
 
 	if (result < 0) {
@@ -116,14 +117,14 @@ int BebopBus::start()
 
   //result = _bebop_bus_init();
 
-	if (result != 0) {
+	if (result < 0) {
 		DF_LOG_ERR("error: Bebop bus initialization failed, thread not started");
 		goto exit;
 	}
 
 	result = DevObj::start();
 
-	if (result != 0) {
+	if (result < 0) {
 		DF_LOG_ERR("DevObj start failed");
 		return result;
 	}
@@ -150,7 +151,17 @@ int BebopBus::_get_info(struct bebop_bus_info *info)
 {
 	memset(info, 0, sizeof(bebop_bus_info));
 
-	return _readReg(BEBOP_REG_GET_INFO, (uint8_t *)info, sizeof(bebop_bus_info));
+	int ret = _readReg(BEBOP_REG_GET_INFO, (uint8_t *)info, sizeof(bebop_bus_info));
+	if (ret != 0) {
+	  return -1;
+	}
+
+  // correct endians
+	info->n_flights = swap16(info->n_flights);
+	info->last_flight_time = swap16(info->last_flight_time);
+	info->total_flight_time = swap32(info->total_flight_time);
+
+	return 0;
 }
 
 int BebopBus::_get_observation_data(struct bebop_bus_observation *obs)
