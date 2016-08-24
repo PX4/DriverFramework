@@ -94,32 +94,25 @@ int BebopBus::start()
 	struct bebop_bus_info info;
 	result = _get_info(&info);
 
-  // TODO make some checks and remove prints
-	DF_LOG_INFO("Software Version: %d.%d", info.version_major, info.version_minor);
-	DF_LOG_INFO("Software Type: %d", info.type);
-	DF_LOG_INFO("Number of controlled motors: %d", info.n_motors_controlled);
-	DF_LOG_INFO("Number of flights: %d", info.n_flights);
-	DF_LOG_INFO("Last flight time: %d", info.last_flight_time);
-	DF_LOG_INFO("Total flight time: %d", info.total_flight_time);
-	DF_LOG_INFO("Last Error: %d\n", info.last_error);
+	// TODO make some sanity checks
+	//DF_LOG_INFO("Software Version: %d.%d", info.version_major, info.version_minor);
+	//DF_LOG_INFO("Software Type: %d", info.type);
+	//DF_LOG_INFO("Number of controlled motors: %d", info.n_motors_controlled);
+	//DF_LOG_INFO("Number of flights: %d", info.n_flights);
+	//DF_LOG_INFO("Last flight time: %d", info.last_flight_time);
+	//DF_LOG_INFO("Total flight time: %d", info.total_flight_time);
+	//DF_LOG_INFO("Last Error: %d\n", info.last_error);
 
 	if (result < 0) {
 		DF_LOG_ERR("Unable to communicate with the sensor");
-		return -1;
+		return result;
 	}
 
 	result = _clear_errors();
-	if (result < 0)
-	{
-		DF_LOG_ERR("Unable to clear errors");
-		return -1;
-	}
-
-  //result = _bebop_bus_init();
 
 	if (result < 0) {
-		DF_LOG_ERR("error: Bebop bus initialization failed, thread not started");
-		goto exit;
+		DF_LOG_ERR("Unable to clear errors");
+		return result;
 	}
 
 	result = DevObj::start();
@@ -129,22 +122,35 @@ int BebopBus::start()
 		return result;
 	}
 
-exit:
-	return result;
+	return 0;
 }
-	
+
 uint8_t BebopBus::_checksum(uint8_t initial, uint8_t *data, uint16_t packet_size)
 {
-  uint8_t checksum = initial;
-  for(size_t i = 0; i < packet_size; i++) {
-       checksum = checksum ^ data[i];
-  }
-  return checksum;
+	uint8_t checksum = initial;
+
+	for (size_t i = 0; i < packet_size; i++) {
+		checksum = checksum ^ data[i];
+	}
+
+	return checksum;
 }
 
 uint16_t BebopBus::_scale_to_rpm(float scale)
 {
-  return scale * (BEBOP_BLDC_RPM_MAX - BEBOP_BLDC_RPM_MIN) + BEBOP_BLDC_RPM_MIN;
+	float checked_scale = scale;
+
+	if (checked_scale < 0.0f) {
+		DF_LOG_ERR("BLDC scale out of range: %f < 0.0", static_cast<double>(checked_scale));
+		checked_scale = 0.0f;
+	}
+
+	if (checked_scale > 1.0f) {
+		DF_LOG_ERR("BLDC scale out of range: %f > 1.0", static_cast<double>(checked_scale));
+		checked_scale = 1.0f;
+	}
+
+	return scale * (BEBOP_BLDC_RPM_MAX - BEBOP_BLDC_RPM_MIN) + BEBOP_BLDC_RPM_MIN;
 }
 
 int BebopBus::_get_info(struct bebop_bus_info *info)
@@ -152,11 +158,13 @@ int BebopBus::_get_info(struct bebop_bus_info *info)
 	memset(info, 0, sizeof(bebop_bus_info));
 
 	int ret = _readReg(BEBOP_REG_GET_INFO, (uint8_t *)info, sizeof(bebop_bus_info));
+
 	if (ret != 0) {
-	  return -1;
+		DF_LOG_ERR("Unable to get information data");
+		return -1;
 	}
 
-  // correct endians
+	// correct endians
 	info->n_flights = swap16(info->n_flights);
 	info->last_flight_time = swap16(info->last_flight_time);
 	info->total_flight_time = swap32(info->total_flight_time);
@@ -169,49 +177,53 @@ int BebopBus::_get_observation_data(struct bebop_bus_observation *obs)
 	memset(obs, 0, sizeof(bebop_bus_observation));
 
 	int ret = _readReg(BEBOP_REG_GET_OBS, (uint8_t *)obs, sizeof(bebop_bus_observation));
-	if (ret != 0)
-	{
-    DF_LOG_ERR("Unable to get obervation data");
-    return -1;
+
+	if (ret != 0) {
+		DF_LOG_ERR("Unable to get obervation data");
+		return -1;
 	}
 
-	if (_checksum(0, (uint8_t*) obs, sizeof(bebop_bus_observation) - 1) != obs->checksum)
-  {
-    DF_LOG_ERR("Incorrect checksum: %u %u", obs->checksum, _checksum(0, (uint8_t*) obs, sizeof(bebop_bus_observation) - 1));
-    return -1;
-  }
+	uint8_t checksum_received = _checksum(0, (uint8_t *) obs, sizeof(bebop_bus_observation) - 1);
 
-  // Endian conversion and remove saturation bit
-  obs->rpm_front_left = swap16(obs->rpm_front_left) & ~(1<<15);
-  obs->rpm_front_right = swap16(obs->rpm_front_right) & ~(1<<15);
-  obs->rpm_back_right = swap16(obs->rpm_back_right) & ~(1<<15);
-  obs->rpm_back_left = swap16(obs->rpm_back_left) & ~(1<<15);
-  obs->battery_voltage_mv = swap16(obs->battery_voltage_mv);
+	if (checksum_received != obs->checksum) {
+		DF_LOG_ERR("Incorrect checksum: Sent %u - Received %u", obs->checksum, checksum_received);
+		return -1;
+	}
 
-  return 0;
+	// Endian conversion and remove saturation bit
+	obs->rpm_front_left = swap16(obs->rpm_front_left) & ~(1 << 15);
+	obs->rpm_front_right = swap16(obs->rpm_front_right) & ~(1 << 15);
+	obs->rpm_back_right = swap16(obs->rpm_back_right) & ~(1 << 15);
+	obs->rpm_back_left = swap16(obs->rpm_back_left) & ~(1 << 15);
+	obs->battery_voltage_mv = swap16(obs->battery_voltage_mv);
+
+	return 0;
 }
 
 int BebopBus::_start_motors()
 {
 
-	uint8_t bits = BEBOP_BLDC_LRLR;;
+	// Select rotation direction
+	uint8_t bits = BEBOP_BLDC_RLRL;;
 
 	if (_writeReg(BEBOP_REG_START_BLDC, &bits, 1) != 0) {
 		DF_LOG_ERR("Unable to start BLDCs");
 		return -1;
 	}
-  return 0;
+
+	return 0;
 }
-	
+
 int BebopBus::_stop_motors()
 {
 	if (_writeReg(BEBOP_REG_STOP_BLDC, nullptr, 0) != 0) {
 		DF_LOG_ERR("Unable to stop BLDCs");
 		return -1;
 	}
-  return 0;
+
+	return 0;
 }
-	
+
 int BebopBus::_clear_errors()
 {
 
@@ -219,7 +231,8 @@ int BebopBus::_clear_errors()
 		DF_LOG_ERR("Unable to clear errors");
 		return -1;
 	}
-  return 0;
+
+	return 0;
 }
 
 int BebopBus::_play_sound(BebopBusSound sound)
@@ -230,7 +243,8 @@ int BebopBus::_play_sound(BebopBusSound sound)
 		DF_LOG_ERR("Unable to play sound");
 		return -1;
 	}
-  return 0;
+
+	return 0;
 }
 
 int BebopBus::_toggle_gpio(BebopBusGPIO mode)
@@ -241,14 +255,16 @@ int BebopBus::_toggle_gpio(BebopBusGPIO mode)
 		DF_LOG_ERR("Unable to toggle gpio");
 		return -1;
 	}
-  return 0;
+
+	return 0;
 }
 
-int BebopBus::_set_esc_speed(float speeds[4])
+int BebopBus::_set_esc_speed(const float speeds[4])
 {
-  struct bebop_bus_esc_speeds data;
+	struct bebop_bus_esc_speeds data;
 
 	memset(&data, 0, sizeof(data));
+	// Correct endians and scale to MIN-MAX rpm
 	data.rpm_front_left = swap16(_scale_to_rpm(speeds[0]));
 	data.rpm_front_right = swap16(_scale_to_rpm(speeds[1]));
 	data.rpm_back_right = swap16(_scale_to_rpm(speeds[2]));
@@ -256,13 +272,14 @@ int BebopBus::_set_esc_speed(float speeds[4])
 
 	data.enable_security = 0x00;
 
-	data.checksum = _checksum(BEBOP_REG_SET_ESC_SPEED, (uint8_t*) &data, sizeof(data) - 1);
+	data.checksum = _checksum(BEBOP_REG_SET_ESC_SPEED, (uint8_t *) &data, sizeof(data) - 1);
 
-	if (_writeReg(BEBOP_REG_SET_ESC_SPEED, (uint8_t*) &data, sizeof(data)) - 1 != 0) {
+	if (_writeReg(BEBOP_REG_SET_ESC_SPEED, (uint8_t *) &data, sizeof(data)) != 0) {
 		DF_LOG_ERR("Unable to set ESC speed");
 		return -1;
 	}
-  return 0;
+
+	return 0;
 }
 
 int BebopBus::stop()
@@ -277,23 +294,25 @@ int BebopBus::stop()
 	return 0;
 }
 
-void BebopBus::_update()
-{
-	// TODO Add implementation
-}
-
 void BebopBus::_measure()
 {
-	// TODO Add implementation
+	// Read the observation status from the Bebop
+	struct bebop_bus_observation data;
+
+	if (_get_observation_data(&data) < 0) {
+		return;
+	}
+
+	// Publish the received data
+	struct bebop_state_data publish_data;
+
+	publish_data.battery_voltage_v = static_cast<float>(data.battery_voltage_mv) / 1000.0f;
+
+	_publish(publish_data);
 }
 
-void BebopBus::_publish(struct bebop_state_data &data)
+int BebopBus::_publish(struct bebop_state_data &data)
 {
-	// TODO Add implementation
-}
-
-int BebopBus::_bebop_bus_init()
-{
-	// TODO Add implementation
+	// TBD
 	return -1;
 }
