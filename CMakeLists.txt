@@ -133,6 +133,11 @@ if("${DF_ENABLE_TESTS}" STREQUAL "1")
 	add_subdirectory(test)
 endif()
 
+foreach(extdriver $ENV{DF_EXTERNAL_DRIVERS})
+	get_filename_component(drivername ${extdriver} NAME)
+	add_subdirectory(${extdriver} drivers/${drivername})
+endforeach()
+
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
