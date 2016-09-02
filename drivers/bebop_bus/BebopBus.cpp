@@ -318,7 +318,7 @@ int BebopBus::_publish(struct bebop_state_data &data)
 	return -1;
 }
 
-const char* BebopBus::strstatus(uint8_t status)
+const char *BebopBus::strstatus(uint8_t status)
 {
 	switch (status) {
 	case INIT:
