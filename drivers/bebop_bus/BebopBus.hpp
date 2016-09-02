@@ -162,6 +162,9 @@ protected:
 	/// Set the speeds of the BLDC (speeds are in range 0.0 - 1.0)
 	int _set_esc_speed(const float speeds[4]);
 
+  // Get a string for the given status
+  const char* strstatus(uint8_t status);
+
 private:
 
 	/// Scale the scale 0.0-1.0 to MIN-MAX rpm of the Bebop

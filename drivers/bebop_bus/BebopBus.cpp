@@ -316,3 +316,32 @@ int BebopBus::_publish(struct bebop_state_data &data)
 	// TBD
 	return -1;
 }
+
+const char* BebopBus::strstatus(uint8_t status)
+{
+	switch (status) {
+	case INIT:
+		return "Initialize";
+
+	case IDLE:
+		return "Idle";
+
+	case RAMPING:
+		return "Ramping";
+
+	case SPINNING_1:
+		return "Spinning 1";
+
+	case SPINNING_2:
+		return "Spinning 2";
+
+	case STOPPING:
+		return "Stopping";
+
+	case CRITICAL:
+		return "Critical";
+
+	default:
+		return "Unknown";
+	}
+}

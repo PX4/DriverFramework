@@ -31,7 +31,6 @@
  *
  ****************************************************************************/
 #include <unistd.h>
-#include <string.h>
 #include "DriverFramework.hpp"
 #include "BebopBus.hpp"
 
@@ -59,48 +58,7 @@ private:
 	int test_gpios();
 	int test_sound();
 	int test_motors();
-	char *strstatus(uint8_t status);
 };
-
-char *BebopBusTester::strstatus(uint8_t status)
-{
-	static char text[15];
-
-	switch (status) {
-	case INIT:
-		strcpy(text, "Initialize");
-		break;
-
-	case IDLE:
-		strcpy(text, "Idle");
-		break;
-
-	case RAMPING:
-		strcpy(text, "Ramping");
-		break;
-
-	case SPINNING_1:
-		strcpy(text, "Spinning 1");
-		break;
-
-	case SPINNING_2:
-		strcpy(text, "Spinning 2");
-		break;
-
-	case STOPPING:
-		strcpy(text, "Stopping");
-		break;
-
-	case CRITICAL:
-		strcpy(text, "Critical");
-		break;
-
-	default:
-		strcpy(text, "Unknown");
-	}
-
-	return text;
-}
 
 int BebopBusTester::print_observation()
 {
