@@ -54,17 +54,18 @@
 #define BEBOP_BUS_ERROR_LIPO_CELLS 0x0A
 #define BEBOP_BUS_ERROR_BLDC 0x0B
 
-// Rotation direction
-// front left: clockwise
-// front right: counterclockwise
-// back right: clockwise
-// back left: counterclockwise
+// Rotation direction RLRL
+//   front left: clockwise
+//   front right: counterclockwise
+//   back right: clockwise
+//   back left: counterclockwise
 #define BEBOP_BLDC_RLRL 0b00001010
-// Rotation direction
-// front left: counterclockwise
-// front right: clockwise
-// back right: counterclockwise
-// back left: clockwise
+
+// Rotation direction LRLR
+//   front left: counterclockwise
+//   front right: clockwise
+//   back right: counterclockwise
+//   back left: clockwise
 #define BEBOP_BLDC_LRLR 0b00000101 // 
 
 #define BEBOP_BLDC_RPM_MIN 3000
