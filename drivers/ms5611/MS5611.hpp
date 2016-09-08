@@ -90,17 +90,18 @@ public:
 		m_id.dev_id_s.address = MS5611_SLAVE_ADDRESS;
 	}
 
-	// @return 0 on success, -errno on failure
-	virtual int start();
+	virtual ~MS5611() = default;
 
 	// @return 0 on success, -errno on failure
-	virtual int stop();
+	int start();
+
+	// @return 0 on success, -errno on failure
+	int stop();
 
 protected:
-	virtual void _measure();
+	void _measure();
 	virtual int _publish(struct baro_sensor_data &data);
 
-private:
 	// Returns pressure in Pa as unsigned 32 bit integer
 	// Output value of “24674867” represents
 	// 24674867/100 = 246748.67 Pa = 24674867 hPa
@@ -108,7 +109,7 @@ private:
 
 	// Returns temperature in DegC, resolution is 0.01 DegC
 	// Output value of “5123” equals 51.23 DegC
-	int32_t convertTemperature(int32_t adc_temperature);
+	virtual int32_t convertTemperature(int32_t adc_temperature);
 
 	int loadCalibration();
 
