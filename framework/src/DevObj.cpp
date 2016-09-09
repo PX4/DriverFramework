@@ -322,6 +322,7 @@ void DevObj::setSampleInterval(unsigned int sample_interval_usecs)
 
 		// Reschedule if non-zero and initialized
 		if (m_sample_interval_usecs != 0) {
+			WorkMgr::releaseWorkHandle(m_work_handle);
 			WorkMgr::getWorkHandle(measure, this, m_sample_interval_usecs, m_work_handle);
 			WorkMgr::schedule(m_work_handle);
 		}
