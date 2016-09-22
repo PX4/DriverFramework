@@ -121,11 +121,24 @@ public:
 			me->m_synchronize.lock();
 
 			if (is_new_data_required) {
+#ifndef __PX4_QURT
 				me->m_synchronize.waitOnSignal(0);
+#else
+				/* When doing IMU sensor unit test, for an unknown reason,
+				 * the Signal never come in case of IMU FIFO corruption
+				 * with a very low reproduce rate.
+				 * set a timeout here to avoid such issue and indicate
+				 * timeout in the return value.
+				 * */
+				ret = me->m_synchronize.waitOnSignal(1000000); // timeout in 1s?
+#endif
 			}
 
 			out_data = me->m_sensor_data;
 			me->m_synchronize.unlock();
+#ifdef __PX4_QURT
+			if (ret != ETIMEDOUT)
+#endif
 			ret = 0;
 		}
 
