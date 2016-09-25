@@ -39,25 +39,6 @@
 #endif
 #include <time.h>
 
-#if defined(__APPLE__) && defined(__MACH__)
-#include <sys/time.h>
-#define CLOCK_REALTIME 0
-static int clock_gettime(int clk_id, struct timespec *t)
-{
-	struct timeval now;
-	int rv = gettimeofday(&now, NULL);
-
-	if (rv) {
-		return rv;
-	}
-
-	t->tv_sec = now.tv_sec;
-	t->tv_nsec = now.tv_usec * 1000;
-
-	return 0;
-}
-#endif
-
 using namespace DriverFramework;
 
 //-----------------------------------------------------------------------
@@ -66,9 +47,8 @@ using namespace DriverFramework;
 
 int DriverFramework::absoluteTime(struct timespec &ts)
 {
-#if (defined(__APPLE__) && defined(__MACH__)) || defined(__DF_NUTTX)
-#define CLOCK_REALTIME 0
-	// CLOCK_MONOTONIC not available on Mac or NuttX
+#if defined(__DF_NUTTX)
+	// CLOCK_MONOTONIC not available on NuttX
 	return clock_gettime(CLOCK_REALTIME, &ts);
 #else
 	return clock_gettime(CLOCK_MONOTONIC, &ts);
