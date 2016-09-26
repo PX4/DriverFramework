@@ -183,6 +183,10 @@ The following unit test seems to be failing
 # ./df_mag_test
 ```
 
-#### Testing on RPi
+## Hardware Support
 
-TBD
+Please refer to http://dev.px4.io for an overview of currently supported targets, as PX4 is using DriverFramework. Late 2016 this included
+
+  * Mac OS
+  * Linux (RPI / Navio 2)
+  * QuRT (Snapdragon)
