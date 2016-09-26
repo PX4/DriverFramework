@@ -231,6 +231,8 @@ DevObj *DevMgr::_getDevObjByHandle(DevHandle &h)
 
 void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 {
+	int err;
+
 	if (dev_path == nullptr) {
 		h.m_errno = EINVAL;
 		return;
@@ -251,10 +253,14 @@ void DevMgr::getHandle(const char *dev_path, DevHandle &h)
 
 			// Device is registered
 			g_lock_dev_mgr->unlock();
-			list_obj->addHandle(h);
+			err = list_obj->addHandle(h);
 			g_lock_dev_mgr->lock();
 			h.m_handle = list_obj;
-			h.m_errno = 0;
+
+			if (!err) {
+				h.m_errno = 0;
+			}
+
 			break;
 		}
 
