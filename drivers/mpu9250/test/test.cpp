@@ -83,6 +83,16 @@ int ImuTester::run(unsigned int num_read_attempts)
 		m_done = false;
 	}
 
+	/*
+	 * it would failed when calls MPU9250::start() from DevMgr::getHandle();
+	 * for example, checking MPU9250 WHOAMI register failed.
+	 * mark the error in the h.m_errno in function DevMgr::getHandle() for such case.
+	 * check the h.m_errno if any error happened.
+	 */
+	if (h.getError()) {
+		m_done = true;
+	}
+
 	while (!m_done) {
 		++m_read_attempts;
 
@@ -101,6 +111,14 @@ int ImuTester::run(unsigned int num_read_attempts)
 
 		} else {
 			DF_LOG_INFO("error: unable to read the IMU sensor device.");
+
+#ifdef __PX4_QURT
+
+			if (ret == ETIMEDOUT) {
+				m_done = true;
+			}
+
+#endif
 		}
 
 		if (m_read_counter >= num_read_attempts) {
