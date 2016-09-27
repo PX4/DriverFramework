@@ -60,7 +60,7 @@ void SyncObjTest::_doTests()
 	}
 
 #ifdef __APPLE__
-	const float error_factor = 1.5f;
+	const float error_factor = 2.0f;
 #else
 	const float error_factor = 1.2f;
 #endif
