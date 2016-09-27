@@ -161,7 +161,7 @@ int MPU9250::mpu9250_init()
 	//}
 	//usleep(1000);
 
-#if defined(__EDISON)
+#if defined(__DF_EDISON)
 	//Setting the gyro bandwidth to 250 Hz corresponds to
 	//8kHz sampling frequency which is too high for the Edison.
 	//Therefore, we use the gyro bandwith of 184 Hz which corresponds to 1kHz sampling frequency.
@@ -451,7 +451,7 @@ void MPU9250::_measure()
 	//
 	// Luckily 10 MHz seems to work fine.
 
-#if defined(__EDISON)
+#if defined(__DF_EDISON)
 	//FIFO corrupt at 10MHz.
 	_setBusFrequency(SPI_FREQUENCY_5MHZ);
 #else

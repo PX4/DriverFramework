@@ -63,7 +63,7 @@ void DFDiag::listRawDevices()
 	DF_LOG_INFO("I2C devices:");
 
 	for (unsigned int i = 0; i < 8; i++) {
-#ifdef __QURT
+#ifdef __DF_QURT
 		sprintf(devname, "/dev/iic-%u", i);
 #else
 		sprintf(devname, "/dev/i2c-%u", i);

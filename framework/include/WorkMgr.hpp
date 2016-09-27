@@ -37,7 +37,7 @@
 
 #include <stdint.h>
 #include <time.h>
-#ifdef __QURT
+#ifdef __DF_QURT
 #include <dspal_time.h>
 #endif
 #include "HandleObj.hpp"

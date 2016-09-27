@@ -178,7 +178,7 @@ namespace DriverFramework
 #define M_PI_F 3.14159265358979323846f
 #endif
 
-#if defined(__EDISON)
+#if defined(__DF_EDISON)
 // update frequency 250 Hz
 #define MPU9250_MEASURE_INTERVAL_US 4000
 #else
@@ -237,7 +237,7 @@ public:
 		_last_temp_c(0.0f),
 		_temp_initialized(false),
 		_mag_enabled(mag_enabled),
-#if defined(__EDISON)
+#if defined(__DF_EDISON)
 		_packets_per_cycle_filtered(4.0f), // The FIFO is supposed to run at 1kHz and we sample at 250Hz.
 #else
 		_packets_per_cycle_filtered(8.0f), // The FIFO is supposed to run at 8kHz and we sample at 1kHz.

@@ -310,7 +310,7 @@ void Framework::waitForShutdown()
   HRTWorkQueue
 *************************************************************************/
 
-#ifndef __PX4_QURT
+#ifndef __DF_QURT
 // pthread_setschedparam does not seem to work on QURT.
 static void show_sched_settings()
 {
@@ -350,7 +350,7 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::process_trampoline");
 
-#ifndef __PX4_QURT
+#ifndef __DF_QURT
 	int ret = setRealtimeSched();
 
 	if (ret != 0) {
@@ -389,7 +389,7 @@ int HRTWorkQueue::initialize(void)
 		return -1;
 	}
 
-#ifdef __QURT
+#ifdef __DF_QURT
 	// Try to set a stack size. This stack size is later used in _measure() calls
 	// in the sensor drivers, at least on QURT.
 	const size_t stacksize = 3072;
@@ -477,7 +477,7 @@ void HRTWorkQueue::process(void)
 		now = offsetTime();
 		DF_LOG_DEBUG("now=%" PRIu64, now);
 
-#ifdef __LINUX
+#ifdef __DF_LINUX
 		// This offset removes latency in processing the items on the queue
 		uint64_t TUNING_ADJUSTMENT = 150;
 		next -= TUNING_ADJUSTMENT;

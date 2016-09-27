@@ -40,9 +40,9 @@
 #include "OSConfig.h"
 #include "I2CDevObj.hpp"
 #include "DevIOCTL.h"
-#ifdef __QURT
+#ifdef __DF_QURT
 #include "dev_fs_lib_i2c.h"
-#elif defined(__LINUX)
+#elif defined(__DF_LINUX)
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
@@ -115,7 +115,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 		return -1;
 	}
 
-#ifdef __QURT
+#ifdef __DF_QURT
 	struct dspal_i2c_ioctl_combined_write_read ioctl_write_read;
 	uint8_t write_buffer[1];
 
@@ -135,7 +135,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 	}
 
 	return 0;
-#elif defined(__LINUX)
+#elif defined(__DF_LINUX)
 	int result = _writeReg(address, nullptr, 0);
 
 	if (result < 0) {
@@ -163,7 +163,7 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 		return -1;
 	}
 
-#if defined(__QURT) || defined(__LINUX)
+#if defined(__DF_QURT) || defined(__DF_LINUX)
 	int bytes_read = 0;
 
 	bytes_read = ::read(m_fd, out_buffer, length);
@@ -182,7 +182,7 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 {
-#if defined(__QURT) || defined(__LINUX)
+#if defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
 
 	if (m_fd == 0) {
@@ -231,7 +231,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_khz,
 			       uint32_t transfer_timeout_usec)
 {
-#ifdef __QURT
+#ifdef __DF_QURT
 	struct dspal_i2c_ioctl_slave_config slave_config;
 	memset(&slave_config, 0, sizeof(slave_config));
 	slave_config.slave_address = slave_address;
@@ -239,7 +239,7 @@ int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_kh
 	slave_config.byte_transer_timeout_in_usecs = transfer_timeout_usec;
 	return ::ioctl(m_fd, I2C_IOCTL_SLAVE, &slave_config);
 
-#elif defined(__LINUX)
+#elif defined(__DF_LINUX)
 	return ioctl(m_fd, I2C_SLAVE, slave_address);
 
 #else
