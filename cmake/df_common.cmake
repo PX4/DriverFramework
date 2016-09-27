@@ -48,7 +48,7 @@ if ("${DF_TARGET}" STREQUAL "")
 			STRING(REGEX MATCH "[0-9]+" DARWIN_VERSION ${DARWIN_VERSION})
 			# message(STATUS "DF Darwin Version: ${DARWIN_VERSION}")
 			if (DARWIN_VERSION LESS 16)
-				list(APPEND added_definitions
+				add_definitions(
 					-DCLOCK_MONOTONIC=1
 					-D__DF_APPLE_LEGACY
 					)
