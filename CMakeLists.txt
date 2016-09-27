@@ -107,21 +107,7 @@ if (NOT "${DF_TARGET}" STREQUAL "qurt")
 
 	list(APPEND df_link_libs pthread)
 
-	if (APPLE)
-		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
-			message(FATAL_ERROR "PX4 Firmware requires XCode 8 or newer on Mac OS. Version installed on this system: ${CMAKE_CXX_COMPILER_VERSION}")
-		endif()
-
-		EXEC_PROGRAM(uname ARGS -v  OUTPUT_VARIABLE DARWIN_VERSION)
-		STRING(REGEX MATCH "[0-9]+" DARWIN_VERSION ${DARWIN_VERSION})
-		message(STATUS "DARWIN_VERSION: ${DARWIN_VERSION}")
-		if (DARWIN_VERSION LESS 16)
-			list(APPEND added_definitions
-				-DCLOCK_MONOTONIC=1
-				-D__DF_APPLE_LEGACY
-				)
-		endif()
-	else()
+	if (NOT APPLE)
 		list(APPEND df_link_libs rt)
 	endif()
 else()
