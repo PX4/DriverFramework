@@ -400,7 +400,8 @@ void LSM9DS1::_measure()
 		++m_sensor_data.gyro_range_hit_counter;
 	}
 
-	// TODO XXX: Inverting z to make the coordinate system right handed, not sure why this is needed.
+	// Inverting z to make the coordinate system right handed because the
+	// sensors coordinate system is left handed according to the datasheet.
 
 	m_sensor_data.accel_m_s2_x = report.accel_x * _acc_scale;
 	m_sensor_data.accel_m_s2_y = report.accel_y * _acc_scale;
