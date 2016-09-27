@@ -91,12 +91,17 @@ int BebopBusTester::run()
 	// Register the driver
 	int ret = init();
 
+	if (ret) {
+		DF_LOG_ERR("Driver init failed");
+		return ret;
+	}
+
 	// Open the mag sensor
 	DevHandle h;
 	DevMgr::getHandle(BEBOP_BUS_DEVICE_PATH, h);
 
 	if (!h.isValid()) {
-		DF_LOG_INFO("Error: unable to obtain a valid handle for the receiver at: %s (%d)",
+		DF_LOG_ERR("Unable to obtain a valid handle for the receiver at: %s (%d)",
 			    BEBOP_BUS_DEVICE_PATH, h.getError());
 		m_done = true;
 
