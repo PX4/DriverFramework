@@ -42,20 +42,20 @@
 #include "SPIDevObj.hpp"
 #endif
 
-#if defined(__QURT)
+#if defined(__DF_QURT)
 #include "dev_fs_lib_spi.h"
 #define IMU_DEVICE_PATH "/dev/spi-1"
-#elif defined(__BEBOP)
+#elif defined(__DF_BEBOP)
 #define IMU_DEVICE_PATH "/dev/i2c-mpu6050"
-#elif defined(__RPI)
+#elif defined(__DF_RPI)
 #define IMU_DEVICE_PATH "/dev/spidev0.1"
-#elif defined(__EDISON)
+#elif defined(__DF_EDISON)
 #define IMU_DEVICE_PATH "/dev/spidev5.1"
 #else
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
-#if defined(__RPI)
+#if defined(__DF_RPI)
 #include <linux/spi/spidev.h>
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
 #define IMU_DEVICE_MAG "/dev/spidev0.2"

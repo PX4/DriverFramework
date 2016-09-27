@@ -8,8 +8,8 @@
 #
 ############################################################################
 add_definitions(
-	-D__RPI
-	-D__LINUX
+	-D__DF_RPI
+	-D__DF_LINUX
 )
 
 ######### test DriverFramework for rpi ###

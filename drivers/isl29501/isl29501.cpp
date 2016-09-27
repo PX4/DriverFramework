@@ -36,7 +36,7 @@
 #include "isl29501.hpp"
 #define _USE_MATH_DEFINES
 #include <math.h>
-#ifdef __QURT
+#ifdef __DF_QURT
 #include "dev_fs_lib_i2c.h"
 #endif
 #define REF_DIST 1.0f

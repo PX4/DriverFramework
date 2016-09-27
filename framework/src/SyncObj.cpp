@@ -53,7 +53,7 @@ SyncObj::SyncObj()
 
 // CLOCK_MONOTONIC is not available on OSX and NuttX
 // CLOCK_MONOTONIC is the default on QuRT so it need not be explicitly set
-#if !defined(__QURT) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__DF_NUTTX)
+#if !defined(__DF_QURT) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__DF_NUTTX)
 
 	// Configure the pthread_cond_timedwait to use the monotonic clock
 	// because we don't want time skews to influence the scheduling.
@@ -123,7 +123,7 @@ int initMutex(pthread_mutex_t &mutex)
 		return -1;
 	}
 
-#ifndef __PX4_NUTTX
+#ifndef __DF_NUTTX
 	rv = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
 
 	if (rv != 0) {

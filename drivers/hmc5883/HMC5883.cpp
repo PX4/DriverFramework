@@ -34,7 +34,7 @@
 #include <string.h>
 #include "DriverFramework.hpp"
 #include "HMC5883.hpp"
-#ifdef __QURT
+#ifdef __DF_QURT
 #include "dev_fs_lib_i2c.h"
 #endif
 

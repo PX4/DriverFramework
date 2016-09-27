@@ -1,3 +1,3 @@
 add_definitions(
-    -D__EDISON
+	-D__DF_EDISON
     )
