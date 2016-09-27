@@ -102,7 +102,7 @@ int BebopBusTester::run()
 
 	if (!h.isValid()) {
 		DF_LOG_ERR("Unable to obtain a valid handle for the receiver at: %s (%d)",
-			    BEBOP_BUS_DEVICE_PATH, h.getError());
+			   BEBOP_BUS_DEVICE_PATH, h.getError());
 		m_done = true;
 
 	} else {
