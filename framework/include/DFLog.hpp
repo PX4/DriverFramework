@@ -50,7 +50,7 @@ uint64_t offsetTime(void);
 
 #ifdef __QURT
 
-#include <stdarg.h>
+#include <cstdarg>
 
 extern "C" {
 
