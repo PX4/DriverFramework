@@ -59,6 +59,7 @@ enum DeviceBusType {
 	DeviceBusType_SPI     = 2,
 	DeviceBusType_UAVCAN  = 3,
 	DeviceBusType_VIRT    = 4,
+	DeviceBusType_PHYS    = 5,
 };
 
 /*
