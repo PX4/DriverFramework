@@ -39,48 +39,50 @@ set(version_patch 0)
 set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexagon")
+if ("${OS}" STREQUAL "qurt")
+	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexagon")
+endif()
 
 if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
-message("Enabling Thread Sanitizer")
+	message("Enabling Thread Sanitizer")
 
-# Used for unit testing
-set(CMAKE_C_COMPILER /usr/bin/clang)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+	# Used for unit testing
+	set(CMAKE_C_COMPILER /usr/bin/clang)
+	set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 
-# warnings
-set(warning_list
-	-Wall
-	-Werror
-	-Wextra
-	-Wno-sign-compare
-	-Wshadow
-	-Wfloat-equal
-	-Wpointer-arith
-	-Wmissing-declarations
-	-Wno-unused-parameter
-	-Werror=format-security
-	-Werror=array-bounds
-	-Wfatal-errors
-	-Werror=unused-variable
-	-Werror=reorder
-	-Werror=uninitialized
-	-Werror=init-self
-	# cxx specific
-	-Wno-missing-field-initializers
-	)
+	# warnings
+	set(warning_list
+		-Wall
+		-Werror
+		-Wextra
+		-Wno-sign-compare
+		-Wshadow
+		-Wfloat-equal
+		-Wpointer-arith
+		-Wmissing-declarations
+		-Wno-unused-parameter
+		-Werror=format-security
+		-Werror=array-bounds
+		-Wfatal-errors
+		-Werror=unused-variable
+		-Werror=reorder
+		-Werror=uninitialized
+		-Werror=init-self
+		# cxx specific
+		-Wno-missing-field-initializers
+		)
 
-string (REPLACE ";" " " _TMP_STR "${warning_list}")
-set(warning_flags ${_TMP_STR})
+	string (REPLACE ";" " " _TMP_STR "${warning_list}")
+	set(warning_flags ${_TMP_STR})
 
 
-set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 ${warning_flags} -g" CACHE STRING "DF_CXX_FLAGS")
+	set(DF_CXX_FLAGS "-fsanitize=thread -std=c++11 ${warning_flags} -g" CACHE STRING "DF_CXX_FLAGS")
 
-elseif ("$ENV{ENABLE_ASAN}" STREQUAL "1")
-message("Enabling Address Sanitizer")
+	elseif ("$ENV{ENABLE_ASAN}" STREQUAL "1")
+	message("Enabling Address Sanitizer")
 
-# Used for unit testing, works with gcc 4.8 or clang
-set(DF_CXX_FLAGS "-O1 -g -fsanitize=address -fno-omit-frame-pointer -std=c++11 ${warning_flags}" CACHE STRING "DF_CXX_FLAGS")
+	# Used for unit testing, works with gcc 4.8 or clang
+	set(DF_CXX_FLAGS "-O1 -g -fsanitize=address -fno-omit-frame-pointer -std=c++11 ${warning_flags}" CACHE STRING "DF_CXX_FLAGS")
 
 else()
 
@@ -111,6 +113,7 @@ if (NOT "${DF_TARGET}" STREQUAL "qurt")
 		list(APPEND df_link_libs rt)
 	endif()
 else()
+	include(qurt_flags)
 	include_directories(dspal/include)
 	add_subdirectory(os/qurt)
 	list(APPEND df_link_libs df_qurt_stubs)
