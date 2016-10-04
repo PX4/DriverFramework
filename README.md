@@ -1,5 +1,7 @@
 # DriverFramework
 
+[![Build Status](https://travis-ci.org/PX4/DriverFramework.svg?branch=master)](https://travis-ci.org/PX4/DriverFramework)
+
 Driver framework for POSIX based userspace drivers.
 
 ## Overview
