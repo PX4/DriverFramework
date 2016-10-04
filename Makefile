@@ -1,15 +1,17 @@
+QC_SOC_TARGET?="APQ8074"
+
 all: linux qurt rpi bebop edison
 
 define df_cmake_generate
-mkdir -p build_$(1) && cd build_$(1) && cmake .. -DOS=$(2) -DCMAKE_TOOLCHAIN_FILE=$(3) -DDF_ENABLE_TESTS=1
+mkdir -p build_$(1) && cd build_$(1) && cmake .. -DOS=$(2) -DCMAKE_TOOLCHAIN_FILE=$(3) -DDF_ENABLE_TESTS=1 $(4)
 endef
 
 rpi linux bebop edison:
-	$(call df_cmake_generate,$@,posix,cmake/toolchains/Toolchain-$@.cmake)
+	$(call df_cmake_generate,$@,posix,cmake/toolchains/Toolchain-$@.cmake,)
 	cd build_$@ && make
 
 qurt:
-	$(call df_cmake_generate,$@,$@,cmake/cmake_hexagon/toolchain/Toolchain-$@.cmake)
+	$(call df_cmake_generate,$@,$@,cmake/cmake_hexagon/toolchain/Toolchain-$@.cmake,-DQC_SOC_TARGET=${QC_SOC_TARGET})
 	cd build_$@ && make
 
 run: linux
