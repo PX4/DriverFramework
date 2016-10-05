@@ -58,6 +58,7 @@ bool WorkItems::_isValidIndex(int index)
 
 void WorkItems::WorkItem::updateStats(unsigned int cur_usec)
 {
+#if SHOW_STATS == 1
 	unsigned long delay_usec = (m_last == ~0x0UL) ? (cur_usec - m_queue_time) : (cur_usec - m_last);
 
 	if (delay_usec < m_min) {
@@ -72,7 +73,6 @@ void WorkItems::WorkItem::updateStats(unsigned int cur_usec)
 	m_count += 1;
 	m_last = cur_usec;
 
-#if SHOW_STATS == 1
 
 	if ((m_count % 100) == 99) {
 		dumpStats();
@@ -83,17 +83,21 @@ void WorkItems::WorkItem::updateStats(unsigned int cur_usec)
 
 void WorkItems::WorkItem::resetStats()
 {
+#if SHOW_STATS == 1
 	m_last = ~(unsigned long)0;
 	m_min = ~(unsigned long)0;
 	m_max = 0;
 	m_total = 0;
 	m_count = 0;
+#endif
 }
 
 void WorkItems::WorkItem::dumpStats()
 {
+#if SHOW_STATS == 1
 	DF_LOG_DEBUG("Stats for callback=%p: count=%lu, avg=%lu min=%lu max=%lu",
 		     m_callback, m_count, m_total / m_count, m_min, m_max);
+#endif
 }
 
 void WorkItems::finalize()

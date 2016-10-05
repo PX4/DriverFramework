@@ -89,7 +89,7 @@ private:
 		~WorkItem() {}
 
 		void schedule();
-		void updateStats(unsigned int cur_usec);
+		inline void updateStats(unsigned int cur_usec);
 		void resetStats();
 		void dumpStats();
 
@@ -110,12 +110,14 @@ private:
 		uint32_t	m_delay_usec;
 		//WorkHandle 	m_handle;
 
+#if SHOW_STATS == 1
 		// statistics
 		unsigned long 	m_last;
 		unsigned long 	m_min;
 		unsigned long 	m_max;
 		unsigned long 	m_total;
 		unsigned long 	m_count;
+#endif
 
 		bool		m_in_use = false;
 
