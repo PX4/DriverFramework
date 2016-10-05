@@ -43,6 +43,10 @@
 #include "SyncObj.hpp"
 #include "WorkItems.hpp"
 
+#ifdef __DF_LINUX
+#include <sys/prctl.h>
+#endif
+
 // Used for backtrace
 #ifdef DF_ENABLE_BACKTRACE
 #include <stdlib.h>
@@ -357,6 +361,10 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 		DF_LOG_ERR("WARNING: setRealtimeSched failed (not run as root?)");
 	}
 
+#endif
+
+#ifdef __DF_LINUX
+	prctl(PR_SET_NAME, "DFWorker"); //set the thread name
 #endif
 
 	DF_LOG_DEBUG("process_trampoline %d", ret);
