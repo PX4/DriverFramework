@@ -151,6 +151,7 @@ private:
 	DFUIntList		m_work_list; 	// List of active work items
 	DFManagedList<WorkItem> m_work_items;	// List of all created work items
 	SyncObj			m_lock;
+	uint32_t		m_scheduling_adjustment = 0; // dynamic adjustment to account for scheduling overhead
 };
 
 class RunStatus
