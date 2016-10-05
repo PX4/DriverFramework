@@ -257,8 +257,10 @@ void WorkItems::processExpiredWorkItems(uint64_t &next)
 void WorkItems::_processExpiredWorkItems(uint64_t &next)
 {
 	DF_LOG_DEBUG("WorkItems::processExpiredWorkItems");
-	uint64_t elapsed;
 	uint64_t now;
+	uint32_t elapsed;
+	uint32_t max_too_late_scheduled = 0;
+	bool had_work = false;
 
 	DFUIntList::Index idx = nullptr;
 	idx = m_work_list.next(idx);
@@ -294,10 +296,17 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 				item->m_queue_time += item->m_delay_usec;
 				item->m_in_use = true;
 
+				if (!had_work && elapsed - item->m_delay_usec > max_too_late_scheduled) {
+					//only take the first into account, because we don't want to include the callback
+					//execution time of the previous items
+					max_too_late_scheduled = elapsed - item->m_delay_usec;
+				}
+
 				void *tmpptr = item->m_arg;
 				WorkCallback cb = item->m_callback;
 				m_lock.unlock();
 				cb(tmpptr);
+				had_work = true;
 				m_lock.lock();
 			}
 
@@ -311,6 +320,44 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 			idx = m_work_list.next(idx);
 		}
 	}
+
+
+#if 0 //debug the scheduling adjustment
+	static int no_work_counter = 0;
+	if (had_work) {
+		static uint32_t max_late_stat = max_too_late_scheduled;
+		static uint64_t max_late_sum = 0;
+		static int counter = 0;
+		if (max_too_late_scheduled > max_late_stat) {
+			max_late_stat = max_too_late_scheduled;
+		}
+		max_late_sum += max_too_late_scheduled;
+		if (++counter == 200) {
+			DF_LOG_ERR("max late= %3i us mean late=%3i us  no work=%i, cur_adj=%i",
+					(int)max_late_stat, (int)(max_late_sum/counter), no_work_counter, m_scheduling_adjustment);
+			counter = 0;
+			max_late_stat = 0;
+			no_work_counter = 0;
+			max_late_sum = 0;
+		}
+	} else {
+		++no_work_counter;
+	}
+#endif
+
+	if (had_work) {
+		// Scheduling can have jitter, so adjust only by a fraction.
+		// The chosen factors are a tradeoff between low-latency and CPU overhead
+		m_scheduling_adjustment += max_too_late_scheduled / 5;
+		if (m_scheduling_adjustment > 1e4) { //max to 10ms
+			m_scheduling_adjustment = 1e4;
+		}
+	} else {
+		// We woke up for nothing. Reduce the adjustment
+		m_scheduling_adjustment = m_scheduling_adjustment * 90 / 100;
+	}
+
+	next -= m_scheduling_adjustment;
 
 	DF_LOG_DEBUG("Setting next=%" PRIu64, next);
 }

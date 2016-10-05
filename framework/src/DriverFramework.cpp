@@ -471,7 +471,6 @@ void HRTWorkQueue::process(void)
 {
 	DF_LOG_DEBUG("HRTWorkQueue::process");
 	uint64_t next;
-	timespec ts;
 	uint64_t now;
 
 	while (g_run_status && g_run_status->check()) {
@@ -485,19 +484,8 @@ void HRTWorkQueue::process(void)
 		now = offsetTime();
 		DF_LOG_DEBUG("now=%" PRIu64, now);
 
-#ifdef __DF_LINUX
-		// This offset removes latency in processing the items on the queue
-		uint64_t TUNING_ADJUSTMENT = 150;
-		next -= TUNING_ADJUSTMENT;
-#endif
-
-		uint64_t wait_time_usec = (next > now) ? next - now : 0;
-
-		// Wait granularity is 200us
-		// TODO: this magic number needs checking
-		if (wait_time_usec > 200) {
-			// pthread_cond_timedwait uses absolute time
-			ts = offsetTimeToAbsoluteTime(next);
+		if (next > now) {
+			uint64_t wait_time_usec = next - now;
 
 			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", wait_time_usec);
 			// Wait until next expiry or until a new item is rescheduled
