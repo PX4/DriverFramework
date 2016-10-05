@@ -142,7 +142,53 @@ int WorkItems::_schedule(int index)
 
 			} else {
 				DF_LOG_DEBUG("WorkMgr::schedule - do schedule");
-				item->m_queue_time = offsetTime();
+
+				// try to align scheduling time with already existing items. This reduces scheduling overhead
+				// as we have to wake up less often. For that to work well (in the sense of low runtime jitter),
+				// each callback must have a roughly constant execution time.
+				// We search another item with the following priorities:
+				// 1. item has equal sampling rate
+				// 2. item has a sampling rate that is a multiple of wi's sampling rate
+				// 3. wi has a sampling rate that is a multiple of item's sampling rate
+				// 4. just pick an arbitrary wi
+				DFPointerList::Index idx = nullptr;
+				idx = m_work_items.next(idx);
+				uint64_t queue_time_equal = 0, queue_time_multiple = 0, queue_time_divider = 0, queue_time_other = 0;
+
+				while (idx != nullptr) {
+					WorkItem *wi = reinterpret_cast<WorkItem *>(m_work_items.get(idx));
+
+					if (wi->m_in_use) {
+						if (wi->m_delay_usec == item->m_delay_usec) {
+							queue_time_equal = wi->m_queue_time;
+						} else if (item->m_delay_usec % wi->m_delay_usec == 0) {
+							queue_time_multiple = wi->m_queue_time;
+						} else if (wi->m_delay_usec % item->m_delay_usec == 0) {
+							queue_time_divider = wi->m_queue_time;
+						} else {
+							queue_time_other = wi->m_queue_time;
+						}
+					}
+					idx = m_work_items.next(idx);
+				}
+
+				uint64_t now = offsetTime();
+				if (queue_time_equal) {
+					item->m_queue_time = queue_time_equal;
+				} else if (queue_time_multiple) {
+					item->m_queue_time = queue_time_multiple;
+				} else if (queue_time_divider) {
+					item->m_queue_time = queue_time_divider;
+				} else if (queue_time_other) {
+					item->m_queue_time = queue_time_other;
+				} else {
+					item->m_queue_time = now;
+				}
+				// make sure next scheduling is in the future
+				while (item->m_queue_time + item->m_delay_usec < now) {
+					item->m_queue_time += item->m_delay_usec;
+				}
+
 				item->m_in_use = true;
 				m_work_list.pushBack(index);
 			}
