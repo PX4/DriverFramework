@@ -161,29 +161,39 @@ int WorkItems::_schedule(int index)
 					if (wi->m_in_use) {
 						if (wi->m_delay_usec == item->m_delay_usec) {
 							queue_time_equal = wi->m_queue_time;
+
 						} else if (item->m_delay_usec % wi->m_delay_usec == 0) {
 							queue_time_multiple = wi->m_queue_time;
+
 						} else if (wi->m_delay_usec % item->m_delay_usec == 0) {
 							queue_time_divider = wi->m_queue_time;
+
 						} else {
 							queue_time_other = wi->m_queue_time;
 						}
 					}
+
 					idx = m_work_items.next(idx);
 				}
 
 				uint64_t now = offsetTime();
+
 				if (queue_time_equal) {
 					item->m_queue_time = queue_time_equal;
+
 				} else if (queue_time_multiple) {
 					item->m_queue_time = queue_time_multiple;
+
 				} else if (queue_time_divider) {
 					item->m_queue_time = queue_time_divider;
+
 				} else if (queue_time_other) {
 					item->m_queue_time = queue_time_other;
+
 				} else {
 					item->m_queue_time = now;
 				}
+
 				// make sure next scheduling is in the future
 				while (item->m_queue_time + item->m_delay_usec < now) {
 					item->m_queue_time += item->m_delay_usec;
@@ -324,34 +334,42 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 
 #if 0 //debug the scheduling adjustment
 	static int no_work_counter = 0;
+
 	if (had_work) {
 		static uint32_t max_late_stat = max_too_late_scheduled;
 		static uint64_t max_late_sum = 0;
 		static int counter = 0;
+
 		if (max_too_late_scheduled > max_late_stat) {
 			max_late_stat = max_too_late_scheduled;
 		}
+
 		max_late_sum += max_too_late_scheduled;
+
 		if (++counter == 200) {
 			DF_LOG_ERR("max late= %3i us mean late=%3i us  no work=%i, cur_adj=%i",
-					(int)max_late_stat, (int)(max_late_sum/counter), no_work_counter, m_scheduling_adjustment);
+				   (int)max_late_stat, (int)(max_late_sum / counter), no_work_counter, m_scheduling_adjustment);
 			counter = 0;
 			max_late_stat = 0;
 			no_work_counter = 0;
 			max_late_sum = 0;
 		}
+
 	} else {
 		++no_work_counter;
 	}
+
 #endif
 
 	if (had_work) {
 		// Scheduling can have jitter, so adjust only by a fraction.
 		// The chosen factors are a tradeoff between low-latency and CPU overhead
 		m_scheduling_adjustment += max_too_late_scheduled / 5;
+
 		if (m_scheduling_adjustment > 1e4) { //max to 10ms
 			m_scheduling_adjustment = 1e4;
 		}
+
 	} else {
 		// We woke up for nothing. Reduce the adjustment
 		m_scheduling_adjustment = m_scheduling_adjustment * 90 / 100;
