@@ -361,6 +361,10 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 
 #endif
 
+// disable scheduling adjustment on embedded platforms (tests showed worse performance on RPI with this,
+// but other platforms should be tested as well)
+#if defined(__DF_LINUX) && !defined(__DF_RPI) && !defined(__DF_BEBOP) && !defined(__DF_EDISON)
+
 	if (had_work) {
 		// Scheduling can have jitter, so adjust only by a fraction.
 		// The chosen factors are a tradeoff between low-latency and CPU overhead
@@ -376,6 +380,7 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 	}
 
 	next -= m_scheduling_adjustment;
+#endif
 
 	DF_LOG_DEBUG("Setting next=%" PRIu64, next);
 }
