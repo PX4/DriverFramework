@@ -31,10 +31,34 @@
  *
  ****************************************************************************/
 
+#include <string.h>
+
 #include "BebopRangeFinder.hpp"
 #include "DriverFramework.hpp"
 
+#define SPEED_OF_SOUND 343.2f
+#define ADC_SAMPLING_FREQ 160000.0f
+
+#define BEBOP_RANGEFINDER_REQUEST_THRESH 2048
+
 using namespace DriverFramework;
+
+BebopRangeFinder::BebopRangeFinder(const char *device_path) :
+  SPIDevObj("BebopRangeFinder", device_path, BEBOP_RANGEFINDER_CLASS_PATH, BEBOP_RANGEFINDER_MEASURE_INTERVAL_US),
+  m_sonar_pin(0, 2, BEBOP_RANGEFINDER_BUFFER_LEN), m_requested_data(false),
+  m_send_length(0), m_maximum_signal_value(0)
+{
+  m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_BEBOP_RANGEFINDER;
+  m_id.dev_id_s.address = DRV_DF_DEVTYPE_BEBOP_RANGEFINDER;
+
+  // Generate the pulse send via SPI and emitter
+  memset(m_pulse, 0x00, BEBOP_RANGEFINDER_PULSE_LEN);
+  memset(m_pulse, 0xF0, 16);
+
+  // Initialize the buffers with zero
+  memset(m_read_buffer, 0, BEBOP_RANGEFINDER_BUFFER_LEN*2);
+  memset(m_filtered_buffer, 0, BEBOP_RANGEFINDER_BUFFER_LEN*2);
+}
 
 int BebopRangeFinder::start()
 {
@@ -43,12 +67,11 @@ int BebopRangeFinder::start()
 	int result = SPIDevObj::start();
 
 	if (result != 0) {
-		DF_LOG_ERR("DevObj start failed");
 		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
 		return result;
 	}
 
-	result = bebop_rangefinder_init();
+	result = _bebop_rangefinder_init();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: Bebop rangefinder sensor initialization failed, sensor read thread not started");
@@ -58,16 +81,15 @@ int BebopRangeFinder::start()
 	result = DevObj::start();
 
 	if (result != 0) {
-		DF_LOG_ERR("DevObj start failed");
+		DF_LOG_ERR("DevObj start failed (%d)", result);
 		return result;
 	}
+	return 0;
 }
 
 int BebopRangeFinder::stop()
 {
-	int result = -1;
-
-	result = DevObj::stop();
+	int result = DevObj::stop();
 
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
@@ -77,7 +99,7 @@ int BebopRangeFinder::stop()
 	return 0;
 }
 
-int BebopRangeFinder::bebop_rangefinder_init()
+int BebopRangeFinder::_bebop_rangefinder_init()
 {
 	/* Zero the struct */
 	m_synchronize.lock();
@@ -89,12 +111,154 @@ int BebopRangeFinder::bebop_rangefinder_init()
 
 	if (result != 0) {
 		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
+		return -1;
 	}
-
+  return 0;
 }
+
+int BebopRangeFinder::_request()
+{
+  if (m_sonar_pin.enable() >= 0)
+  {
+    m_requested_data = true;
+    return _writeReg(0x0, m_pulse, BEBOP_RANGEFINDER_PULSE_LEN);
+  }
+  return -1;
+}
+	
+int BebopRangeFinder::_collect()
+{
+    int result = m_sonar_pin.read(m_read_buffer, BEBOP_RANGEFINDER_BUFFER_LEN);
+
+    m_sonar_pin.disable();
+    m_requested_data = false;
+    return result;
+}
+
+uint16_t BebopRangeFinder::_find_end_of_send()
+{
+  bool peak = false;
+  uint16_t start_index = 0;
+  uint16_t end_index = 0;
+  for (unsigned int i = 0; i < BEBOP_RANGEFINDER_BUFFER_LEN; ++i)
+  {
+    if (!peak && m_read_buffer[i] > BEBOP_RANGEFINDER_REQUEST_THRESH)
+    {
+      start_index = i;
+      peak = true;
+    }
+    else if (peak && m_read_buffer[i] < BEBOP_RANGEFINDER_REQUEST_THRESH)
+    {
+      end_index = i;
+      break;
+    }
+  }
+  m_send_length = end_index - start_index;
+  return end_index;
+}
+
+void BebopRangeFinder::_filter_read_buffer()
+{
+
+  memset(m_filtered_buffer, 0, BEBOP_RANGEFINDER_BUFFER_LEN*2);
+  m_maximum_signal_value = 0;
+
+  uint16_t eos = _find_end_of_send(); // get index where the send pulse ends (end-of-send = eos)
+
+  // Perform a rolling mean filter with size 3
+  // Raw values on the Bebop's iio have the format (16 >> 4)
+  
+  // Set the values at the left edge
+  m_filtered_buffer[0] = m_read_buffer[eos] >> 4;
+  m_filtered_buffer[1] = m_read_buffer[eos + 1] >> 4;
+  
+  uint16_t running_sum = m_filtered_buffer[0] + m_filtered_buffer[1] 
+                           + (m_read_buffer[eos + 2] >> 4);
+
+  // Mean filter the read signal, but exclude the pulse recorded during send
+  for (unsigned int i = 2; i < BEBOP_RANGEFINDER_BUFFER_LEN - eos - 1; ++i)
+  {
+    m_filtered_buffer[i] = running_sum / 3;
+    running_sum = (running_sum + (m_read_buffer[eos+i+1] >> 4) 
+                              - (m_read_buffer[eos+i-2] >> 4));
+
+    // Capture the maximum value in the signal
+    if (m_filtered_buffer[i] > m_maximum_signal_value)
+    {
+      m_maximum_signal_value = m_filtered_buffer[i];
+    }
+  }
+}
+
+uint16_t BebopRangeFinder::_get_echo_index()
+{
+	  _filter_read_buffer();
+
+    // threshold is 4/5 * m_maximum_signal_value
+    uint16_t threshold = m_maximum_signal_value - (m_maximum_signal_value / 5);
+    bool peak = false;
+    bool max_peak_found = false;
+    uint16_t start_index = 0;
+
+    // search the filtered signal for the rising edge of the peak, which also 
+    // includes the maximum value (strongest reflection)
+	  for (unsigned int i = 0; i < BEBOP_RANGEFINDER_BUFFER_LEN; ++i)
+	  {
+	    if (!peak && m_filtered_buffer[i] > (threshold))
+	    {
+	      peak = true;
+	      start_index = i;
+	    }
+	    else if (peak && m_filtered_buffer[i] < threshold)
+	    {
+	      peak = false;
+	      if (max_peak_found)
+	      {
+	        // return the index of the rising edge and add the length of that we cut 
+	        // at the beginning of the signal to exclude the send peak
+	        return start_index + m_send_length;
+	      }
+	    }
+	    else if (peak && m_filtered_buffer[i] >= m_maximum_signal_value)
+      {
+        max_peak_found = true;
+      }
+	  }
+    return BEBOP_RANGEFINDER_BUFFER_LEN;
+}
+
 void BebopRangeFinder::_measure()
 {
-  // TODO Add implementation
+  // Make sure, we requested some data
+  if (m_requested_data)
+  {
+    if (_collect() >= 0)
+    {
+
+      // Get the index of the reflected pulse and compute the distance
+      float index = static_cast<float>(_get_echo_index());
+      float height_m = (index * SPEED_OF_SOUND) / (2.0f * ADC_SAMPLING_FREQ);
+
+      // TODO only publish reasonable measurements (in range, ...)
+      
+      // Publish the measurements
+      m_synchronize.lock();
+
+      m_sensor_data.height_m = height_m;
+
+      _publish(m_sensor_data);
+
+      m_synchronize.signal();
+      m_synchronize.unlock();
+    }
+
+  }
+
+  // Request a new measurement
+  if (_request() < 0)
+  {
+    DF_LOG_ERR("Request failed");
+  }
 }
 
 int BebopRangeFinder::_publish(struct bebop_range &data)
