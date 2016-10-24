@@ -86,6 +86,7 @@ public:
 
 protected:
 	int _readReg(uint8_t address, uint8_t &val);
+	int _writeReg(uint8_t address, uint8_t *in_buffer, uint16_t length);
 	int _writeReg(uint8_t address, uint8_t val);
 	int _modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits);
 

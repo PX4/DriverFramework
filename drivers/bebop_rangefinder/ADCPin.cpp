@@ -31,15 +31,6 @@
  *
  ****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <poll.h>
-
-#include <time.h>
 #include <errno.h>
 #include <string.h>
 
@@ -56,7 +47,7 @@ ADCPin::ADCPin(uint16_t device_id, uint16_t channel, uint16_t buffer_length)
   snprintf(m_dev_path, sizeof(m_dev_path), "/sys/bus/iio/devices/iio:device%d", m_dev_id);
   DF_LOG_INFO("Initialize device: %s", m_dev_path);
 
-  // Before we setup the device, disable the pin
+  // Before we setup the device, disable the pin (prevent resource busy error)
   disable();
 
   // Enable the channel
@@ -66,12 +57,11 @@ ADCPin::ADCPin(uint16_t device_id, uint16_t channel, uint16_t buffer_length)
 
   // Set buffer length and disable it initially
   write("/buffer/length", buffer_length);
-  disable();
 }
   
 ADCPin::~ADCPin()
 {
-  // Make sure you disable device at the end
+  // Make sure we leave the device disabled
   disable();
 }
 
@@ -132,29 +122,17 @@ int ADCPin::read(uint16_t *buffer, uint16_t len)
     return -1;
   }
 
-  struct timespec tt;
-  if (clock_gettime(CLOCK_MONOTONIC, &tt) < 0)
-  {
-    DF_LOG_INFO("clock error");
-  }
-  long start_time = tt.tv_nsec;
   int result = ::fread(buffer, 2, len, pFile);
   if (result < 0)
   {
     DF_LOG_ERR("Error reading: %s", strerror(errno));
   }
-  if (clock_gettime(CLOCK_MONOTONIC, &tt) < 0)
-  {
-    DF_LOG_INFO("clock error 2");
-  }
-  DF_LOG_INFO("Read took %f", double(tt.tv_nsec - start_time)*1e-6);
 
-  int res = fclose(pFile);
-  if (res != 0)
+  result = fclose(pFile);
+  if (result < 0)
   {
     DF_LOG_ERR("Unable to close file: %s", strerror(errno));
   }
 
-
-  return 0;
+  return result;
 }

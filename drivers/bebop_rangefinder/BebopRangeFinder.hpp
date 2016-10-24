@@ -35,6 +35,7 @@
 #pragma once
 
 #include "SPIDevObj.hpp"
+#include "ADCPin.hpp"
 
 namespace DriverFramework
 {
@@ -45,29 +46,30 @@ struct bebop_range {
 
 #define DRV_DF_DEVTYPE_BEBOP_RANGEFINDER 0x99
 
-// update frequency 20 Hz
-#define BEBOP_RANGEFINDER_MEASURE_INTERVAL_US 50000
+// update frequency 16.66 Hz (reading 8192 samples at 160 kHz takes 51200 us)
+#define BEBOP_RANGEFINDER_MEASURE_INTERVAL_US 60000
 #define BEBOP_RANGEFINDER_CLASS_PATH "/dev/ranger"
-#define BEBOP_RANGEFINDER_DEVICE_PATH "/dev/ranger" // TODO set correct path
+#define BEBOP_RANGEFINDER_DEVICE_PATH "/dev/spidev1.0"
+
+#define BEBOP_RANGEFINDER_MIN_DISTANCE_M 0.5 // TODO verify these values
+#define BEBOP_RANGEFINDER_MAX_DISTANCE_M 8.5
+
+#define BEBOP_RANGEFINDER_BUFFER_LEN 8192
+
+#define BEBOP_RANGEFINDER_PULSE_LEN 32
 
 class BebopRangeFinder : public SPIDevObj
 {
 public:
-  BebopRangeFinder(const char *device_path) :
-		SPIDevObj("BebopRangeFinder", device_path, BEBOP_RANGEFINDER_CLASS_PATH, BEBOP_RANGEFINDER_MEASURE_INTERVAL_US),
-		m_measure_phase(0)
-  {
-		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_BEBOP_RANGEFINDER;
-		m_id.dev_id_s.address = DRV_DF_DEVTYPE_BEBOP_RANGEFINDER;
-	}
+  BebopRangeFinder(const char *device_path);
 
   ~BebopRangeFinder() = default;
 
 	// @return 0 on success, -errno on failure
-	virtual int start();
+	int start();
 
 	// @return 0 on success, -errno on failure
-	virtual int stop();
+	int stop();
 
 protected:
 	void _measure();
@@ -80,9 +82,23 @@ protected:
 private:
 
 	// @returns 0 on success, -errno on failure
-  int bebop_rangefinder_init();
+  int _bebop_rangefinder_init();
 
-	int m_measure_phase;
+	int _request();
+	int _collect();
+
+  uint16_t _find_end_of_send();
+	void _filter_read_buffer();
+  uint16_t _get_echo_index();
+
+	ADCPin m_sonar_pin;
+	bool m_requested_data;
+
+	uint8_t m_pulse[BEBOP_RANGEFINDER_PULSE_LEN];
+	uint16_t m_read_buffer[BEBOP_RANGEFINDER_BUFFER_LEN];
+	uint16_t m_filtered_buffer[BEBOP_RANGEFINDER_BUFFER_LEN];
+	uint16_t m_send_length;
+	uint16_t m_maximum_signal_value;
 
 };
 } // namespace DriverFramework

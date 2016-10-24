@@ -50,16 +50,31 @@ public:
 	int run(void);
 
 private:
+	int _publish(struct bebop_range &data);
 
 	int		m_pass;
 	bool	m_done = false;
 
 };
 
+int BebopRangeFinderTester::_publish(struct bebop_range &data)
+{
+  DF_LOG_INFO("Height measure: %fm", data.height_m);
+}
+
 int BebopRangeFinderTester::run()
 {
-	return -1;
+  
+  init();
+  start();
+
+  // Get measurements for one second
+	usleep(1000000);
+
+	stop();
+	return BebopRangeFinderTester::TEST_PASS;
 }
+
 int do_test()
 {
 	int ret = Framework::initialize();
