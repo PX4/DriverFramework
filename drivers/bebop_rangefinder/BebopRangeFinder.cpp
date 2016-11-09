@@ -39,7 +39,7 @@
 #define SPEED_OF_SOUND 343.2f
 #define ADC_SAMPLING_FREQ 160000.0f
 
-#define BEBOP_RANGEFINDER_REQUEST_THRESH 2048
+#define BEBOP_RANGEFINDER_REQUEST_THRESH 3276
 
 using namespace DriverFramework;
 
@@ -142,12 +142,13 @@ uint16_t BebopRangeFinder::_find_end_of_send()
   uint16_t end_index = 0;
   for (unsigned int i = 0; i < BEBOP_RANGEFINDER_BUFFER_LEN; ++i)
   {
-    if (!peak && m_read_buffer[i] > BEBOP_RANGEFINDER_REQUEST_THRESH)
+    uint16_t value = m_read_buffer[i] >> 4;
+    if (!peak && value > BEBOP_RANGEFINDER_REQUEST_THRESH)
     {
       start_index = i;
       peak = true;
     }
-    else if (peak && m_read_buffer[i] < BEBOP_RANGEFINDER_REQUEST_THRESH)
+    else if (peak && value < BEBOP_RANGEFINDER_REQUEST_THRESH)
     {
       end_index = i;
       break;
