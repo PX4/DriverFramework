@@ -412,7 +412,7 @@ void LSM9DS1::_measure()
 	m_sensor_data.gyro_rad_s_y = float(report.gyro_y) * _gyro_scale;
 	m_sensor_data.gyro_rad_s_z = -float(report.gyro_z) * _gyro_scale;
 
-	m_sensor_data.mag_ga_x = float(report.mag_x) * _mag_scale;
+	m_sensor_data.mag_ga_x = -float(report.mag_x) * _mag_scale;
 	m_sensor_data.mag_ga_y = float(report.mag_y) * _mag_scale;
 	m_sensor_data.mag_ga_z = -float(report.mag_z) * _mag_scale;
 
