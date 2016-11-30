@@ -43,7 +43,7 @@ QURT_BUNDLE(APP_NAME df_mag_test
 		df_driver_framework
 		df_hmc5883
 		${df_link_libs}
-	APPS_COMPILER arm-linux-gnueabihf-gcc
+	APPS_COMPILER ${ARM-LINUX-GNUEABIHF-GCC}
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :

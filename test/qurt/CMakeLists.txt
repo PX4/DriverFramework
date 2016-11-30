@@ -44,7 +44,7 @@ QURT_BUNDLE(APP_NAME df_testapp
 		df_framework_test
 		${df_link_libs}
 	DSP_INCS ${CMAKE_SOURCE_DIR}/framework/include
-	APPS_COMPILER arm-linux-gnueabihf-gcc
+	APPS_COMPILER ${ARM-LINUX-GNUEABIHF-GCC}
 	)
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
