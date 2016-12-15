@@ -240,8 +240,11 @@ int MPU6050::mpu6050_init()
 
 	usleep(1000);
 
-	// Set sample frequency
-	bits = BITS_DLPF_CFG_260HZ;
+	// Set cutoff frequency of onboard digital lowpass filter
+	// ATTENTION: Make sure that you read the comment about the sample rate
+	// divider below when changing the cutoff frequency. Depening on the value
+	// you set the sample rate of the sensor will change!
+	bits = BITS_DLPF_CFG_44HZ;
 	result = _writeReg(MPUREG_CONFIG, &bits, 1);
 
 	if (result < 0) {
@@ -256,7 +259,7 @@ int MPU6050::mpu6050_init()
 	//
 	// If DLPF is disabled (0 or 7) Gyroscope_Output_Rate = 8 kHz
 	// otherwise Gyroscope_Output_Rate = 1kHz
-	bits = 7;
+	bits = 0;
 	result = _writeReg(MPUREG_SMPLRT_DIV, &bits, 1);
 
 	if (result < 0) {
