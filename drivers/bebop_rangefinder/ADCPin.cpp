@@ -40,99 +40,96 @@
 using namespace DriverFramework;
 
 ADCPin::ADCPin(uint16_t device_id, uint16_t channel, uint16_t buffer_length)
-  : m_dev_id(device_id), m_dev_path{0}, m_channel(channel), m_buffer_length(buffer_length), m_buffer_enabled(false)
+	: m_dev_id(device_id), m_dev_path{0}, m_channel(channel), m_buffer_length(buffer_length), m_buffer_enabled(false)
 {
 
-  // Prepare the device path
-  snprintf(m_dev_path, sizeof(m_dev_path), "/sys/bus/iio/devices/iio:device%d", m_dev_id);
-  DF_LOG_INFO("Initialize device: %s", m_dev_path);
+	// Prepare the device path
+	snprintf(m_dev_path, sizeof(m_dev_path), "/sys/bus/iio/devices/iio:device%d", m_dev_id);
+	DF_LOG_INFO("Initialize device: %s", m_dev_path);
 
-  // Before we setup the device, disable the pin (prevent resource busy error)
-  disable();
+	// Before we setup the device, disable the pin (prevent resource busy error)
+	disable();
 
-  // Enable the channel
-  char path[35] = {0};
-  snprintf(path, sizeof(path), "scan_elements/in_voltage%d_en", channel);
-  write(path, 1);
+	// Enable the channel
+	char path[35] = {0};
+	snprintf(path, sizeof(path), "scan_elements/in_voltage%d_en", channel);
+	write(path, 1);
 
-  // Set buffer length and disable it initially
-  write("/buffer/length", buffer_length);
+	// Set buffer length and disable it initially
+	write("/buffer/length", buffer_length);
 }
-  
+
 ADCPin::~ADCPin()
 {
-  // Make sure we leave the device disabled
-  disable();
+	// Make sure we leave the device disabled
+	disable();
 }
 
 int ADCPin::write(const char *path, int value)
 {
-  char filename[sizeof(m_dev_path) + 20] = {0};
-  snprintf(filename, sizeof(filename), "%s/%s", m_dev_path, path);
+	char filename[sizeof(m_dev_path) + 20] = {0};
+	snprintf(filename, sizeof(filename), "%s/%s", m_dev_path, path);
 
-  FILE *pFile = fopen(filename, "w");
+	FILE *pFile = fopen(filename, "w");
 
-  if (pFile == NULL)
-  {
-    DF_LOG_ERR("Unable to open file: %s", filename);
-    return -1;
-  }
+	if (pFile == NULL) {
+		DF_LOG_ERR("Unable to open file: %s", filename);
+		return -1;
+	}
 
-  fprintf(pFile, "%d", value);
+	fprintf(pFile, "%d", value);
 
-  if (fclose(pFile) != 0)
-  {
-    DF_LOG_ERR("Unable to close file: %s", filename);
-    return -1;
-  }
-  return 0;
+	if (fclose(pFile) != 0) {
+		DF_LOG_ERR("Unable to close file: %s", filename);
+		return -1;
+	}
+
+	return 0;
 }
 
 int ADCPin::enable()
 {
-  m_buffer_enabled = true;
-  return write("buffer/enable", 1);
+	m_buffer_enabled = true;
+	return write("buffer/enable", 1);
 }
-  
+
 int ADCPin::disable()
 {
-  m_buffer_enabled = false;
-  return write("buffer/enable", 0);
+	m_buffer_enabled = false;
+	return write("buffer/enable", 0);
 }
 
 int ADCPin::read(uint16_t *buffer, uint16_t len)
 {
 
-  if (!m_buffer_enabled)
-  {
-    DF_LOG_ERR("Read not possible, buffer was not enabled");
-    return -1;
-  }
+	if (!m_buffer_enabled) {
+		DF_LOG_ERR("Read not possible, buffer was not enabled");
+		return -1;
+	}
 
-  FILE *pFile;
-  char path[20];
-  snprintf(path, sizeof(path), "/dev/iio:device%d", m_dev_id);
+	FILE *pFile;
+	char path[20];
+	snprintf(path, sizeof(path), "/dev/iio:device%d", m_dev_id);
 
-  pFile = fopen(path, "r");
+	pFile = fopen(path, "r");
 
-  if (pFile == NULL)
-  {
-    DF_LOG_ERR("%s", strerror(errno));
-    DF_LOG_ERR("Unable to open file: %s", path);
-    return -1;
-  }
+	if (pFile == NULL) {
+		DF_LOG_ERR("%s", strerror(errno));
+		DF_LOG_ERR("Unable to open file: %s", path);
+		return -1;
+	}
 
-  int result = ::fread(buffer, 2, len, pFile);
-  if (result < 0)
-  {
-    DF_LOG_ERR("Error reading: %s", strerror(errno));
-  }
+	int result = ::fread(buffer, 2, len, pFile);
 
-  result = fclose(pFile);
-  if (result < 0)
-  {
-    DF_LOG_ERR("Unable to close file: %s", strerror(errno));
-  }
+	if (result < 0) {
+		DF_LOG_ERR("Error reading: %s", strerror(errno));
+	}
 
-  return result;
+	result = fclose(pFile);
+
+	if (result < 0) {
+		DF_LOG_ERR("Unable to close file: %s", strerror(errno));
+	}
+
+	return result;
 }

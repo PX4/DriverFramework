@@ -41,7 +41,7 @@ namespace DriverFramework
 {
 
 struct bebop_range {
-  float height_m;
+	float height_m;
 } __attribute__((packed));
 
 #define DRV_DF_DEVTYPE_BEBOP_RANGEFINDER 0x99
@@ -51,7 +51,7 @@ struct bebop_range {
 #define BEBOP_RANGEFINDER_CLASS_PATH "/dev/ranger"
 #define BEBOP_RANGEFINDER_DEVICE_PATH "/dev/spidev1.0"
 
-#define BEBOP_RANGEFINDER_MIN_DISTANCE_M 0.5 // TODO verify these values
+#define BEBOP_RANGEFINDER_MIN_DISTANCE_M 0.5
 #define BEBOP_RANGEFINDER_MAX_DISTANCE_M 8.5
 
 #define BEBOP_RANGEFINDER_BUFFER_LEN 8192
@@ -61,9 +61,9 @@ struct bebop_range {
 class BebopRangeFinder : public SPIDevObj
 {
 public:
-  BebopRangeFinder(const char *device_path);
+	BebopRangeFinder(const char *device_path);
 
-  ~BebopRangeFinder() = default;
+	~BebopRangeFinder() = default;
 
 	// @return 0 on success, -errno on failure
 	int start();
@@ -82,14 +82,14 @@ protected:
 private:
 
 	// @returns 0 on success, -errno on failure
-  int _bebop_rangefinder_init();
+	int _bebop_rangefinder_init();
 
 	int _request();
 	int _collect();
 
-  uint16_t _find_end_of_send();
-	void _filter_read_buffer();
-  uint16_t _get_echo_index();
+	int16_t _find_end_of_send();
+	int16_t _filter_read_buffer();
+	int16_t _get_echo_index();
 
 	ADCPin m_sonar_pin;
 	bool m_requested_data;
