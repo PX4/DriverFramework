@@ -59,16 +59,16 @@ private:
 
 int BebopRangeFinderTester::_publish(struct bebop_range &data)
 {
-  DF_LOG_INFO("Height measure: %fm", data.height_m);
+	DF_LOG_INFO("Height measure: %fm", data.height_m);
 }
 
 int BebopRangeFinderTester::run()
 {
-  
-  init();
-  start();
 
-  // Get measurements for one second
+	init();
+	start();
+
+	// Get measurements for one second
 	usleep(1000000);
 
 	stop();

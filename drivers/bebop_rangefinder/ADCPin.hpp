@@ -41,21 +41,21 @@ namespace DriverFramework
 class ADCPin
 {
 public:
-  ADCPin(uint16_t device_id, uint16_t channel, uint16_t buffer_length);
-  ~ADCPin();
+	ADCPin(uint16_t device_id, uint16_t channel, uint16_t buffer_length);
+	~ADCPin();
 
-  int enable();
-  int disable();
+	int enable();
+	int disable();
 
-  int read(uint16_t *buffer, uint16_t len);
+	int read(uint16_t *buffer, uint16_t len);
 
 private:
-  int write(const char *path, int value);
+	int write(const char *path, int value);
 
-  uint16_t m_dev_id;
-  char m_dev_path[50];
-  uint16_t m_channel;
-  uint16_t m_buffer_length;
-  bool m_buffer_enabled;
+	uint16_t m_dev_id;
+	char m_dev_path[50];
+	uint16_t m_channel;
+	uint16_t m_buffer_length;
+	bool m_buffer_enabled;
 };
 } // namespace DriverFramework

@@ -206,7 +206,7 @@ int SPIDevObj::writeRegVerified(DevHandle &h, uint8_t address, uint8_t val)
 
 int SPIDevObj::_writeReg(uint8_t address, uint8_t val)
 {
-  return _writeReg(address, &val, 1);
+	return _writeReg(address, &val, 1);
 }
 
 int SPIDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, uint16_t length)
@@ -222,9 +222,8 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, uint16_t length)
 
 	write_buffer[0] = address | DIR_WRITE; // write mode
 
-	if (in_buffer)
-	{
-	  memcpy(&write_buffer[1], in_buffer, length);
+	if (in_buffer) {
+		memcpy(&write_buffer[1], in_buffer, length);
 	}
 
 	spi_transfer.rx_buf = (unsigned long)read_buffer;
@@ -248,9 +247,8 @@ int SPIDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, uint16_t length)
 
 	write_buffer[0] = address | DIR_WRITE;
 
-	if (in_buffer)
-	{
-	  memcpy(&write_buffer[1], in_buffer, length);
+	if (in_buffer) {
+		memcpy(&write_buffer[1], in_buffer, length);
 	}
 
 	/* Save the address of the register to read from in the write buffer for the combined write. */
@@ -445,7 +443,7 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
 	// in-reality 32Mbs is the upper limit of the SPI clock on RPI.
 	switch (freq_hz) {
-  case SPI_FREQUENCY_320KHZ :
+	case SPI_FREQUENCY_320KHZ :
 		DF_LOG_DEBUG("SPI speed set to 320KHz.");
 		break;
 
