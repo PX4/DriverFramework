@@ -57,7 +57,7 @@ using namespace DriverFramework;
 
 // convertPressure must be called after convertTemperature
 // as convertTemperature sets m_sensor_data.t_fine
-int64_t BMP280::convertPressure(int64_t adc_P)
+uint32_t BMP280::convertPressure(int64_t adc_P)
 {
 	int64_t var1, var2, p;
 	var1 = ((int64_t) m_sensor_data.t_fine) - 128000;
@@ -78,7 +78,7 @@ int64_t BMP280::convertPressure(int64_t adc_P)
 	var2 = (((int64_t) m_sensor_calibration.dig_P8) * p) >> 19;
 	p = ((p + var1 + var2) >> 8) + (((int64_t) m_sensor_calibration.dig_P7) << 4);
 
-	return p;
+	return (uint32_t)p;
 }
 
 int32_t BMP280::convertTemperature(int32_t adc_T)

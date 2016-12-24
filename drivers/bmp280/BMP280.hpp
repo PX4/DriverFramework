@@ -96,7 +96,7 @@ private:
 	// Q24.8 format (24 integer bits and 8 fractional bits)
 	// Output value of “24674867” represents
 	// 24674867/256 = 96386.2 Pa = 963.862 hPa
-	int64_t convertPressure(int64_t adc_pressure);
+	uint32_t convertPressure(int64_t adc_pressure);
 
 	// Returns temperature in DegC, resolution is 0.01 DegC
 	// Output value of “5123” equals 51.23 DegC
