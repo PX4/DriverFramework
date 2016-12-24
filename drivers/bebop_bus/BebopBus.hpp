@@ -54,6 +54,7 @@ namespace DriverFramework
 /// package with published data
 struct bebop_state_data {
 	float battery_voltage_v;
+	uint16_t rpm[4];
 } __attribute__((packed));
 
 /// read observations from the Bebop
@@ -96,9 +97,11 @@ class BebopBus : public DriverFramework::I2CDevObj
 {
 public:
 	BebopBus(const char *device_path)
-		: I2CDevObj("BebopBus", device_path, BEBOP_BUS_CLASS_PATH, BEBOP_BUS_UPDATE_INTERVAL_US)
+		: I2CDevObj("BebopBus", device_path, BEBOP_BUS_CLASS_PATH, BEBOP_BUS_UPDATE_INTERVAL_US),
+		  _speed_setpoint{}
 	{
 	}
+
 
 	virtual int start();
 
@@ -165,7 +168,12 @@ protected:
 	// Get a string for the given status
 	const char *strstatus(uint8_t status);
 
+	// Get desired motor speeds in rpm.
+	void _get_esc_speed_setpoint(uint16_t speeds_rpm[4]);
+
 private:
+
+	uint16_t _speed_setpoint[4];
 
 	/// Scale the scale 0.0-1.0 to MIN-MAX rpm of the Bebop
 	uint16_t _scale_to_rpm(float scale);

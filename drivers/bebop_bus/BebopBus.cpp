@@ -271,6 +271,11 @@ int BebopBus::_set_esc_speed(const float speeds[4])
 	data.rpm_back_right = swap16(_scale_to_rpm(speeds[2]));
 	data.rpm_back_left = swap16(_scale_to_rpm(speeds[3]));
 
+	_speed_setpoint[0] = data.rpm_front_left;
+	_speed_setpoint[1] = data.rpm_front_right;
+	_speed_setpoint[2] = data.rpm_back_right;
+	_speed_setpoint[3] = data.rpm_back_left;
+
 	data.enable_security = 0x00;
 
 	data.checksum = _checksum(BEBOP_REG_SET_ESC_SPEED, (uint8_t *) &data, sizeof(data) - 1);
@@ -306,6 +311,11 @@ void BebopBus::_measure()
 
 	// Publish the received data
 	struct bebop_state_data publish_data;
+
+	publish_data.rpm[0] = static_cast<uint16_t>(data.rpm_front_right);
+	publish_data.rpm[1] = static_cast<uint16_t>(data.rpm_front_left);
+	publish_data.rpm[2] = static_cast<uint16_t>(data.rpm_back_right);
+	publish_data.rpm[3] = static_cast<uint16_t>(data.rpm_back_left);
 
 	publish_data.battery_voltage_v = static_cast<float>(data.battery_voltage_mv) / 1000.0f;
 
@@ -345,4 +355,9 @@ const char *BebopBus::strstatus(uint8_t status)
 	default:
 		return "Unknown";
 	}
+}
+
+void BebopBus::_get_esc_speed_setpoint(uint16_t speeds_rpm[4])
+{
+	memcpy(speeds_rpm, _speed_setpoint, sizeof(_speed_setpoint));
 }
