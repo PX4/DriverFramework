@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include <string.h>
+#include <math.h>
 
 #include "DriverFramework.hpp"
 #include "BebopBus.hpp"
@@ -151,7 +152,23 @@ uint16_t BebopBus::_scale_to_rpm(float scale)
 		checked_scale = 1.0f;
 	}
 
-	return scale * (BEBOP_BLDC_RPM_MAX - BEBOP_BLDC_RPM_MIN) + BEBOP_BLDC_RPM_MIN;
+	// we assume that scale is a dimensionless desired thrust force in the range [0,1]
+	// remap scale to the range [scale_min, 1], where scale_min represents the minimum
+	// dimensionless force that we can output (because lowest motor speed is constrained).
+	// Then calculate back from dimensionless force to desired motor speed
+	// Force_norm = w^2 / w_max^2
+	// Force_norm: dimensionless force in range [scale_min, 1]
+	// w: desired motor speed in rpm
+	// w_max: maximum motor speed
+	float rpm_min_sq = (float)(BEBOP_BLDC_RPM_MIN * BEBOP_BLDC_RPM_MIN);
+	float rmp_max_sq = (float)(BEBOP_BLDC_RPM_MAX * BEBOP_BLDC_RPM_MAX);
+	float scale_min = rpm_min_sq / rmp_max_sq;
+
+	// remap dimensionless force to range [scale_min, 1]
+	scale = scale_min + (1.0f - scale_min) * scale;
+
+	// use Force_norm = w^2 / w_max^2 and solve for w
+	return sqrtf(scale * rmp_max_sq);
 }
 
 int BebopBus::_get_info(struct bebop_bus_info *info)
