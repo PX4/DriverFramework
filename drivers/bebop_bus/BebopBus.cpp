@@ -288,10 +288,10 @@ int BebopBus::_set_esc_speed(const float speeds[4])
 	data.rpm_back_right = swap16(_scale_to_rpm(speeds[2]));
 	data.rpm_back_left = swap16(_scale_to_rpm(speeds[3]));
 
-	_speed_setpoint[0] = data.rpm_front_left;
-	_speed_setpoint[1] = data.rpm_front_right;
-	_speed_setpoint[2] = data.rpm_back_right;
-	_speed_setpoint[3] = data.rpm_back_left;
+	_speed_setpoint[0] = swap16(data.rpm_front_left);
+	_speed_setpoint[1] = swap16(data.rpm_front_right);
+	_speed_setpoint[2] = swap16(data.rpm_back_right);
+	_speed_setpoint[3] = swap16(data.rpm_back_left);
 
 	data.enable_security = 0x00;
 
