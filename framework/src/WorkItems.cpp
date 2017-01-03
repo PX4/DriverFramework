@@ -361,8 +361,8 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 
 #endif
 
-// disable scheduling adjustment on embedded platforms (tests showed worse performance on RPI with this,
-// but other platforms should be tested as well)
+// disable scheduling adjustment on embedded platforms (tests showed worse performance on RPI & QuRT with this)
+// see test results: https://github.com/PX4/DriverFramework/pull/155
 #if defined(__DF_LINUX) && !defined(__DF_RPI) && !defined(__DF_BEBOP) && !defined(__DF_EDISON)
 
 	if (had_work) {
