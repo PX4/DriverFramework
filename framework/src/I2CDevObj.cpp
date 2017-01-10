@@ -154,6 +154,35 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 #endif
 }
 
+int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, int length)
+{
+
+	if (m_fd == 0) {
+		DF_LOG_ERR("error: i2c bus is not yet opened");
+		return -1;
+	}
+
+#ifdef __DF_QURT
+	return -1;
+#elif defined(__DF_LINUX)
+	int result = _writeReg16(address, nullptr, 0);
+
+	if (result < 0) {
+		return result;
+	}
+
+	result = _simple_read((uint8_t *)out_buffer, length);
+
+	if (result < 0) {
+		return result;
+	}
+
+	return 0;
+#else
+	return -1;
+#endif
+}
+
 // read from a register without ioctl
 int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 {
@@ -212,6 +241,55 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 		int bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
 
 		if (bytes_written != length + 1) {
+			DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
+				   bytes_written);
+
+		} else {
+			return 0;
+		}
+
+	} while (retry_count++ < _retries);
+
+	return -1;
+#else
+
+	return -1;
+#endif
+}
+
+int I2CDevObj::_writeReg16(uint16_t address, uint16_t *in_buffer, int length)
+{
+#if defined(__DF_QURT) || defined(__DF_LINUX)
+	unsigned retry_count = 0;
+
+	if (m_fd == 0) {
+		DF_LOG_ERR("error: i2c bus is not yet opened");
+		return -1;
+	}
+
+	uint8_t write_buffer[length + 2];
+
+	if (in_buffer) {
+		memcpy(&write_buffer[2], in_buffer, length);
+	}
+
+	/* Save the address of the register to read from in the write buffer for the combined write. */
+	write_buffer[0] = (uint8_t)(address & 0xFF);
+	write_buffer[1] = (uint8_t)(address >> 8);
+
+	/*
+	 * Verify that the length of the caller's buffer does not exceed the local stack
+	 * buffer with one additional byte for the register ID.
+	 */
+	if (length + 2 > MAX_LEN_TRANSMIT_BUFFER_IN_BYTES) {
+		DF_LOG_ERR("error: caller's buffer exceeds max len");
+		return -1;
+	}
+
+	do {
+		int bytes_written = ::write(m_fd, (char *) write_buffer, length + 2);
+
+		if (bytes_written != length + 2) {
 			DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
 				   bytes_written);
 
