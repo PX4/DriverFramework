@@ -34,7 +34,11 @@
 #include "MT9V117.hpp"
 #include "MT9V117_patches.hpp"
 
+#if !(defined(__APPLE__) && defined(__MACH__))
+// v4l2-subdev.h is not available on OSX
 #include <linux/v4l2-subdev.h>
+#endif
+
 #include <string.h>
 
 #define MT9V117_BUS_FREQUENCY_IN_KHZ 400
@@ -431,6 +435,8 @@ int MT9V117::configure_sensor()
 
 int MT9V117::set_format()
 {
+#if !(defined(__APPLE__) && defined(__MACH__))
+// v4l2-subdev.h is not available on OSX
 	struct v4l2_subdev_format fmt;
 	int ret, fd;
 
@@ -458,4 +464,7 @@ int MT9V117::set_format()
 	}
 
 	return 0;
+#else
+	return -1;
+#endif
 }
