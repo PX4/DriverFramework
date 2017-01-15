@@ -363,7 +363,7 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 
 	instance().process();
 
-	return NULL;
+	return nullptr;
 }
 
 HRTWorkQueue &HRTWorkQueue::instance(void)
@@ -402,7 +402,7 @@ int HRTWorkQueue::initialize(void)
 #endif
 
 	// Create high priority worker thread
-	if (pthread_create(&g_tid, &attr, process_trampoline, NULL)) {
+	if (pthread_create(&g_tid, &attr, process_trampoline, nullptr)) {
 		return -3;
 	}
 
@@ -418,7 +418,7 @@ void HRTWorkQueue::finalize(void)
 	shutdown();
 
 	// Wait for work queue thread to exit
-	pthread_join(g_tid, NULL);
+	pthread_join(g_tid, nullptr);
 }
 
 void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
