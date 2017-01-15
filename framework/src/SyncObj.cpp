@@ -103,7 +103,7 @@ int SyncObj::waitOnSignal(unsigned long timeout_us)
 
 // signal must be called inside a lock()
 // of this object
-void SyncObj::signal(void)
+void SyncObj::signal()
 {
 	DEBUG("signal %p\n", &m_new_data_cond);
 	pthread_cond_signal(&m_new_data_cond);

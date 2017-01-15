@@ -64,23 +64,23 @@ namespace DriverFramework
 class HRTWorkQueue : public DisableCopy
 {
 public:
-	static HRTWorkQueue &instance(void);
+	static HRTWorkQueue &instance();
 
-	int initialize(void);
-	void finalize(void);
+	int initialize();
+	void finalize();
 
 	void scheduleWorkItem(WorkHandle &wh);
 
-	void shutdown(void);
+	void shutdown();
 	void enableStats(bool enable);
 
 	static void *process_trampoline(void *);
 
 private:
-	HRTWorkQueue(void) {}
-	~HRTWorkQueue(void) {}
+	HRTWorkQueue() {}
+	~HRTWorkQueue() {}
 
-	void process(void);
+	void process();
 
 	bool 	m_enable_stats = false;
 
@@ -159,7 +159,7 @@ static uint64_t getStartTime()
 //-----------------------------------------------------------------------
 
 // NOTE: DO NOT USE DF_LOG_XXX here as it will cause a recursive loop
-uint64_t DriverFramework::offsetTime(void)
+uint64_t DriverFramework::offsetTime()
 {
 	struct timespec ts = {};
 
@@ -374,7 +374,7 @@ void *HRTWorkQueue::process_trampoline(void *arg)
 	return nullptr;
 }
 
-HRTWorkQueue &HRTWorkQueue::instance(void)
+HRTWorkQueue &HRTWorkQueue::instance()
 {
 	static HRTWorkQueue *instance = nullptr;
 
@@ -385,7 +385,7 @@ HRTWorkQueue &HRTWorkQueue::instance(void)
 	return *instance;
 }
 
-int HRTWorkQueue::initialize(void)
+int HRTWorkQueue::initialize()
 {
 	DF_LOG_DEBUG("HRTWorkQueue::initialize");
 
@@ -419,7 +419,7 @@ int HRTWorkQueue::initialize(void)
 	return 0;
 }
 
-void HRTWorkQueue::finalize(void)
+void HRTWorkQueue::finalize()
 {
 	DF_LOG_DEBUG("HRTWorkQueue::finalize");
 
@@ -454,7 +454,7 @@ void HRTWorkQueue::scheduleWorkItem(WorkHandle &wh)
 
 }
 
-void HRTWorkQueue::shutdown(void)
+void HRTWorkQueue::shutdown()
 {
 	DF_LOG_DEBUG("HRTWorkQueue::shutdown");
 
@@ -467,7 +467,7 @@ void HRTWorkQueue::shutdown(void)
 	m_reschedule.unlock();
 }
 
-void HRTWorkQueue::process(void)
+void HRTWorkQueue::process()
 {
 	DF_LOG_DEBUG("HRTWorkQueue::process");
 	uint64_t next;
