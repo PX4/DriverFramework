@@ -75,6 +75,8 @@ public:
 protected:
 	int _readReg(uint8_t address, uint8_t *out_buffer, int length);
 	int _writeReg(uint8_t address, uint8_t *out_buffer, int length);
+	int _readReg16(uint16_t address, uint16_t *out_buffer, int length);
+	int _writeReg16(uint16_t address, uint16_t *out_buffer, int length);
 
 	// read from a register without ioctl
 	int _simple_read(uint8_t *out_buffer, int length);
