@@ -73,7 +73,7 @@ public:
 
 static DFPointerList g_wait_list;
 
-int DevMgr::initialize(void)
+int DevMgr::initialize()
 {
 	g_lock_dev_mgr = new SyncObj();
 
@@ -85,7 +85,7 @@ int DevMgr::initialize(void)
 	return 0;
 }
 
-void DevMgr::finalize(void)
+void DevMgr::finalize()
 {
 	g_lock_dev_mgr->lock();
 	m_initialized = false;

@@ -126,7 +126,7 @@ DevObj::~DevObj()
 	}
 }
 
-int DevObj::init(void)
+int DevObj::init()
 {
 	DF_LOG_DEBUG("DevObj::init %s", m_name);
 
@@ -148,7 +148,7 @@ int DevObj::init(void)
 	return 0;
 }
 
-int DevObj::start(void)
+int DevObj::start()
 {
 	DF_LOG_DEBUG("DevObj::start %s", m_name);
 
@@ -184,7 +184,7 @@ int DevObj::start(void)
 	return -m_work_handle.getError();
 }
 
-int DevObj::stop(void)
+int DevObj::stop()
 {
 	DF_LOG_DEBUG("DevObj::stop %s", m_name);
 
