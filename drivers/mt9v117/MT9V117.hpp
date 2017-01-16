@@ -49,8 +49,9 @@
 #define DRV_DF_DEVTYPE_MT9V117 0x91
 #define MT9V117_SLAVE_ADDRESS 0x5D
 
-// The interface is only used to set parameter. A periodic callback is not needed
-#define MT9V117_MEASURE_INTERVAL_US 10000000
+// The interface is only used to set parameter. A periodic callback is not needed but an interval of
+// zero is not possible
+#define MT9V117_MEASURE_INTERVAL_US 100000000
 
 namespace DriverFramework
 {
@@ -86,7 +87,10 @@ private:
 	int write16(uint16_t add, uint16_t val);
 	int write32(uint16_t add, uint32_t val);
 	int read16(uint16_t add, uint16_t *val);
+
+	// Helper functions
 	uint16_t to_reg(uint16_t address, uint16_t offset) {return (0x8000 | (address << 10) | offset);}
+	static uint32_t swap32(uint32_t val) { return (val >> 24) | ((val >> 8) & 0x0000FF00) | ((val << 8) & 0x00FF0000) | (val << 24); }
 
 	PWM _sensor_clock;
 	GPIO _sensor_reset;

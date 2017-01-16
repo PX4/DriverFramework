@@ -65,7 +65,7 @@ int PWM::disable()
 
 int PWM::set_frequency(uint32_t freq_hz)
 {
-	return set_period(1000000000 / freq_hz);
+	return set_period(1000000000 / freq_hz); // Hz to ns conversion
 }
 
 int PWM::set_period(uint32_t period_ns)
