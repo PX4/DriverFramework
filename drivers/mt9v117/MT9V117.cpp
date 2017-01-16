@@ -104,7 +104,7 @@ int MT9V117::start()
 	_sensor_reset.set_value(false);
 	_sensor_reset.set_value(true);
 
-	usleep(10500); // 10.5ms
+	usleep(15000); // 15ms
 
 	result = I2CDevObj::start();
 
@@ -181,22 +181,22 @@ int MT9V117::mt9v117_init()
 	}
 
 	if (soft_reset() != 0) {
-		DF_LOG_ERR("MT9V117 image sensor soft reset");
+		DF_LOG_ERR("MT9V117 image sensor soft reset failed");
 		return -1;
 	}
 
 	if (write_patch() != 0) {
-		DF_LOG_ERR("MT9V117 image sensor soft reset");
+		DF_LOG_ERR("MT9V117 image sensor write patch failed");
 		return -1;
 	}
 
 	if (write_settings() != 0) {
-		DF_LOG_ERR("MT9V117 image sensor write settings");
+		DF_LOG_ERR("MT9V117 image sensor write settings failed");
 		return -1;
 	}
 
 	if (configure_sensor() != 0) {
-		DF_LOG_ERR("MT9V117 image sensor configuration");
+		DF_LOG_ERR("MT9V117 image sensor configuration failed");
 		return -1;
 	}
 
@@ -251,21 +251,14 @@ int inline MT9V117::write8(uint16_t add, uint8_t val)
 
 int inline MT9V117::write16(uint16_t add, uint16_t val)
 {
-	uint8_t buf[2];
-	buf[0] = (uint8_t)(val >> 8);
-	buf[1] = (uint8_t)(val & 0xFF);
-	return _writeReg16(swap16(add), (uint16_t *)&buf[0], 2);
+	uint16_t buf = swap16(val);
+	return _writeReg16(swap16(add), &buf, 2);
 }
 
-int MT9V117::write32(uint16_t add, uint32_t val)
+int inline MT9V117::write32(uint16_t add, uint32_t val)
 {
-	uint8_t buf[4];
-	buf[0] = (uint8_t)(val >> 24);
-	buf[1] = (uint8_t)((val >> 16) & 0xFF);
-	buf[2] = (uint8_t)((val >> 8) & 0xFF);
-	buf[3] = (uint8_t)(val & 0xFF);
-
-	return _writeReg16(swap16(add), (uint16_t *)&buf[0], 4);
+	uint32_t buf = swap32(val);
+	return _writeReg16(swap16(add), (uint16_t *)&buf, 4);
 }
 
 int MT9V117::read16(uint16_t add, uint16_t *val)
@@ -281,6 +274,7 @@ int MT9V117::read16(uint16_t add, uint16_t *val)
 int MT9V117::write_patch()
 {
 	int result = 0;
+
 	// Errata item 2
 	result += write16(0x301a, 0x10d0);
 	result += write16(0x31c0, 0x1404);
@@ -295,22 +289,23 @@ int MT9V117::write_patch()
 	result += write16(to_reg(MT9V117_VAR_CAM_CTRL, 0x0078), 0x00a0);
 	result += write16(to_reg(MT9V117_VAR_CAM_CTRL, 0x0076), 0x0140);
 
-	/* Errata item 8 */
+	// Errata item 8
 	result += write16(to_reg(MT9V117_VAR_LOW_LIGHT, 0x0004), 0x00fc);
 	result += write16(to_reg(MT9V117_VAR_LOW_LIGHT, 0x0038), 0x007f);
 	result += write16(to_reg(MT9V117_VAR_LOW_LIGHT, 0x003a), 0x007f);
 	result += write16(to_reg(MT9V117_VAR_LOW_LIGHT, 0x003c), 0x007f);
 	result += write16(to_reg(MT9V117_VAR_LOW_LIGHT, 0x0004), 0x00f4);
 
-	// Patch 0403; Critical; Sensor optimization
+	// Patch 0403:
+	// Critical sensor optimization
 	result += write16(MT9V117_REG_ACCESS_CTL, 0x0001);
 	result += write16(MT9V117_PHYSICAL_ADDRESS_ACCESS, 0x7000);
 
 	// write patch lines
-	for (unsigned int i = 0; i < MT9V117_PATCH_LINE_NUM; i++) {
-		int bytes_written = ::write(m_fd, (char *) MT9V117_patch_lines[i].data, MT9V117_patch_lines[i].size);
+	for (size_t i = 0; i < MT9V117_PATCH_LINE_NUM; ++i) {
+		int bytes_written = ::write(m_fd, (uint8_t *) MT9V117_patch[i].data, MT9V117_patch[i].size);
 
-		if (bytes_written != MT9V117_patch_lines[i].size) {
+		if (bytes_written != MT9V117_patch[i].size) {
 			DF_LOG_INFO("Patch line transmission failed");
 			result += -1;
 		}
@@ -331,17 +326,17 @@ int MT9V117::write_patch()
 int MT9V117::check_config_change(uint16_t new_state)
 {
 	uint16_t retries = 10;
-	uint16_t status = 0;
+	uint16_t state = 0;
 	uint16_t i = 0;
 
 	for (i = 0; i < retries; ++i) {
-		int result = read16(MT9V117_REG_CMD, &status);
+		int result = read16(MT9V117_REG_CMD, &state);
 
-		if (result == 0 && (status & new_state) == 0) {
+		if (result == 0 && (state & new_state) == 0) {
 			break;
 		}
 
-		usleep(10000); // 10ms
+		usleep(15000); // 15ms
 	}
 
 	if (i >= retries) {
@@ -349,7 +344,7 @@ int MT9V117::check_config_change(uint16_t new_state)
 		return -1;
 	}
 
-	if ((status & HOST_CMD_OK) == 0) {
+	if ((state & HOST_CMD_OK) == 0) {
 		DF_LOG_ERR("Config change failed");
 		return -2;
 	}
@@ -380,6 +375,7 @@ int MT9V117::write_settings()
 int MT9V117::configure_sensor()
 {
 	int result = 0;
+
 	result += write16(to_reg(MT9V117_VAR_CAM_CTRL, 0x02), 16);  // X address startoffset
 	result += write16(to_reg(MT9V117_VAR_CAM_CTRL, 0x06), 663); // X address end
 	result += write16(to_reg(MT9V117_VAR_CAM_CTRL, 0x00), 8);   // Y address start
