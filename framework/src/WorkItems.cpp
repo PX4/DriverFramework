@@ -288,7 +288,7 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 				     item->m_queue_time);
 
 			// Remove inactive work items from work list here to prevent use after free
-			if (item->m_in_use == false) {
+			if (!item->m_in_use) {
 				// Remove the inactive work item from work list
 				idx = m_work_list.erase(idx);
 				continue;
