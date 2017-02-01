@@ -483,8 +483,12 @@ void HRTWorkQueue::process()
 
 		now = offsetTime();
 		DF_LOG_DEBUG("now=%" PRIu64, now);
-
+#ifdef __DF_QURT
+                // to accomodate sleep inaccuracy in the platform
+		if (next > now + 200) {
+#else
 		if (next > now) {
+#endif
 			uint64_t wait_time_usec = next - now;
 
 			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", wait_time_usec);
