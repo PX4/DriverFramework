@@ -15,10 +15,6 @@ add_definitions(
 # used for debug
 # add_definitions(-DDF_DEBUG)
 
-if ("${RPI_TOOLCHAIN_DIR}" STREQUAL "")
-	set(RPI_TOOLCHAIN_DIR /opt/rpi_toolchain)
-endif()
-
 # this one is important
 set(CMAKE_SYSTEM_NAME Linux)
 
@@ -26,8 +22,8 @@ set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_VERSION 1)
 
 # set cross compilers
-set(CMAKE_C_COMPILER "${RPI_TOOLCHAIN_DIR}/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-gcc")
-set(CMAKE_CXX_COMPILER "${RPI_TOOLCHAIN_DIR}/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-g++")
+set(CMAKE_C_COMPILER "${PX4_TOOLCHAIN_DIR}/gcc-linaro-arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc")
+set(CMAKE_CXX_COMPILER "${PX4_TOOLCHAIN_DIR}/gcc-linaro-arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++")
 set(CMAKE_C_FLAGS "-static" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "-static" CACHE STRING "" FORCE)
 set(LINKER_FLAGS "-Wl,-gc-sections")
