@@ -3,98 +3,74 @@
 #include <string.h>
 #include "DriverFramework.hpp"
 
-// Threshold to detect the beginning or our send pulse
-#define BEBOP_RANGEFINDER_REQUEST_THRESH 3276
-
-// The mic records the transmitted signal at the beginning of our received signal.
-// This value defines, when it should have ended and is used to detect if we are bellow
-// block distance.
-#define BEBOP_RANGEFINDER_SEND_PULSE_LEN 420
-
-// This value defines the end of the transitted signal and defines the noise level. A valid
-// received signal has to be above this value to be accepted
-#define BEBOP_RANGEFINDER_NOISE_LEVEL_THRESH 100
-
 using namespace DriverFramework;
 
+// Threshold for the derivative to detect rising, falling edges
+#define DT_THRESH 100
+
+// Add a small margin after the detected end of send and start searching
+// for the echo pulse afterwards
+#define EOS_MARGIN 50
+
 EchoExtractor::EchoExtractor(uint16_t signal_length)
-	: m_signal_length(signal_length), m_send_length(0), m_maximum_signal_value(0)
+	: m_signal_length(signal_length)
 {
+	// Allocate memory for the signal processing
+	m_derivative = static_cast<int16_t *>(malloc(m_signal_length * 2));
+	memset(m_derivative, 0, m_signal_length * 2);
 	m_filtered_buffer = static_cast<uint16_t *>(malloc(m_signal_length * 2));
 	memset(m_filtered_buffer, 0, m_signal_length * 2);
 }
 
 EchoExtractor::~EchoExtractor()
 {
+	free(m_derivative);
 	free(m_filtered_buffer);
 }
 
 int16_t EchoExtractor::_find_end_of_send(const uint16_t *signal)
 {
 	bool peak = false;
-	uint16_t start_index = 0;
-	uint16_t end_index = 0;
+	bool rising = false;
+	uint16_t start = 0;
+	uint16_t end = 0;
 
-	for (unsigned int i = 0; i < m_signal_length; ++i) {
-		uint16_t value = signal[i];
+	for (size_t i = 0; i < m_signal_length; ++i) {
+		if (!peak && m_derivative[i] > DT_THRESH) {
+			// detect rising edge in the signal
+			rising = true;
 
-		if (!peak && value > BEBOP_RANGEFINDER_REQUEST_THRESH) {
-			start_index = i;
+		} else if (rising && m_derivative[i] < DT_THRESH) {
+			// detect peak or plateau
 			peak = true;
+			rising = false;
+			start = i;
 
-		} else if (peak && value < (BEBOP_RANGEFINDER_NOISE_LEVEL_THRESH)) {
-			end_index = i;
+		} else if (peak && m_derivative[i] < -DT_THRESH) {
+			// detect falling edge of the peak
+			end = i;
 			break;
 		}
 	}
 
-	m_send_length = end_index - start_index;
+	m_start_of_send = start;
+	m_end_of_send = end;
 
-	if (m_send_length > BEBOP_RANGEFINDER_SEND_PULSE_LEN) {
-		DF_LOG_DEBUG("Bellow block distance");
-		return -1;
-
-	} else {
-		return end_index;
-	}
+	return 0;
 }
 
-int16_t EchoExtractor::_filter_read_buffer(const uint16_t *signal)
+int16_t EchoExtractor::_differentiate(const uint16_t *signal)
 {
 
-	memset(m_filtered_buffer, 0, m_signal_length);
-	m_maximum_signal_value = 0;
+	memset(m_derivative, 0, m_signal_length * 2);
 
-	int16_t eos = _find_end_of_send(signal); // get index where the send pulse ends (end-of-send = eos)
-
-	if (eos < 0) {
-		return -1;
-	}
-
-	// Perform a rolling mean filter with size 3
-
-	// Set the values at the left edge
-	m_filtered_buffer[0] = signal[eos];
-	m_filtered_buffer[1] = signal[eos + 1];
-
-	uint16_t running_sum = m_filtered_buffer[0] + m_filtered_buffer[1]
-			       + (signal[eos + 2]);
-
-	// Mean filter the read signal, but exclude the pulse recorded during send
-	for (unsigned int i = 2; i < m_signal_length - eos - 1; ++i) {
-		m_filtered_buffer[i] = running_sum / 3;
-		running_sum = (running_sum + (signal[eos + i + 1])
-			       - (signal[eos + i - 2]));
-
-		// Capture the maximum value in the signal
-		if (m_filtered_buffer[i] > m_maximum_signal_value) {
-			m_maximum_signal_value = m_filtered_buffer[i];
-		}
-	}
-
-	if (m_maximum_signal_value < BEBOP_RANGEFINDER_NOISE_LEVEL_THRESH) {
-		DF_LOG_DEBUG("No peak found");
-		return -1;
+	for (size_t i = 3; i < m_signal_length - 3; ++i) {
+		m_derivative[i] = - static_cast<int16_t>(signal[i - 3])
+				  - static_cast<int16_t>(signal[i - 2])
+				  - static_cast<int16_t>(signal[i - 1])
+				  + static_cast<int16_t>(signal[i + 1])
+				  + static_cast<int16_t>(signal[i + 2])
+				  + static_cast<int16_t>(signal[i + 3]);
 	}
 
 	return 0;
@@ -102,38 +78,76 @@ int16_t EchoExtractor::_filter_read_buffer(const uint16_t *signal)
 
 int16_t EchoExtractor::get_echo_index(const uint16_t *signal)
 {
-	if (_filter_read_buffer(signal) < 0) {
-		return -1;
-	}
+	// Preprocess the signal
+	_filter_read_buffer(signal);
+	_differentiate(m_filtered_buffer);
+	_find_end_of_send(m_filtered_buffer);
 
-	// threshold is 4/5 * m_maximum_signal_value
-	uint16_t threshold = m_maximum_signal_value - (m_maximum_signal_value / 5);
+	// start searching for the echo pulse after this index
+	int16_t start_for_signal = m_end_of_send + EOS_MARGIN;
+
+	uint16_t peak_index = 0;
+	uint16_t peak_value = 0;
+	uint16_t start_current_peak = 0;
+	uint16_t max_current_peak = 0;
 	bool peak = false;
-	bool max_peak_found = false;
-	uint16_t start_index = 0;
+	bool rising = false;
 
-	// search the filtered signal for the rising edge of the peak, which also
-	// includes the maximum value (strongest reflection)
-	for (unsigned int i = 0; i < m_signal_length; ++i) {
-		if (!peak && m_filtered_buffer[i] > (threshold)) {
+	for (size_t i = start_for_signal; i < m_signal_length; ++i) {
+		if (!peak && m_derivative[i] > DT_THRESH) {
+			// rising edge in the signal
+			rising = true;
+
+		} else if (rising && m_derivative[i] < DT_THRESH) {
+			// detect peak or plateau
 			peak = true;
-			start_index = i;
+			rising = false;
+			start_current_peak = i;
+			max_current_peak = signal[i];
 
-		} else if (peak && m_filtered_buffer[i] < threshold) {
-			peak = false;
+		} else if (peak && m_derivative[i] < -DT_THRESH) {
+			// detect falling edge after the peak
 
-			if (max_peak_found) {
-				// return the index of the rising edge and add the length that we cut
-				// at the beginning of the signal to exclude the send peak
-				return start_index + m_send_length;
+			// capture new peak if its value was higher than the previous peaks
+			if (max_current_peak > peak_value) {
+				peak_index = start_current_peak;
+				peak_value = max_current_peak;
 			}
 
-		} else if (peak && m_filtered_buffer[i] >= m_maximum_signal_value) {
-			max_peak_found = true;
+			max_current_peak = 0;
+			peak = false;
+
+		} else if (peak) {
+			// find the maximum value within this peak
+			if (signal[i] > max_current_peak) {
+				max_current_peak = signal[i];
+			}
 		}
 	}
 
-	DF_LOG_DEBUG("No peak");
-	return -1;
+	return peak_index - m_start_of_send;
 }
 
+int16_t EchoExtractor::_filter_read_buffer(const uint16_t *signal)
+{
+
+	memset(m_filtered_buffer, 0, m_signal_length * 2);
+
+	// Perform a rolling mean filter with size 3
+
+	// Set the values at the left edge
+	m_filtered_buffer[0] = signal[0];
+
+	uint16_t running_sum = m_filtered_buffer[0] + m_filtered_buffer[1]
+			       + (signal[2]);
+
+	// Mean filter the read signal
+	for (unsigned int i = 2; i < m_signal_length - 1; ++i) {
+		m_filtered_buffer[i - 1] = running_sum / 3;
+		running_sum = (running_sum + (signal[i + 1])
+			       - (signal[i - 2]));
+
+	}
+
+	return 0;
+}
