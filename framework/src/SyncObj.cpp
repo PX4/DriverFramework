@@ -48,7 +48,7 @@ SyncObj::SyncObj()
 	// Cannot use recursive mutex for pthread_cond_timedwait in DSPAL
 	initMutex(m_lock);
 
-	pthread_condattr_t condattr;
+	pthread_condattr_t condattr{};
 	pthread_condattr_init(&condattr);
 
 // CLOCK_MONOTONIC is not available on OSX and NuttX
@@ -64,10 +64,6 @@ SyncObj::SyncObj()
 #endif
 
 	pthread_cond_init(&m_new_data_cond, &condattr);
-}
-
-SyncObj::~SyncObj()
-{
 }
 
 void SyncObj::lock()
@@ -90,7 +86,7 @@ int SyncObj::waitOnSignal(unsigned long timeout_us)
 	DEBUG("wait %p %lu us\n", &m_new_data_cond, timeout_us);
 
 	if (timeout_us) {
-		struct timespec ts;
+		struct timespec ts {};
 		ret = absoluteTimeInFuture(timeout_us, ts);
 		ret = ret ? ret : pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
 
@@ -114,7 +110,7 @@ namespace DriverFramework
 
 int initMutex(pthread_mutex_t &mutex)
 {
-	pthread_mutexattr_t attr;
+	pthread_mutexattr_t attr {};
 
 	int rv = pthread_mutexattr_init(&attr);
 

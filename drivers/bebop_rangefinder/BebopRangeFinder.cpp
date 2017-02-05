@@ -55,8 +55,7 @@ using namespace DriverFramework;
 
 BebopRangeFinder::BebopRangeFinder(const char *device_path) :
 	SPIDevObj("BebopRangeFinder", device_path, BEBOP_RANGEFINDER_CLASS_PATH, BEBOP_RANGEFINDER_MEASURE_INTERVAL_US),
-	m_sonar_pin(0, 2, BEBOP_RANGEFINDER_BUFFER_LEN), m_requested_data(false),
-	m_send_length(0), m_maximum_signal_value(0)
+	m_sonar_pin(0, 2, BEBOP_RANGEFINDER_BUFFER_LEN)
 {
 	m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_BEBOP_RANGEFINDER;
 	m_id.dev_id_s.address = DRV_DF_DEVTYPE_BEBOP_RANGEFINDER;
@@ -64,10 +63,6 @@ BebopRangeFinder::BebopRangeFinder(const char *device_path) :
 	// Generate the pulse send via SPI and emitter
 	memset(m_pulse, 0x00, BEBOP_RANGEFINDER_PULSE_LEN);
 	memset(m_pulse, 0xF0, 16);
-
-	// Initialize the buffers with zero
-	memset(m_read_buffer, 0, BEBOP_RANGEFINDER_BUFFER_LEN * 2);
-	memset(m_filtered_buffer, 0, BEBOP_RANGEFINDER_BUFFER_LEN * 2);
 }
 
 int BebopRangeFinder::start()

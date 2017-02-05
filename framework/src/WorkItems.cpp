@@ -284,7 +284,7 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 		if (index < m_work_items.size()) {
 			WorkItem *item = nullptr;
 			getAt(index, &item);
-			DF_LOG_DEBUG("WorkList (%p) in use=%d delay=%u queue_time=%" PRIu64 , item, item->m_in_use, item->m_delay_usec,
+			DF_LOG_DEBUG("WorkList (%p) in use=%d delay=%u queue_time=%" PRIu64, item, item->m_in_use, item->m_delay_usec,
 				     item->m_queue_time);
 
 			// Remove inactive work items from work list here to prevent use after free

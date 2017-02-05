@@ -77,8 +77,8 @@ public:
 	static void *process_trampoline(void *);
 
 private:
-	HRTWorkQueue() {}
-	~HRTWorkQueue() {}
+	HRTWorkQueue() = default;
+	~HRTWorkQueue() = default;
 
 	void process();
 
@@ -319,7 +319,7 @@ void Framework::waitForShutdown()
 static void show_sched_settings()
 {
 	int policy;
-	struct sched_param param;
+	struct sched_param param {};
 
 	int ret = pthread_getschedparam(pthread_self(), &policy, &param);
 
@@ -338,7 +338,7 @@ static void show_sched_settings()
 static int setRealtimeSched()
 {
 	int policy = SCHED_FIFO;
-	sched_param param;
+	sched_param param {};
 
 	param.sched_priority = 10;
 
@@ -389,7 +389,7 @@ int HRTWorkQueue::initialize()
 {
 	DF_LOG_DEBUG("HRTWorkQueue::initialize");
 
-	pthread_attr_t attr;
+	pthread_attr_t attr {};
 	int ret = pthread_attr_init(&attr);
 
 	if (ret != 0) {
