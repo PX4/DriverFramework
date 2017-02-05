@@ -71,6 +71,8 @@ public:
 	// @return 0 on success, -errno on failure
 	int stop();
 
+	void capture_signal() {m_capture_signal = true;};
+
 protected:
 	void _measure();
 
@@ -90,6 +92,7 @@ private:
 	int16_t _find_end_of_send();
 	int16_t _filter_read_buffer();
 	int16_t _get_echo_index();
+	int _dump_signal(const char *path, int peak_index);
 
 	ADCPin m_sonar_pin;
 	bool m_requested_data;
@@ -99,6 +102,8 @@ private:
 	uint16_t m_filtered_buffer[BEBOP_RANGEFINDER_BUFFER_LEN];
 	uint16_t m_send_length;
 	uint16_t m_maximum_signal_value;
+	bool m_capture_signal;
+	uint16_t m_capture_count;
 
 };
 } // namespace DriverFramework

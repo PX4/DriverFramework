@@ -36,6 +36,8 @@
 #include "BebopRangeFinder.hpp"
 #include "DriverFramework.hpp"
 
+#define BEBOP_RANGEFINDER_CAPTURE_PATH "/home/root/rangefinder.csv"
+
 #define SPEED_OF_SOUND 343.2f
 #define ADC_SAMPLING_FREQ_HZ 160000.0f
 
@@ -274,6 +276,12 @@ void BebopRangeFinder::_measure()
 				height_m = -1.0f;
 			}
 
+
+			if (m_capture_signal) {
+				_dump_signal(BEBOP_RANGEFINDER_CAPTURE_PATH, echo);
+				m_capture_signal = false;
+			}
+
 			// Publish the measurements
 			m_synchronize.lock();
 
@@ -291,6 +299,31 @@ void BebopRangeFinder::_measure()
 	if (_request() < 0) {
 		DF_LOG_ERR("Request failed");
 	}
+}
+
+int BebopRangeFinder::_dump_signal(const char *path, int peak_index)
+{
+
+	FILE *pFile = fopen(path, "a");
+
+	if (pFile == nullptr) {
+		DF_LOG_ERR("Unable to open file: %s", path);
+		return -1;
+	}
+
+	fprintf(pFile, "%d", peak_index);
+
+	for (size_t i = 0; i < BEBOP_RANGEFINDER_BUFFER_LEN; ++i) {
+		uint16_t value = m_read_buffer[i] >> 4;
+		fprintf(pFile, ",%u", value);
+	}
+
+	fprintf(pFile, "\n");
+
+	fclose(pFile);
+	DF_LOG_INFO("Signal captured: %u", ++m_capture_count);
+
+	return 0;
 }
 
 int BebopRangeFinder::_publish(struct bebop_range &data)
