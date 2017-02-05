@@ -1,4 +1,3 @@
-
 /****************************************************************************
  *
  *   Copyright (C) 2016 PX4 Development Team. All rights reserved.
@@ -34,72 +33,25 @@
 
 #pragma once
 
-#include "SPIDevObj.hpp"
-#include "ADCPin.hpp"
-#include "EchoExtractor.hpp"
+#include <stdint.h>
 
 namespace DriverFramework
 {
 
-struct bebop_range {
-	float height_m;
-} __attribute__((packed));
-
-#define DRV_DF_DEVTYPE_BEBOP_RANGEFINDER 0x99
-
-// update frequency 16.66 Hz (reading 8192 samples at 160 kHz takes 51200 us)
-#define BEBOP_RANGEFINDER_MEASURE_INTERVAL_US 60000
-#define BEBOP_RANGEFINDER_CLASS_PATH "/dev/ranger"
-#define BEBOP_RANGEFINDER_DEVICE_PATH "/dev/spidev1.0"
-
-#define BEBOP_RANGEFINDER_MIN_DISTANCE_M 0.5
-#define BEBOP_RANGEFINDER_MAX_DISTANCE_M 8.5
-
-#define BEBOP_RANGEFINDER_BUFFER_LEN 8192
-
-#define BEBOP_RANGEFINDER_PULSE_LEN 32
-
-class BebopRangeFinder : public SPIDevObj
+class EchoExtractor
 {
 public:
-	BebopRangeFinder(const char *device_path);
-
-	~BebopRangeFinder() = default;
-
-	// @return 0 on success, -errno on failure
-	int start();
-
-	// @return 0 on success, -errno on failure
-	int stop();
-
-	void capture_signal() {m_capture_signal = true;};
-
-protected:
-	void _measure();
-
-	virtual int _publish(struct bebop_range &data);
-
-	struct bebop_range m_sensor_data;
-	SyncObj 					m_synchronize;
+	EchoExtractor(uint16_t signal_length) ;
+	~EchoExtractor();
+	int16_t get_echo_index(const uint16_t *signal);
 
 private:
+	int16_t _find_end_of_send(const uint16_t *signal);
+	int16_t _filter_read_buffer(const uint16_t *signal);
 
-	// @returns 0 on success, -errno on failure
-	int _bebop_rangefinder_init();
-
-	int _request();
-	int _collect();
-
-	int _dump_signal(const char *path, int peak_index);
-
-	ADCPin m_sonar_pin;
-	bool m_requested_data;
-
-	uint8_t m_pulse[BEBOP_RANGEFINDER_PULSE_LEN];
-	uint16_t m_read_buffer[BEBOP_RANGEFINDER_BUFFER_LEN];
-	EchoExtractor m_extractor;
-	bool m_capture_signal;
-	uint16_t m_capture_count;
-
+	uint16_t m_signal_length;
+	uint16_t *m_filtered_buffer;
+	uint16_t m_send_length;
+	uint16_t m_maximum_signal_value;
 };
 } // namespace DriverFramework

@@ -41,6 +41,7 @@ get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 df_add_library(df_${drivername}
 	BebopRangeFinder.cpp
 	ADCPin.cpp
+	EchoExtractor.cpp
   )
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
