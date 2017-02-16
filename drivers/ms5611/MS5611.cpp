@@ -166,7 +166,7 @@ int MS5611::loadCalibration()
 	union {
 		uint8_t b[2];
 		uint16_t w;
-	} cvt;
+	} cvt {};
 
 	for (int i = 0; i < 8; ++i) {
 		uint8_t cmd = ADDR_PROM_SETUP + (i * 2);
@@ -326,7 +326,7 @@ int MS5611::_collect(uint32_t &raw)
 	union {
 		uint8_t b[4];
 		uint32_t w;
-	} cvt;
+	} cvt {};
 
 	uint8_t buf[3];
 
@@ -348,7 +348,7 @@ int MS5611::_collect(uint32_t &raw)
 	return 0;
 }
 
-void MS5611::_measure(void)
+void MS5611::_measure()
 {
 	if (m_measure_phase == 0) {
 		if (_collect(m_temperature_from_sensor) < 0) {

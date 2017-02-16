@@ -31,12 +31,14 @@
  *
  ****************************************************************************/
 
+#include "SPIDevObj.hpp"
+
 #include <stdint.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+
 #include "OSConfig.h"
-#include "SPIDevObj.hpp"
 #include "DevIOCTL.h"
 
 #if defined(__DF_RPI) || defined(__DF_EDISON) || defined(__DF_BEBOP)
@@ -55,9 +57,7 @@ using namespace DriverFramework;
 #define DIR_READ    0x80
 #define DIR_WRITE   0x00
 
-SPIDevObj::~SPIDevObj()
-{
-}
+SPIDevObj::~SPIDevObj() = default;
 
 int SPIDevObj::start()
 {

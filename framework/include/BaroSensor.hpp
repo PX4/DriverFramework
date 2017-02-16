@@ -61,7 +61,7 @@ public:
 		I2CDevObj("BaroSensor", device_path, BARO_CLASS_PATH, sample_interval_usec)
 	{}
 
-	~BaroSensor() {}
+	~BaroSensor() = default;
 
 	void setAltimeter(float altimeter_setting_in_mbars)
 	{
@@ -90,15 +90,14 @@ public:
 
 	static void printPressureValues(struct baro_sensor_data &data)
 	{
-		DF_LOG_INFO("Pressure: %.2f Pa, temperature: %.2f C",
-			    (double)data.pressure_pa, (double)data.temperature_c);
+		DF_LOG_INFO("Pressure: %.2f Pa, temperature: %.2f C", (double)data.pressure_pa, (double)data.temperature_c);
 	}
 
 protected:
 	virtual void _measure() = 0;
 
-	struct baro_sensor_data		m_sensor_data;
-	float 				m_altimeter_mbars = 0.0;
+	struct baro_sensor_data	m_sensor_data {};
+	float 				m_altimeter_mbars{0.0f};
 	SyncObj 			m_synchronize;
 };
 

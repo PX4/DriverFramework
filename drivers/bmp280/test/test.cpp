@@ -43,13 +43,11 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
-	PressureTester() :
-		m_sensor(BARO_DEVICE_PATH)
-	{}
+	PressureTester() : m_sensor(BARO_DEVICE_PATH) {};
 
 	static void readSensorCallback(void *arg);
 
-	int run(void);
+	int run();
 
 private:
 	void readSensor();

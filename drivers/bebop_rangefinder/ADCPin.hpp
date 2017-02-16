@@ -56,6 +56,6 @@ private:
 	char m_dev_path[50];
 	uint16_t m_channel;
 	uint16_t m_buffer_length;
-	bool m_buffer_enabled;
+	bool m_buffer_enabled{false};
 };
 } // namespace DriverFramework

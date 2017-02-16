@@ -37,23 +37,6 @@
 
 using namespace DriverFramework;
 
-DFPointerList::DFListNode::DFListNode(void *item) :
-	m_next(nullptr),
-	m_item(item)
-{
-}
-
-DFPointerList::DFListNode::~DFListNode()
-{
-}
-
-DFPointerList::DFPointerList() :
-	m_head(nullptr),
-	m_end(nullptr),
-	m_size(0)
-{
-}
-
 DFPointerList::~DFPointerList()
 {
 	m_sync.lock();
@@ -217,24 +200,6 @@ void *DFPointerList::get(Index idx)
 	return nullptr;
 }
 
-DFUIntList::DFUIntListNode::DFUIntListNode(unsigned int item) :
-	m_next(nullptr),
-	m_item(item)
-{
-}
-
-DFUIntList::DFUIntListNode::~DFUIntListNode()
-{
-}
-
-DFUIntList::DFUIntList() :
-	m_sync(),
-	m_head(nullptr),
-	m_end(nullptr),
-	m_size(0)
-{
-}
-
 DFUIntList::~DFUIntList()
 {
 	m_sync.lock();
@@ -309,7 +274,7 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 
 	if (idx != nullptr && idx == m_head) {
 		Index t = m_head->m_next;
-		delete(m_head);
+		delete (m_head);
 		m_head = t;
 
 		if (t == nullptr) {
@@ -331,7 +296,7 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 					m_end = p;
 				}
 
-				delete(t);
+				delete (t);
 				--m_size;
 				m_sync.unlock();
 				return p->m_next;
