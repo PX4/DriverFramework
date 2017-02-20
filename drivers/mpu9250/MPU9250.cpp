@@ -285,14 +285,14 @@ int MPU9250::start()
 	result = mpu9250_init();
 
 	if (result != 0) {
-	DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
+		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
 		goto exit;
 	}
 
 	result = DevObj::start();
 
 	if (result != 0) {
-	DF_LOG_ERR("DevObj start failed");
+		DF_LOG_ERR("DevObj start failed");
 		return result;
 	}
 
