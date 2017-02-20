@@ -275,9 +275,9 @@ int MPU9250::start()
 		goto exit;
 	}
 
-	if (!(MPU_WHOAMI_9250 == sensor_id || MPU_WHOAMI_9250_REAL == sensor_id)) {
-		DF_LOG_ERR("MPU9250 sensor WHOAMI wrong: 0x%X, should be: 0x%X OR 0x%X",
-			   sensor_id, MPU_WHOAMI_9250, MPU_WHOAMI_9250_REAL);
+	if (MPU_WHOAMI_9250 != sensor_id && MPU_WHOAMI_9250_REAL != sensor_id)) {
+		DF_LOG_ERR("MPU9250 sensor WHOAMI wrong: 0x%X, should be: 0x%X",
+			   sensor_id, MPU_WHOAMI_9250);
 		result = -1;
 		goto exit;
 	}
@@ -285,14 +285,14 @@ int MPU9250::start()
 	result = mpu9250_init();
 
 	if (result != 0) {
-		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
+	DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
 		goto exit;
 	}
 
 	result = DevObj::start();
 
 	if (result != 0) {
-		DF_LOG_ERR("DevObj start failed");
+	DF_LOG_ERR("DevObj start failed");
 		return result;
 	}
 
