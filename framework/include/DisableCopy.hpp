@@ -50,4 +50,4 @@ private:
 	DisableCopy &operator=(const DisableCopy &);
 };
 
-};
+}

@@ -89,5 +89,5 @@ private:
 	static bool m_initialized;
 };
 
-};
+}
 
