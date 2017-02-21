@@ -151,4 +151,4 @@ private:
 	unsigned 		m_refcount;
 };
 
-};
+}
