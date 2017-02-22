@@ -50,10 +50,6 @@
 
 using namespace DriverFramework;
 
-I2CDevObj::~I2CDevObj()
-{
-}
-
 int I2CDevObj::start()
 {
 	m_fd = ::open(m_dev_path, O_RDWR);
@@ -65,7 +61,6 @@ int I2CDevObj::start()
 
 	return 0;
 }
-
 
 int I2CDevObj::stop()
 {
@@ -81,7 +76,6 @@ int I2CDevObj::stop()
 
 	return 0;
 }
-
 
 int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
 {

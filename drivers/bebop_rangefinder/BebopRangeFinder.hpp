@@ -66,10 +66,10 @@ public:
 	~BebopRangeFinder() = default;
 
 	// @return 0 on success, -errno on failure
-	int start();
+	virtual int start();
 
 	// @return 0 on success, -errno on failure
-	int stop();
+	virtual int stop();
 
 protected:
 	void _measure();
@@ -77,7 +77,7 @@ protected:
 	virtual int _publish(struct bebop_range &data);
 
 	struct bebop_range m_sensor_data;
-	SyncObj 					m_synchronize;
+	SyncObj m_synchronize;
 
 private:
 
@@ -92,13 +92,13 @@ private:
 	int16_t _get_echo_index();
 
 	ADCPin m_sonar_pin;
-	bool m_requested_data;
+	bool m_requested_data{false};
 
-	uint8_t m_pulse[BEBOP_RANGEFINDER_PULSE_LEN];
-	uint16_t m_read_buffer[BEBOP_RANGEFINDER_BUFFER_LEN];
-	uint16_t m_filtered_buffer[BEBOP_RANGEFINDER_BUFFER_LEN];
-	uint16_t m_send_length;
-	uint16_t m_maximum_signal_value;
+	uint8_t m_pulse[BEBOP_RANGEFINDER_PULSE_LEN] {0};
+	uint16_t m_read_buffer[BEBOP_RANGEFINDER_BUFFER_LEN] {0};
+	uint16_t m_filtered_buffer[BEBOP_RANGEFINDER_BUFFER_LEN] {0};
+	uint16_t m_send_length{0};
+	uint16_t m_maximum_signal_value{0};
 
 };
 } // namespace DriverFramework

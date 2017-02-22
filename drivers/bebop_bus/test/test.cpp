@@ -43,11 +43,9 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
-	BebopBusTester() :
-		BebopBus(BEBOP_BUS_DEVICE_PATH)
-	{}
+	BebopBusTester() : BebopBus(BEBOP_BUS_DEVICE_PATH) {};
 
-	int run(void);
+	int run();
 
 private:
 

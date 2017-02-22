@@ -191,13 +191,13 @@ int AK8963::run_self_test()
 		int16_t		x;
 		int16_t		y;
 		int16_t		z;
-	}	ak8963_report;
+	}	ak8963_report {};
 #pragma pack(pop)
 
 	bool ready = false;
 
 	while (!ready) {
-		int result = _readReg(AK8963_REG_ST1, &bits , 1);
+		int result = _readReg(AK8963_REG_ST1, &bits, 1);
 
 		if (result != 0) {
 			DF_LOG_ERR("Error reading status");
@@ -358,7 +358,7 @@ int AK8963::stop()
 	return 0;
 }
 
-void AK8963::_measure(void)
+void AK8963::_measure()
 {
 #pragma pack(push, 1)
 	struct sample {
@@ -366,10 +366,10 @@ void AK8963::_measure(void)
 		uint8_t st2;
 	};
 #pragma pack(pop)
-	struct sample ak8963_report;
+	struct sample ak8963_report {};
 
 	uint8_t bits = 0;
-	int result = _readReg(AK8963_REG_ST1, &bits , 1);
+	int result = _readReg(AK8963_REG_ST1, &bits, 1);
 
 	if (result != 0) {
 		DF_LOG_ERR("Error reading status");
@@ -415,9 +415,6 @@ void AK8963::_measure(void)
 
 		m_synchronize.signal();
 		m_synchronize.unlock();
-
-	} else {
-		return;
 	}
 
 	return;

@@ -99,7 +99,7 @@ int TROne::stop()
 	return 0;
 }
 
-int TROne::probe(void)
+int TROne::probe()
 {
 	int result = 0;
 	uint8_t who_am_i = 0;
@@ -131,7 +131,7 @@ int TROne::probe(void)
 	return 0;
 }
 
-void TROne::_measure(void)
+void TROne::_measure()
 {
 	int result = 0;
 

@@ -45,13 +45,11 @@ public:
 
 	static constexpr unsigned num_read_attempts = 1000;
 
-	ImuTester() :
-		m_sensor(IMU_DEVICE_ACC_GYRO, IMU_DEVICE_MAG)
-	{}
+	ImuTester() : m_sensor(IMU_DEVICE_ACC_GYRO, IMU_DEVICE_MAG) {};
 
 	static void readSensorCallback(void *arg);
 
-	int run(void);
+	int run();
 
 private:
 	void readSensor();

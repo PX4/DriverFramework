@@ -45,15 +45,6 @@
 namespace DriverFramework
 {
 
-class SPIDevHandle : public DevHandle
-{
-public:
-	SPIDevHandle() :
-		DevHandle()
-	{}
-	virtual ~SPIDevHandle();
-};
-
 class SPIDevObj : public DevObj
 {
 public:

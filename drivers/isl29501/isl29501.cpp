@@ -205,7 +205,7 @@ int ISL29501::stop()
 //User is required to put sensor at REF_DIST and run this routine to get
 //calibration value.
 //TODO: Make the calculated offset persistent using px4 param system
-int ISL29501::calibration(void)
+int ISL29501::calibration()
 {
 	uint16_t raw_data;
 	float raw_avg = 0;
@@ -272,7 +272,7 @@ int ISL29501::_detect()
 }
 
 // read distance data from ISL sensor
-void ISL29501::_measure(void)
+void ISL29501::_measure()
 {
 	if (!_detected) {
 		return;
