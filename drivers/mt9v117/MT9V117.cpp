@@ -33,7 +33,7 @@
 
 #include "MT9V117.hpp"
 #include "MT9V117_patches.hpp"
- 
+
 #if !(defined(__APPLE__) && defined(__MACH__)) && !defined(__PX4_QURT)
 // v4l2-subdev.h is not available on OSX or Snapdragon platforms
 #include <linux/v4l2-subdev.h>
