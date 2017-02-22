@@ -433,7 +433,7 @@ int MT9V117::set_format()
 {
 #if !(defined(__APPLE__) && defined(__MACH__)) && !defined(__PX4_QURT)
 // v4l2-subdev.h is not available on OSX or Snapdragon platforms
-	struct v4l2_subdev_format fmt;
+	struct v4l2_subdev_format fmt {};
 	int ret, fd;
 
 	char device_path[] = "/dev/v4l-subdev0";
