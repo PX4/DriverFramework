@@ -343,7 +343,7 @@ void LSM9DS1::_measure()
 
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
 
-	struct packet report;
+	struct packet report {};
 
 	// Read Temperature
 	_bulkRead(LSM9DS1XG_OUT_TEMP_L, (uint8_t *)&report.temp, 2);

@@ -182,7 +182,7 @@ int HMC5883::stop()
 	return 0;
 }
 
-void HMC5883::_measure(void)
+void HMC5883::_measure()
 {
 	int result = 0;
 
@@ -193,7 +193,7 @@ void HMC5883::_measure(void)
 			int16_t		x;
 			int16_t		z;
 			int16_t		y;
-		}	hmc_report;
+		}	hmc_report {};
 #pragma pack(pop)
 
 		result = _readReg(HMC5883_REG_DATA_OUT_X_MSB, (uint8_t *)&hmc_report, sizeof(hmc_report));

@@ -52,15 +52,14 @@ public:
 	class DFListNode
 	{
 	public:
-		DFListNode(void *item);
-		~DFListNode();
+		DFListNode(void *item) : m_item(item) {}
+		~DFListNode() = default;
 
-		Index	m_next;
+		Index	m_next{nullptr};
 		void 	*m_item;
 	};
 
-	DFPointerList();
-
+	DFPointerList() = default;
 	virtual ~DFPointerList();
 
 	unsigned int size();
@@ -84,9 +83,9 @@ public:
 
 private:
 
-	Index		m_head;
-	Index		m_end;
-	unsigned int 	m_size;
+	Index		m_head{nullptr};
+	Index		m_end{nullptr};
+	unsigned int 	m_size{0};
 };
 
 template <class T>
@@ -158,15 +157,14 @@ public:
 	class DFUIntListNode
 	{
 	public:
-		DFUIntListNode(unsigned int item);
-		~DFUIntListNode();
+		DFUIntListNode(unsigned int item) : m_item(item) {}
+		~DFUIntListNode() = default;
 
-		Index		m_next;
+		Index		m_next{nullptr};
 		unsigned int	m_item;
 	};
 
-	DFUIntList();
-
+	DFUIntList() = default;
 	~DFUIntList();
 
 	unsigned int size();
@@ -190,9 +188,9 @@ public:
 
 private:
 
-	Index		m_head;
-	Index		m_end;
-	unsigned int 	m_size;
+	Index		m_head{nullptr};
+	Index		m_end{nullptr};
+	unsigned int 	m_size{0};
 };
 
-};
+}

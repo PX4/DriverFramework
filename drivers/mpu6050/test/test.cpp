@@ -44,13 +44,11 @@ public:
 
 	static constexpr unsigned num_read_attempts = 1000;
 
-	ImuTester() :
-		m_sensor(IMU_DEVICE_PATH)
-	{}
+	ImuTester() : m_sensor(IMU_DEVICE_PATH) {};
 
 	static void readSensorCallback(void *arg);
 
-	int run(void);
+	int run();
 
 private:
 	void readSensor();

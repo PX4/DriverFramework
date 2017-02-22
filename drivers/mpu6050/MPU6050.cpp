@@ -547,8 +547,8 @@ void MPU6050::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
-		// Pass on the sampling interval between FIFO samples at 1kHz.
-		m_sensor_data.fifo_sample_interval_us = 1000000 / MPU6050_MEASURE_INTERVAL_US
+		// Pass on the sampling interval between FIFO samples
+		m_sensor_data.fifo_sample_interval_us = MPU6050_MEASURE_INTERVAL_US
 							/ _packets_per_cycle_filtered;
 
 		// Flag if this is the last sample, and _publish() should wrap up the data it has received.

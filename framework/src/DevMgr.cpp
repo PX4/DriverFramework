@@ -64,7 +64,8 @@ public:
 		m_in_set(in_set),
 		m_out_set(out_set)
 	{}
-	~WaitList() {}
+
+	~WaitList() = default;
 
 	UpdateList 	&m_in_set;
 	UpdateList 	&m_out_set;

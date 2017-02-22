@@ -93,7 +93,7 @@ int BebopBus::start()
 	}
 
 	/* Try to talk to the sensor. */
-	struct bebop_bus_info info;
+	struct bebop_bus_info info {};
 	result = _get_info(&info);
 
 	// TODO make some sanity checks
@@ -279,7 +279,7 @@ int BebopBus::_toggle_gpio(BebopBusGPIO mode)
 
 int BebopBus::_set_esc_speed(const float speeds[4])
 {
-	struct bebop_bus_esc_speeds data;
+	struct bebop_bus_esc_speeds data {};
 
 	memset(&data, 0, sizeof(data));
 	// Correct endians and scale to MIN-MAX rpm
@@ -320,14 +320,14 @@ int BebopBus::stop()
 void BebopBus::_measure()
 {
 	// Read the observation status from the Bebop
-	struct bebop_bus_observation data;
+	struct bebop_bus_observation data {};
 
 	if (_get_observation_data(&data) < 0) {
 		return;
 	}
 
 	// Publish the received data
-	struct bebop_state_data publish_data;
+	struct bebop_state_data publish_data {};
 
 	publish_data.rpm[0] = static_cast<uint16_t>(data.rpm_front_right);
 	publish_data.rpm[1] = static_cast<uint16_t>(data.rpm_front_left);

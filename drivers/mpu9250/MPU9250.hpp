@@ -193,6 +193,7 @@ namespace DriverFramework
 #define DRV_DF_DEVTYPE_MPU9250 0x41
 
 #define MPU_WHOAMI_9250			0x71
+#define MPU_WHOAMI_9250_REAL		0x73
 
 #pragma pack(push, 1)
 struct fifo_packet {
@@ -299,4 +300,3 @@ private:
 
 }
 // namespace DriverFramework
-

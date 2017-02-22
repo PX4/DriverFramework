@@ -216,7 +216,7 @@ int MPU9250_mag::initialize(int output_data_rate_in_hz)
 	return ret;
 }
 
-int MPU9250_mag::get_sensitivity_adjustment(void)
+int MPU9250_mag::get_sensitivity_adjustment()
 {
 	// First set power-down mode
 	if (write_reg(MPU9250_MAG_REG_CNTL1, BIT_MAG_CNTL1_MODE_POWER_DOWN) != 0) {
@@ -265,7 +265,7 @@ int MPU9250_mag::get_sensitivity_adjustment(void)
 	return 0;
 }
 
-int MPU9250_mag::detect(void)
+int MPU9250_mag::detect()
 {
 	uint8_t b = 0;
 

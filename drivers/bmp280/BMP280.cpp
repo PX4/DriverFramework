@@ -241,7 +241,7 @@ int BMP280::stop()
 	return 0;
 }
 
-void BMP280::_measure(void)
+void BMP280::_measure()
 {
 	uint8_t pdata[BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES];
 	memset(pdata, 0, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
