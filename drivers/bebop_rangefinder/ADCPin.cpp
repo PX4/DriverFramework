@@ -72,7 +72,7 @@ int ADCPin::write(const char *path, int value)
 
 	FILE *pFile = fopen(filename, "w");
 
-	if (pFile == NULL) {
+	if (pFile == nullptr) {
 		DF_LOG_ERR("Unable to open file: %s", filename);
 		return -1;
 	}
@@ -113,7 +113,7 @@ int ADCPin::read(uint16_t *buffer, uint16_t len)
 
 	pFile = fopen(path, "r");
 
-	if (pFile == NULL) {
+	if (pFile == nullptr) {
 		DF_LOG_ERR("%s", strerror(errno));
 		DF_LOG_ERR("Unable to open file: %s", path);
 		return -1;

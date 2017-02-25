@@ -44,7 +44,7 @@
 static int clock_gettime(int clk_id, struct timespec *t)
 {
 	struct timeval now;
-	int rv = gettimeofday(&now, NULL);
+	int rv = gettimeofday(&now, nullptr);
 
 	if (rv) {
 		return rv;

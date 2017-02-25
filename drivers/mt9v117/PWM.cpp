@@ -80,7 +80,7 @@ int PWM::write(const char *path, int value)
 
 	FILE *pFile = fopen(filename, "w");
 
-	if (pFile == NULL) {
+	if (pFile == nullptr) {
 		DF_LOG_ERR("Unable to open file: %s", filename);
 		return -1;
 	}
