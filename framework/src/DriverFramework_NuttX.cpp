@@ -68,7 +68,7 @@ int Framework::initialize()
 {
 	int ret = DevMgr::initialize();
 
-	pthread_cond_init(&g_framework_cond, NULL);
+	pthread_cond_init(&g_framework_cond, nullptr);
 	return (ret < 0) ? -1 : 0;
 }
 

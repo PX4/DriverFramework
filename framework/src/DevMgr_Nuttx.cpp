@@ -100,7 +100,7 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **dev_path)
 
 		char devname[50];
 
-		while ((direntry = readdir(d)) != NULL) {
+		while ((direntry = readdir(d)) != nullptr) {
 			if (idx == index) {
 				snprintf(devname, sizeof(devname), "/dev/%s", direntry->d_name);
 				*dev_path = direntry->d_name;
