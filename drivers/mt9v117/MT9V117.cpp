@@ -34,7 +34,7 @@
 #include "MT9V117.hpp"
 #include "MT9V117_patches.hpp"
 
-#if !(defined(__APPLE__) && defined(__MACH__)) && !defined(__PX4_QURT)
+#if !(defined(__APPLE__) && defined(__MACH__)) && !defined(__QURT)
 // v4l2-subdev.h is not available on OSX or Snapdragon platforms
 #include <linux/v4l2-subdev.h>
 #endif
@@ -431,7 +431,7 @@ int MT9V117::configure_sensor()
 
 int MT9V117::set_format()
 {
-#if !(defined(__APPLE__) && defined(__MACH__)) && !defined(__PX4_QURT)
+#if !(defined(__APPLE__) && defined(__MACH__)) && !defined(__QURT)
 // v4l2-subdev.h is not available on OSX or Snapdragon platforms
 	struct v4l2_subdev_format fmt {};
 	int ret, fd;
