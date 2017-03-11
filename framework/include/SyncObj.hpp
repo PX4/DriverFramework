@@ -63,4 +63,4 @@ private:
 	pthread_cond_t	m_new_data_cond{};
 };
 
-};
+}
