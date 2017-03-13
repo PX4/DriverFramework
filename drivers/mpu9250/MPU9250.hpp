@@ -182,7 +182,7 @@ namespace DriverFramework
 // update frequency 250 Hz
 #define MPU9250_MEASURE_INTERVAL_US 4000
 #elif defined(__DF_RPI_SINGLE)
-// update frequency 400 Hz
+// update frequency 1000 Hz,if using rpi1,rpi zero,1000hz may be to higher,please reduce the frequency 
 #define MPU9250_MEASURE_INTERVAL_US 1000
 #else
 // update frequency 1000 Hz
@@ -243,8 +243,6 @@ public:
 		_mag_enabled(mag_enabled),
 #if defined(__DF_EDISON)
 		_packets_per_cycle_filtered(4.0f), // The FIFO is supposed to run at 1kHz and we sample at 250Hz.
-#elif defined(__DF_RPI_SINGLE)
-		_packets_per_cycle_filtered(8.0f),// The FIFO is supposed to run at 1kHz and we sample at 250Hz.
 #else
 		_packets_per_cycle_filtered(8.0f), // The FIFO is supposed to run at 8kHz and we sample at 1kHz.
 #endif
