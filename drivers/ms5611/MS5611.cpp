@@ -171,9 +171,12 @@ int MS5611::loadCalibration()
 	for (int i = 0; i < 8; ++i) {
 		uint8_t cmd = ADDR_PROM_SETUP + (i * 2);
 
+#if defined(__DF_OCPOC)
+		if (_bulkRead(cmd, &prom_buf[0], 2) < 0) {
+#else
 		_retries = 5;
-
 		if (_readReg(cmd, &prom_buf[0], 2) < 0) {
+#endif
 			DF_LOG_ERR("Read calibration error");
 			break;
 		}
@@ -215,9 +218,13 @@ int MS5611::ms5611_init()
 	m_sensor_data.error_counter = 0;
 	m_synchronize.unlock();
 
+#if defined(__DF_OCPOC)
+	int result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
+#else
 	int result = _setSlaveConfig(MS5611_SLAVE_ADDRESS,
 				     MS5611_BUS_FREQUENCY_IN_KHZ,
 				     MS5611_TRANSFER_TIMEOUT_IN_USECS);
+#endif
 
 	if (result < 0) {
 		DF_LOG_ERR("could not set slave config");
@@ -251,8 +258,19 @@ int MS5611::reset()
 {
 	int result;
 	uint8_t cmd = ADDR_RESET_CMD;
+
+#if defined(__DF_OCPOC)
+	uint8_t wbuf[1];
+	uint8_t rbuf[1];
+	wbuf[0] = cmd;
+	result = _transfer(wbuf, rbuf, 1);
+
+#else
+
 	_retries = 10;
 	result = _writeReg(cmd, nullptr, 0);
+
+#endif
 
 	if (result < 0) {
 		DF_LOG_ERR("Unable to reset device: %d", result);
@@ -266,7 +284,11 @@ int MS5611::start()
 {
 	int result = 0;
 
+#if defined(__DF_OCPOC)
+	result = SPIDevObj::start();
+#else
 	result = I2CDevObj::start();
+#endif
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
@@ -309,8 +331,16 @@ int MS5611::_request(uint8_t cmd)
 {
 	int ret;
 
+#if defined(__DF_OCPOC)
+	uint8_t wbuf[1];
+	uint8_t rbuf[1];
+
+	wbuf[0] = cmd;
+	ret = _transfer(wbuf, rbuf, 1);
+#else
 	_retries = 0;
 	ret = _writeReg(cmd, nullptr, 0);
+#endif
 
 	if (ret < 0) {
 		DF_LOG_ERR("error: request failed");
@@ -328,10 +358,32 @@ int MS5611::_collect(uint32_t &raw)
 		uint32_t w;
 	} cvt {};
 
-	uint8_t buf[3];
-
-	_retries = 0;
 	uint8_t cmd = ADDR_CMD_ADC_READ;
+
+#if defined(__DF_OCPOC)
+	uint8_t buf[4];
+	uint8_t wbuf[4];
+	wbuf[0] = cmd;
+
+	ret = _transfer(&wbuf[0], &buf[0], 4);
+
+	if (ret < 0) {
+		raw = 0;
+		return -1;
+	}
+	
+	cvt.b[0] = buf[3];
+	cvt.b[1] = buf[2];
+	cvt.b[2] = buf[1];
+	cvt.b[3] = 0;
+	raw = cvt.w;
+
+	return 0;
+
+#else
+	uint8_t buf[3];
+	_retries = 0;
+
 	ret = _readReg(cmd, &buf[0], 3);
 
 	if (ret < 0) {
@@ -346,6 +398,7 @@ int MS5611::_collect(uint32_t &raw)
 	raw = cvt.w;
 
 	return 0;
+#endif
 }
 
 void MS5611::_measure()
@@ -393,7 +446,6 @@ void MS5611::_measure()
 		}
 
 		m_measure_phase = 0;
-
 
 		m_synchronize.lock();
 
