@@ -57,7 +57,11 @@ struct ms5611_sensor_measurement {
 	int32_t pressure_mbar; // Temperature compensated pressure with 0.01 mbar resolution
 };
 
-#define BARO_DEVICE_PATH "/dev/i2c-1"
+#if defined(__DF_OCPOC)
+  #define BARO_DEVICE_PATH "/dev/spidev1.1"
+#else
+  #define BARO_DEVICE_PATH "/dev/i2c-1"
+#endif
 
 // update frequency is 50 Hz (44.4-51.3Hz ) at 8x oversampling
 #define MS5611_MEASURE_INTERVAL_US 20000 // microseconds
