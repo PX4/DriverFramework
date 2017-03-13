@@ -31,20 +31,20 @@
 #
 ############################################################################
 
-include(.. / .. / cmake / df_common.cmake)
+include(../../cmake/df_common.cmake)
 
 include_directories(
-	.. / .. / framework / include
-)
+	../../framework/include
+	)
 
-get_filename_component(drivername $ {CMAKE_CURRENT_SOURCE_DIR} NAME)
-df_add_library(df_$ {drivername}
-	       MPU9250.cpp
-	       MPU9250_mag.cpp
-	      )
+get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+df_add_library(df_${drivername}
+	MPU9250.cpp
+	MPU9250_mag.cpp
+	)
 
-if ("${DF_ENABLE_TESTS}" STREQUAL "1")
+if("${DF_ENABLE_TESTS}" STREQUAL "1")
 	add_subdirectory(test)
-	endif()
+endif()
 
 # vim: set noet fenc=utf-8 ff=unix ft=cmake :
