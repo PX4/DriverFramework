@@ -37,6 +37,10 @@
 #include "SyncObj.hpp"
 
 #if defined(__DF_OCPOC)
+#define __BARO_USE_SPI
+#endif
+
+#if defined(__BARO_USE_SPI)
 #include "SPIDevObj.hpp"
 #else
 #include "I2CDevObj.hpp"
@@ -59,7 +63,7 @@ struct baro_sensor_data {
 	uint64_t error_counter;		/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
-#if defined(__DF_OCPOC)
+#if defined(__BARO_USE_SPI)
 class BaroSensor : public SPIDevObj
 #else
 class BaroSensor : public I2CDevObj
@@ -67,7 +71,7 @@ class BaroSensor : public I2CDevObj
 {
 public:
 	BaroSensor(const char *device_path, unsigned int sample_interval_usec) :
-#if defined(__DF_OCPOC)
+#if defined(__BARO_USE_SPI)
 		SPIDevObj("BaroSensor", device_path, BARO_CLASS_PATH, sample_interval_usec)
 #else
 		I2CDevObj("BaroSensor", device_path, BARO_CLASS_PATH, sample_interval_usec)
