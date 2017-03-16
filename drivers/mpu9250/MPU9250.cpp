@@ -167,6 +167,9 @@ int MPU9250::mpu9250_init()
 	//Therefore, we use the gyro bandwith of 184 Hz which corresponds to 1kHz sampling frequency.
 	result = _writeReg(MPUREG_CONFIG,
 			   BITS_DLPF_CFG_184HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
+#elif defined(__DF_RPI_SINGLE)
+	result = _writeReg(MPUREG_CONFIG,
+			   BITS_DLPF_CFG_184HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
 #else
 	result = _writeReg(MPUREG_CONFIG,
 			   BITS_DLPF_CFG_250HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
@@ -453,6 +456,8 @@ void MPU9250::_measure()
 
 #if defined(__DF_EDISON)
 	//FIFO corrupt at 10MHz.
+	_setBusFrequency(SPI_FREQUENCY_5MHZ);
+#elif defined(__DF_RPI_SINGLE)
 	_setBusFrequency(SPI_FREQUENCY_5MHZ);
 #else
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
