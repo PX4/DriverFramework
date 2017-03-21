@@ -96,6 +96,40 @@ int SPIDevObj::readReg(DevHandle &h, uint8_t address, uint8_t &val)
 
 	return -1;
 }
+int SPIDevObj::_readReg(uint8_t address, uint8_t *val,uint8_t len)
+{
+		/* implement sensor interface via rpi2 spi */
+		// constexpr int transfer_bytes = 1 + 1; // first byte is address
+		uint8_t write_buffer[2] = {0}; // automatic write buffer
+		uint8_t read_buffer[len+1] = {0}; // automatic read buffer
+
+		write_buffer[0] = address | DIR_READ; // read mode
+		write_buffer[1] = 0; // write data
+
+		struct spi_ioc_transfer spi_transfer; // datastructures for linux spi interface
+		memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
+
+		spi_transfer.tx_buf = (unsigned long)write_buffer;
+		spi_transfer.rx_buf = (unsigned long)read_buffer;
+		spi_transfer.len = len;
+		// spi_transfer.speed_hz = SPI_FREQUENCY_1MHZ; // temporarily override spi speed
+		spi_transfer.bits_per_word = 8;
+		spi_transfer.delay_usecs = 0;
+
+		int result = 0;
+		result = ::ioctl(m_fd, SPI_IOC_MESSAGE(1), &spi_transfer);
+
+		if (result != 2) {
+			DF_LOG_ERR("error: SPI combined read write failed: %d", result);
+			return -1;
+		}
+		for(int i=0;i<len;++i){
+			*val+i = read_buffer[i+1];
+		}
+		return 0;
+}
+
+
 
 int SPIDevObj::_readReg(uint8_t address, uint8_t &val)
 {
