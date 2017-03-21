@@ -124,7 +124,7 @@ int SPIDevObj::_readReg(uint8_t address, uint8_t *val,uint8_t len)
 			return -1;
 		}
 		for(int i=0;i<len;++i){
-			*val+i = read_buffer[i+1];
+			*(val+i) = read_buffer[i+1];
 		}
 		return 0;
 }
