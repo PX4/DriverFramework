@@ -35,7 +35,7 @@
 
 #include <stdint.h>
 #include "SyncObj.hpp"
-#if defined(BARO_spi)
+#if defined(BARO_SPI)
 #include "SPIDevObj.hpp"
 #else
 #include "I2CDevObj.hpp"
@@ -57,14 +57,14 @@ struct baro_sensor_data {
 	uint64_t last_read_time_usec; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
 	uint64_t error_counter;		/*! the total number of errors detected when reading the pressure, since the system was started */
 };
-#if defined(BARO_spi)
+#if defined(BARO_SPI)
 class BaroSensor : public SPIDevObj
 #else
 class BaroSensor : public I2CDevObj
 #endif
 {
 public:
-#if defined(BARO_spi)
+#if defined(BARO_SPI)
 	BaroSensor(const char *device_path, unsigned int sample_interval_usec) :
 		SPIDevObj("BaroSensor", device_path, BARO_CLASS_PATH, sample_interval_usec)
 	{}
