@@ -72,7 +72,7 @@ public:
 	BaroSensor(const char *device_path, unsigned int sample_interval_usec) :
 		I2CDevObj("BaroSensor", device_path, BARO_CLASS_PATH, sample_interval_usec)
 	{}
-#endif;
+#endif
 	~BaroSensor() = default;
 
 	void setAltimeter(float altimeter_setting_in_mbars)
