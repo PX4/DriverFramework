@@ -214,11 +214,13 @@ int MS5611::ms5611_init()
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
 	m_synchronize.unlock();
-
+#if defined(BARO_SPI)
+	_setBusFrequency(SPI_FREQUENCY_1MHZ);
+#else
 	int result = _setSlaveConfig(MS5611_SLAVE_ADDRESS,
 				     MS5611_BUS_FREQUENCY_IN_KHZ,
 				     MS5611_TRANSFER_TIMEOUT_IN_USECS);
-
+#endif
 	if (result < 0) {
 		DF_LOG_ERR("could not set slave config");
 	}
