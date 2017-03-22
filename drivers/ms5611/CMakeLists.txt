@@ -39,6 +39,7 @@ include_directories(../../framework/include)
 get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 df_add_library(df_${drivername}
 	MS5611.cpp
+	MS5611_spi.cpp
 	)
 
 if("${DF_ENABLE_TESTS}" STREQUAL "1")
