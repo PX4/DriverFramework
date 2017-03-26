@@ -47,7 +47,7 @@ void SyncObjTest::_doTests()
 	reportResult("Simple lock/unlock", passed);
 
 	uint64_t now = offsetTime();
-	unsigned long wait_in_us = 5000;
+	unsigned long wait_in_us = 9000;
 	so.lock();
 	int rv = so.waitOnSignal(wait_in_us);
 	so.unlock();
