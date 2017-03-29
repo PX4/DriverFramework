@@ -40,7 +40,7 @@ set(version "${version_major}.${version_minor}.${version_patch}")
 set(package-contact "charlebm@gmail.com")
 
 if ("${OS}" STREQUAL "qurt")
-	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/cmake_hexagon")
+	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/dspal/cmake_hexagon")
 	add_definitions(-D__DF_QURT)
 endif()
 
