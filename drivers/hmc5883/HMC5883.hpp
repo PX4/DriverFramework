@@ -38,9 +38,9 @@
 namespace DriverFramework
 {
 #if defined(__DF_OCPOC)
-  #define MAG_DEVICE_PATH "/dev/i2c-0"
+#define MAG_DEVICE_PATH "/dev/i2c-0"
 #else
-  #define MAG_DEVICE_PATH "/dev/iic-2"
+#define MAG_DEVICE_PATH "/dev/iic-2"
 #endif
 
 // 150 Hz (supported in single measurment mode is up to 160 Hz

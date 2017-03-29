@@ -172,9 +172,11 @@ int MS5611::loadCalibration()
 		uint8_t cmd = ADDR_PROM_SETUP + (i * 2);
 
 #if defined(__BARO_USE_SPI)
+
 		if (_bulkRead(cmd, &prom_buf[0], 2) < 0) {
 #else
 		_retries = 5;
+
 		if (_readReg(cmd, &prom_buf[0], 2) < 0) {
 #endif
 			DF_LOG_ERR("Read calibration error");
@@ -371,7 +373,7 @@ int MS5611::_collect(uint32_t &raw)
 		raw = 0;
 		return -1;
 	}
-	
+
 	cvt.b[0] = buf[3];
 	cvt.b[1] = buf[2];
 	cvt.b[2] = buf[1];
