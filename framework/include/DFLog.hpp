@@ -41,9 +41,7 @@
 
 namespace DriverFramework
 {
-
-uint64_t offsetTime(void);
-
+uint64_t offsetTime();
 }
 
 #define DF_INFO 0
