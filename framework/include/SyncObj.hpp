@@ -56,7 +56,7 @@ public:
 	// Use timeout_us = 0 for blocking wait
 	int waitOnSignal(unsigned long timeout_us);
 
-	void signal(void);
+	void signal();
 
 private:
 	pthread_mutex_t m_lock{};

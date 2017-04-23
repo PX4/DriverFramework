@@ -58,7 +58,7 @@ public:
 typedef void (*WorkCallback)(void *arg);
 
 // Get the offset time from startup
-uint64_t offsetTime(void);
+uint64_t offsetTime();
 
 // convert offset time to absolute time
 struct timespec offsetTimeToAbsoluteTime(uint64_t offset_time);
@@ -83,8 +83,8 @@ private:
 	friend class Framework;
 
 	static bool isValidHandle(const WorkHandle &h);
-	static int initialize(void);
-	static void finalize(void);
+	static int initialize();
+	static void finalize();
 
 	static bool m_initialized;
 };
