@@ -195,7 +195,7 @@ int16_t BebopRangeFinder::_filter_read_buffer()
 			       + (m_read_buffer[eos + 2] >> 4);
 
 	// Mean filter the read signal, but exclude the pulse recorded during send
-	for (unsigned int i = 2; i < BEBOP_RANGEFINDER_BUFFER_LEN - eos - 1; ++i) {
+	for (int i = 2; i < BEBOP_RANGEFINDER_BUFFER_LEN - eos - 1; ++i) {
 		m_filtered_buffer[i] = running_sum / 3;
 		running_sum = (running_sum + (m_read_buffer[eos + i + 1] >> 4)
 			       - (m_read_buffer[eos + i - 2] >> 4));
