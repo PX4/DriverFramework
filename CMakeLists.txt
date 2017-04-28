@@ -56,7 +56,6 @@ if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 		-Wall
 		-Werror
 		-Wextra
-		-Wno-sign-compare
 		-Wshadow
 		-Wfloat-equal
 		-Wpointer-arith
