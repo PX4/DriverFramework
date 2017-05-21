@@ -172,7 +172,7 @@ int MPU9250::mpu9250_init()
 			   BITS_DLPF_CFG_184HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
 #else
 	result = _writeReg(MPUREG_CONFIG,
-			   BITS_DLPF_CFG_250HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
+			   BITS_DLPF_CFG_41HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
 #endif
 
 	if (result != 0) {
@@ -197,7 +197,7 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-	result = _writeReg(MPUREG_ACCEL_CONFIG2, BITS_ACCEL_CONFIG2_BW_1130HZ);
+	result = _writeReg(MPUREG_ACCEL_CONFIG2, BITS_ACCEL_CONFIG2_BW_41HZ);
 
 	if (result != 0) {
 		DF_LOG_ERR("Accel scale config2 failed");

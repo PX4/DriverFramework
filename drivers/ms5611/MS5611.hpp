@@ -33,7 +33,7 @@
  ****************************************************************************/
 
 #pragma once
-#define BARO_spi
+
 #include "BaroSensor.hpp"
 
 namespace DriverFramework
@@ -56,8 +56,9 @@ struct ms5611_sensor_measurement {
 	int64_t sens; // Sensitivity at actual temperature
 	int32_t pressure_mbar; // Temperature compensated pressure with 0.01 mbar resolution
 };
-#if defined(BARO_SPI)
-#define BARO_DEVICE_PATH "/dev/spidev0.0"
+
+#if defined(__DF_OCPOC)
+#define BARO_DEVICE_PATH "/dev/spidev1.1"
 #else
 #define BARO_DEVICE_PATH "/dev/i2c-1"
 #endif
