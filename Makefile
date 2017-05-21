@@ -6,15 +6,18 @@ define df_cmake_generate
 mkdir -p build_$(1) && cd build_$(1) && cmake .. -DOS=$(2) -DCMAKE_TOOLCHAIN_FILE=$(3) -DDF_ENABLE_TESTS=1 $(4)
 endef
 
-rpi linux bebop edison:
+rpi linux bebop edison ocpoc:
 	$(call df_cmake_generate,$@,posix,cmake/toolchains/Toolchain-$@.cmake,)
 	cd build_$@ && make
 
-qurt:
+qurt: dspal/cmake_hexagon
 	# qurt needs to be separate from rpi, bebop, etc. because it has "qurt"
 	# as the OS and not posix like the others.
-	$(call df_cmake_generate,$@,qurt,cmake/cmake_hexagon/toolchain/Toolchain-$@.cmake,-DQC_SOC_TARGET=${QC_SOC_TARGET})
+	$(call df_cmake_generate,$@,qurt,dspal/cmake_hexagon/toolchain/Toolchain-$@.cmake,-DQC_SOC_TARGET=${QC_SOC_TARGET})
 	cd build_$@ && make
+
+dspal/cmake_hexagon:
+	git submodule update --init --recursive
 
 run: linux
 	build_linux/test/df_testapp
