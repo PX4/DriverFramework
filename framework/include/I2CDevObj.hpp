@@ -72,7 +72,7 @@ protected:
 
 	int _setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_khz, uint32_t transfer_timeout_usec);
 
-	int m_fd{-1};
+	int m_fd{ -1};
 	unsigned _retries{0};
 };
 

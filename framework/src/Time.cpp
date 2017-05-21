@@ -65,8 +65,8 @@ using namespace DriverFramework;
 
 int DriverFramework::absoluteTime(struct timespec &ts)
 {
-#if defined(__DF_NUTTX)
-	// CLOCK_MONOTONIC not available on NuttX
+#if defined(__DF_NUTTX) || defined(__DF_APPLE_LEGACY)
+	// CLOCK_MONOTONIC not available on NuttX or OSX
 	return clock_gettime(0, &ts);
 #else
 	return clock_gettime(CLOCK_MONOTONIC, &ts);

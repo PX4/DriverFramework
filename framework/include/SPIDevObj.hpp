@@ -77,10 +77,10 @@ public:
 
 protected:
 	int _readReg(uint8_t address, uint8_t &val);
-	int _readReg(uint8_t address, uint8_t *val,uint8_t len);
 	int _writeReg(uint8_t address, uint8_t *in_buffer, uint16_t length);
 	int _writeReg(uint8_t address, uint8_t val);
 	int _modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits);
+	int _transfer(uint8_t *write_buffer, uint8_t *read_buffer, uint8_t len);
 
 	int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
 	int _setBusFrequency(SPI_FREQUENCY freq_hz);

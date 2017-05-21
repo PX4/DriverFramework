@@ -87,9 +87,9 @@ public:
 
 	virtual int init();
 
-	virtual int start(void);
+	virtual int start();
 
-	virtual int stop(void);
+	virtual int stop();
 
 	void setSampleInterval(unsigned int sample_interval_usecs);
 

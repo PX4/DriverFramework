@@ -115,8 +115,8 @@ private:
 	DevMgr();
 	~DevMgr();
 
-	static int initialize(void);
-	static void finalize(void);
+	static int initialize();
+	static void finalize();
 
 #ifndef __DF_NUTTX
 	static DevObj *_getDevObjByHandle(DevHandle &handle);
