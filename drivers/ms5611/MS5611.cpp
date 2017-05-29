@@ -213,6 +213,10 @@ int MS5611::ms5611_init()
 	/* Zero the struct */
 	m_synchronize.lock();
 
+	m_sample_valid = true;
+	m_pressure_from_sensor = 1; /* Zero is returned on an error reading */
+	m_temperature_from_sensor = 1; /* Zero is returned on an error reading */
+
 	m_sensor_data.pressure_pa = 0.0f;
 	m_sensor_data.temperature_c = 0.0f;
 	m_sensor_data.last_read_time_usec = 0;
@@ -423,6 +427,15 @@ void MS5611::_measure()
 		// Request to convert the pressure
 		if (_request(ADDR_CMD_CONVERT_D1) < 0) {
 			DF_LOG_ERR("error: pressure measure failed");
+			m_pressure_from_sensor = 0;
+		}
+
+		/* if this reading or the last pressure reading is zero, this sample is compromised */
+		if (m_temperature_from_sensor == 0 || m_pressure_from_sensor == 0) {
+			m_sample_valid = false;
+
+		} else {
+			m_sample_valid = true;
 		}
 
 		m_measure_phase++;
@@ -448,6 +461,15 @@ void MS5611::_measure()
 		}
 
 		m_measure_phase = 0;
+
+		if (m_pressure_from_sensor == 0) {
+			m_sample_valid = false;
+		}
+
+		if (!m_sample_valid) {
+			DF_LOG_ERR("error: invalid sample");
+			return;
+		}
 
 		m_synchronize.lock();
 
