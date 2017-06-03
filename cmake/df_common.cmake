@@ -47,12 +47,14 @@ if ("${DF_TARGET}" STREQUAL "")
 			EXEC_PROGRAM(uname ARGS -v  OUTPUT_VARIABLE DARWIN_VERSION)
 			STRING(REGEX MATCH "[0-9]+" DARWIN_VERSION ${DARWIN_VERSION})
 			# message(STATUS "DF Darwin Version: ${DARWIN_VERSION}")
-			if (DARWIN_VERSION LESS 16)
+
+			# So far no real support for monotonic timers as of macOS 10.12.1
+			# if (DARWIN_VERSION LESS 16)
 				add_definitions(
 					-DCLOCK_MONOTONIC=1
 					-D__DF_APPLE_LEGACY
 					)
-			endif()
+			# endif()
 		else()
 			set(DF_TARGET linux)
 		endif()

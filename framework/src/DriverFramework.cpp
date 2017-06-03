@@ -74,7 +74,7 @@ public:
 	void shutdown();
 	void enableStats(bool enable);
 
-	static void *process_trampoline(void *);
+	static void *process_trampoline(void * /*arg*/);
 
 private:
 	HRTWorkQueue() = default;
