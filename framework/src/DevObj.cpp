@@ -304,7 +304,7 @@ int DevObj::removeHandle(DevHandle &h)
 	}
 
 	m_handle_lock.unlock();
-	return m_handles.size();
+	return (int)m_handles.size();
 }
 
 void DevObj::updateNotify()

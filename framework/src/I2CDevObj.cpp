@@ -77,7 +77,7 @@ int I2CDevObj::stop()
 	return 0;
 }
 
-int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int length)
+int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, size_t length)
 {
 	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
 
@@ -89,7 +89,7 @@ int I2CDevObj::readReg(DevHandle &h, uint8_t address, uint8_t *out_buffer, int l
 	}
 }
 
-int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int length)
+int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, size_t length)
 {
 	I2CDevObj *obj = DevMgr::getDevObjByHandle<I2CDevObj>(h);
 
@@ -101,7 +101,7 @@ int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, int l
 	}
 }
 
-int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
+int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, size_t length)
 {
 
 	if (m_fd == 0) {
@@ -148,7 +148,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, int length)
 #endif
 }
 
-int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, int length)
+int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, size_t length)
 {
 
 	if (m_fd == 0) {
@@ -178,7 +178,7 @@ int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, int length)
 }
 
 // read from a register without ioctl
-int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
+int I2CDevObj::_simple_read(uint8_t *out_buffer, size_t length)
 {
 
 	if (m_fd == 0) {
@@ -187,11 +187,11 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 	}
 
 #if defined(__DF_QURT) || defined(__DF_LINUX)
-	int bytes_read = 0;
+	ssize_t bytes_read = 0;
 
 	bytes_read = ::read(m_fd, out_buffer, length);
 
-	if (bytes_read != length) {
+	if (bytes_read != (ssize_t)length) {
 		DF_LOG_ERR("error: read register reports a read of %d bytes, but attempted to set %d bytes",
 			   bytes_read, length);
 		return -1;
@@ -203,7 +203,7 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, int length)
 #endif
 }
 
-int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
+int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, size_t length)
 {
 #if defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
@@ -232,9 +232,9 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 	}
 
 	do {
-		int bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
+		ssize_t bytes_written = ::write(m_fd, (char *) write_buffer, length + 1);
 
-		if (bytes_written != length + 1) {
+		if (bytes_written != (ssize_t)length + 1) {
 			DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
 				   bytes_written);
 
@@ -251,7 +251,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, int length)
 #endif
 }
 
-int I2CDevObj::_writeReg16(uint16_t address, uint16_t *in_buffer, int length)
+int I2CDevObj::_writeReg16(uint16_t address, uint16_t *in_buffer, size_t length)
 {
 #if defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
@@ -281,9 +281,9 @@ int I2CDevObj::_writeReg16(uint16_t address, uint16_t *in_buffer, int length)
 	}
 
 	do {
-		int bytes_written = ::write(m_fd, (char *) write_buffer, length + 2);
+		ssize_t bytes_written = ::write(m_fd, (char *) write_buffer, length + 2);
 
-		if (bytes_written != length + 2) {
+		if (bytes_written != (ssize_t)length + 2) {
 			DF_LOG_ERR("Error: i2c write failed. Reported %d bytes written",
 				   bytes_written);
 
