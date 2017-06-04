@@ -42,7 +42,7 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
-	ImuTester() : m_sensor(IMU_DEVICE_PATH, true) {};
+	ImuTester() : m_sensor(IMU_DEVICE_PATH, true) {}
 
 	static void readSensorCallback(void *arg);
 

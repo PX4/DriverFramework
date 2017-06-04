@@ -43,7 +43,7 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
-	BebopRangeFinderTester() : BebopRangeFinder(BEBOP_RANGEFINDER_DEVICE_PATH) {};
+	BebopRangeFinderTester() : BebopRangeFinder(BEBOP_RANGEFINDER_DEVICE_PATH) {}
 
 	int run();
 
