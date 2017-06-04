@@ -43,7 +43,7 @@ public:
 	static const int TEST_PASS = 0;
 	static const int TEST_FAIL = 1;
 
-	MagTester() : m_sensor(MAG_DEVICE_PATH) {};
+	MagTester() : m_sensor(MAG_DEVICE_PATH) {}
 
 	static void readSensorCallback(void *arg);
 

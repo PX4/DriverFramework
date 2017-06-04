@@ -156,8 +156,8 @@ private:
 class RunStatus
 {
 public:
-	RunStatus() {};
-	~RunStatus() {};
+	RunStatus() {}
+	~RunStatus() {}
 
 	// check() returns true if no terminate was requested
 	bool check();

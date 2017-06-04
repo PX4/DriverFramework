@@ -263,7 +263,7 @@ int AK8963::ak8963_init()
 	m_synchronize.unlock();
 
 	// Perform soft-reset
-	uint8_t bits = AK8963_BITS_CNTL2_SOFT_RESET;;
+	uint8_t bits = AK8963_BITS_CNTL2_SOFT_RESET;
 	int result = _writeReg(AK8963_REG_CNTL2, &bits, 1);
 
 	if (result < 0) {
