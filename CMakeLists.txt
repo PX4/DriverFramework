@@ -54,22 +54,21 @@ if ("$ENV{ENABLE_TSAN}" STREQUAL "1")
 	# warnings
 	set(warning_list
 		-Wall
+		-Warray-bounds
 		-Werror
 		-Wextra
-		-Wshadow
+		-Wfatal-errors
 		-Wfloat-equal
-		-Wpointer-arith
+		-Wformat-security
+		-Winit-self
 		-Wmissing-declarations
 		-Wno-unused-parameter
-		-Werror=format-security
-		-Werror=array-bounds
-		-Wfatal-errors
-		-Werror=unused-variable
-		-Werror=reorder
-		-Werror=uninitialized
-		-Werror=init-self
-		# cxx specific
-		-Wno-missing-field-initializers
+		-Wpointer-arith
+		-Wreorder
+		-Wshadow
+		-Wsign-conversion
+		-Wuninitialized
+		-Wunused-variable
 		)
 
 	string (REPLACE ";" " " _TMP_STR "${warning_list}")

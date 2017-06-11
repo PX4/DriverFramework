@@ -56,7 +56,7 @@ namespace DriverFramework
 /**
  * Get the absolute time off the system realtime clock
  *
- * @param timespec the realtime time
+ * @param ts the realtime time
  *
  * @return 0 if successful, nonzero else
  */
@@ -68,7 +68,7 @@ int absoluteTimeInFuture(uint64_t time_us, struct timespec &ts);
 /**
  * Get the absolute time off the system monotonic clock
  *
- * @param timespec the realtime time
+ * @param ts the realtime time
  *
  * @return 0 if successful, nonzero else
  */

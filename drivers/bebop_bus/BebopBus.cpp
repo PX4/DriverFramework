@@ -220,9 +220,8 @@ int BebopBus::_get_observation_data(struct bebop_bus_observation *obs)
 
 int BebopBus::_start_motors()
 {
-
 	// Select rotation direction
-	uint8_t bits = BEBOP_BLDC_RLRL;;
+	uint8_t bits = BEBOP_BLDC_RLRL;
 
 	if (_writeReg(BEBOP_REG_START_BLDC, &bits, 1) != 0) {
 		DF_LOG_ERR("Unable to start BLDCs");
