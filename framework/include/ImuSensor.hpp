@@ -48,6 +48,10 @@
 #elif defined(__DF_BEBOP)
 #define IMU_DEVICE_PATH "/dev/i2c-mpu6050"
 #elif defined(__DF_RPI)
+//Here to fix generic linux support
+#if defined(__DF_ARM_GENERIC)
+#define IMU_DEVICE_PATH __DF_ACCEL_DEV
+#else
 #define IMU_DEVICE_PATH "/dev/spidev0.1"
 #elif defined(__DF_EDISON)
 #define IMU_DEVICE_PATH "/dev/spidev5.1"
@@ -57,10 +61,7 @@
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
-//Here to fix generic linux support
-#if defined(__DF_ARM_GENERIC)
-#define IMU_DEVICE_PATH __DF_ACCEL_DEV
-#endif
+
 
 #if defined(__DF_RPI)
 #include <linux/spi/spidev.h>
