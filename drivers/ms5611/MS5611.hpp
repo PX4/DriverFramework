@@ -60,7 +60,8 @@ struct ms5611_sensor_measurement {
 #if defined(__DF_OCPOC)
 #define BARO_DEVICE_PATH "/dev/spidev1.1"
 #elif defined(__DF_ARM_GENERIC)
-#define BARO_DEVICE_PATH __DF_BARO_DEV  // add custom path to support other borad,such as  friendly arm nano pi.
+// add custom path to support other borad,such as  friendly arm nano pi.
+#define BARO_DEVICE_PATH __DF_BARO_DEV
 #else
 #define BARO_DEVICE_PATH "/dev/i2c-1"
 #endif

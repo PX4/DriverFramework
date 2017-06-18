@@ -61,7 +61,7 @@
 #include <linux/spi/spidev.h>
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
 #define IMU_DEVICE_MAG "/dev/spidev0.2"
-#elif defined(__DF_RPI_SINGLE) && defined(__DF_ARM_GENERIC) // Use variable definetion to  support friendly arm and other board
+#elif defined(__DF_ARM_GENERIC) // Use variable definetion to  support friendly arm and other
 #define IMU_DEVICE_ACC_GYRO __DF_ACCEL_DEV
 #define IMU_DEVICE_MAG  __DF_MAG_DEV
 #elif defined(__DF_RPI_SINGLE)
