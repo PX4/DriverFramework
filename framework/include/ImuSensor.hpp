@@ -57,6 +57,11 @@
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
+//Here to fix generic linux support
+#if defined(__DF_ARM_GENERIC)
+#define IMU_DEVICE_PATH __DF_ACCEL_DEV
+#endif
+
 #if defined(__DF_RPI)
 #include <linux/spi/spidev.h>
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
