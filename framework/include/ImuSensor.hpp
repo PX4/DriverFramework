@@ -61,19 +61,19 @@
 #endif
 
 #if defined(__DF_ARM_GENERIC) // Use variable definetion to  support friendly arm and other
-#include <linux/spi/spidev.h>
-#define IMU_DEVICE_ACC_GYRO __DF_ACCEL_DEV
-#define IMU_DEVICE_MAG  __DF_MAG_DEV
+	#include <linux/spi/spidev.h>
+	#define IMU_DEVICE_ACC_GYRO __DF_ACCEL_DEV
+	#define IMU_DEVICE_MAG  __DF_MAG_DEV
 #else
-#if defined(__DF_RPI)
-#include <linux/spi/spidev.h>
-#if defined(__DF_RPI_SINGLE)
-#define IMU_DEVICE_ACC_GYRO "/dev/spidev0.1"
-#define IMU_DEVICE_MAG "/dev/spidev0.1"
+	#if defined(__DF_RPI)
+	#include <linux/spi/spidev.h>
+	#if defined(__DF_RPI_SINGLE)
+	#define IMU_DEVICE_ACC_GYRO "/dev/spidev0.1"
+	#define IMU_DEVICE_MAG "/dev/spidev0.1"
+	#else
+	#define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
+	#define IMU_DEVICE_MAG "/dev/spidev0.2"
 #else
-#define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
-#define IMU_DEVICE_MAG "/dev/spidev0.2"
-#endif
 #else
 #define IMU_DEVICE_ACC_GYRO ""
 #define IMU_DEVICE_MAG ""
