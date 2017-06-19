@@ -47,6 +47,8 @@
 #define IMU_DEVICE_PATH "/dev/spi-1"
 #elif defined(__DF_BEBOP)
 #define IMU_DEVICE_PATH "/dev/i2c-mpu6050"
+#elif defined(__DF_ARM_GENERIC)
+#define IMU_DEVICE_PATH  IMU_DEVICE_ACC_GYRO
 #elif defined(__DF_RPI)
 #define IMU_DEVICE_PATH "/dev/spidev0.1"
 #elif defined(__DF_EDISON)
