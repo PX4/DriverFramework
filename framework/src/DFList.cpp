@@ -274,7 +274,7 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 
 	if (idx != nullptr && idx == m_head) {
 		Index t = m_head->m_next;
-		delete (m_head);
+		delete(m_head);
 		m_head = t;
 
 		if (t == nullptr) {
@@ -296,7 +296,7 @@ DFUIntList::Index DFUIntList::erase(Index idx)
 					m_end = p;
 				}
 
-				delete (t);
+				delete(t);
 				--m_size;
 				m_sync.unlock();
 				return p->m_next;
