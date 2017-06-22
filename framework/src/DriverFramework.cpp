@@ -41,7 +41,7 @@
 #include "DevObj.hpp"
 #include "DevMgr.hpp"
 #include "SyncObj.hpp"
-    #include "WorkItems.hpp"
+#include "WorkItems.hpp"
 
 #ifdef __DF_LINUX
 #include <sys/prctl.h>
