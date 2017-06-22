@@ -28,13 +28,16 @@ addons:
     - build-essential
     - clang-3.5
     - cmake
-    - astyle
 
 before_script:
   - export PATH=~/bin:$PATH
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      brew install astyle
+      ;
+    fi
 
 script:
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       make check-style
       ;
     fi
