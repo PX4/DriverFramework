@@ -29,23 +29,15 @@ addons:
     - clang-3.5
     - cmake
 
-before_install:
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      pushd .
-      && cd ~
-      && mkdir -p ~/bin
-      && wget -O ~/bin/astyle https://github.com/PX4/astyle/releases/download/2.06/astyle-linux
-      && chmod +x ~/bin/astyle
-      && astyle --version
-      && popd
+before_script:
+  - export PATH=~/bin:$PATH
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      brew install astyle
       ;
     fi
 
-before_script:
-  - export PATH=~/bin:$PATH
-
 script:
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       make check-style
       ;
     fi
