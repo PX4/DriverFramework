@@ -183,7 +183,7 @@ namespace DriverFramework
 // update frequency 250 Hz
 #define MPU9250_MEASURE_INTERVAL_US 4000
 #elif defined(__DF_ARM_GENERIC)
-#define MPU9250_MEASURE_INTERVAL_US 2500
+#define MPU9250_MEASURE_INTERVAL_US 4000
 #elif defined(__DF_RPI_SINGLE)
 // update frequency 1000 Hz,if using rpi1,rpi zero,1000hz may be to higher,please reduce the frequency
 #define MPU9250_MEASURE_INTERVAL_US 1000
