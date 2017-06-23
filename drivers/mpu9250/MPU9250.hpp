@@ -246,6 +246,8 @@ public:
 		_mag_enabled(mag_enabled),
 #if defined(__DF_EDISON)
 		_packets_per_cycle_filtered(4.0f), // The FIFO is supposed to run at 1kHz and we sample at 250Hz.
+#elif defined(__DF_ARM_GENERIC)
+		_packets_per_cycle_filtered(2.5f),
 #else
 		_packets_per_cycle_filtered(8.0f), // The FIFO is supposed to run at 8kHz and we sample at 1kHz.
 #endif
