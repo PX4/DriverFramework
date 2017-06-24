@@ -135,6 +135,7 @@ protected:
 
 	uint32_t m_temperature_from_sensor;
 	uint32_t m_pressure_from_sensor;
+	bool m_sample_valid;
 
 	int m_measure_phase;
 };
