@@ -97,10 +97,10 @@ public:
 	virtual ~MS5611() = default;
 
 	// @return 0 on success, -errno on failure
-	int start();
+	virtual int start() override;
 
 	// @return 0 on success, -errno on failure
-	int stop();
+	virtual int stop() override;
 
 protected:
 	virtual void _measure() override;
