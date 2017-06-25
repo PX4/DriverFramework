@@ -560,9 +560,3 @@ void MPU6050::_measure()
 		_publish(m_sensor_data);
 	}
 }
-
-int MPU6050::_publish(struct imu_sensor_data &data)
-{
-	// TBD
-	return -1;
-}
