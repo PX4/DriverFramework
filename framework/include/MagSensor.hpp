@@ -61,7 +61,7 @@ public:
 		I2CDevObj("MagSensor", device_path, MAG_CLASS_PATH, sample_interval_usec)
 	{}
 
-	~MagSensor() {}
+	virtual ~MagSensor() = default;
 
 	static void printValues(struct mag_sensor_data &data)
 	{
