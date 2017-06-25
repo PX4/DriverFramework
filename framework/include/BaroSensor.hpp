@@ -78,7 +78,7 @@ public:
 #endif
 	{}
 
-	~BaroSensor() = default;
+	virtual ~BaroSensor() = default;
 
 	void setAltimeter(float altimeter_setting_in_mbars)
 	{
