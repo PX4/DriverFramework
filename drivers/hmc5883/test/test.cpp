@@ -37,6 +37,47 @@
 
 using namespace DriverFramework;
 
+class HMC5883Tester : public HMC5883
+{
+public:
+	using HMC5883::HMC5883;
+
+	int getSensorData(struct mag_sensor_data &out_data, bool is_new_data_required);
+	virtual int _publish(struct mag_sensor_data &data) override;
+
+private:
+	SyncObj m_synchronize;
+	mag_sensor_data m_sensor_data_copy;
+};
+
+int HMC5883Tester::getSensorData(struct mag_sensor_data &out_data, bool is_new_data_required)
+{
+	int ret = -1;
+
+	m_synchronize.lock();
+
+	if (is_new_data_required) {
+		m_synchronize.waitOnSignal(0);
+	}
+
+	out_data = m_sensor_data_copy;
+	m_synchronize.unlock();
+	ret = 0;
+
+	return ret;
+}
+
+int HMC5883Tester::_publish(struct mag_sensor_data &data)
+{
+	m_synchronize.lock();
+	m_sensor_data_copy = data;
+	m_synchronize.signal();
+	m_synchronize.unlock();
+
+	return 0;
+}
+
+
 class MagTester
 {
 public:
@@ -53,7 +94,7 @@ private:
 	void readSensor();
 	void wait();
 
-	HMC5883		m_sensor;
+	HMC5883Tester		m_sensor;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
 	struct mag_sensor_data m_sensor_data;
@@ -87,7 +128,7 @@ int MagTester::run()
 
 	while (!m_done) {
 		++m_read_attempts;
-		ret = MagSensor::getSensorData(h, m_sensor_data, true);
+		ret = m_sensor.getSensorData(m_sensor_data, true);
 
 		if (ret == 0) {
 			uint32_t count = m_sensor_data.read_counter;
