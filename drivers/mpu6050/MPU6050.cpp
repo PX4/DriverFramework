@@ -152,7 +152,6 @@ using namespace DriverFramework;
 int MPU6050::mpu6050_init()
 {
 	/* Zero the struct */
-	m_synchronize.lock();
 
 	m_sensor_data.accel_m_s2_x = 0.0f;
 	m_sensor_data.accel_m_s2_y = 0.0f;
@@ -174,8 +173,6 @@ int MPU6050::mpu6050_init()
 
 	m_sensor_data.fifo_sample_interval_us = 0;
 	m_sensor_data.is_last_fifo_sample = false;
-
-	m_synchronize.unlock();
 
 	int result = _setSlaveConfig(MPU6050_SLAVE_ADDRESS,
 				     MPU6050_BUS_FREQUENCY_IN_KHZ,
@@ -421,19 +418,15 @@ void MPU6050::_measure()
 	int result = _readReg(MPUREG_INT_STATUS, &int_status, 1);
 
 	if (result < 0) {
-		m_synchronize.lock();
 		++m_sensor_data.error_counter;
-		m_synchronize.unlock();
 		return;
 	}
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
 		reset_fifo();
 
-		m_synchronize.lock();
 		++m_sensor_data.fifo_overflow_counter;
 		DF_LOG_ERR("FIFO overflow: %d", (int)m_sensor_data.fifo_overflow_counter);
-		m_synchronize.unlock();
 
 		return;
 	}
@@ -445,9 +438,7 @@ void MPU6050::_measure()
 	_packets_per_cycle_filtered = (0.95f * _packets_per_cycle_filtered) + (0.05f * (bytes_to_read / size_of_fifo_packet));
 
 	if (bytes_to_read <= 0) {
-		m_synchronize.lock();
 		++m_sensor_data.error_counter;
-		m_synchronize.unlock();
 		return;
 	}
 
@@ -462,9 +453,7 @@ void MPU6050::_measure()
 	result = _readReg(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 
 	if (result < 0) {
-		m_synchronize.lock();
 		++m_sensor_data.error_counter;
-		m_synchronize.unlock();
 		return;
 	}
 
@@ -487,18 +476,14 @@ void MPU6050::_measure()
 		if (report->accel_x == INT16_MIN || report->accel_x == INT16_MAX ||
 		    report->accel_y == INT16_MIN || report->accel_y == INT16_MAX ||
 		    report->accel_z == INT16_MIN || report->accel_z == INT16_MAX) {
-			m_synchronize.lock();
 			++m_sensor_data.accel_range_hit_counter;
-			m_synchronize.unlock();
 		}
 
 		// Also check the full gyro range, however, this is very unlikely to happen.
 		if (report->gyro_x == INT16_MIN || report->gyro_x == INT16_MAX ||
 		    report->gyro_y == INT16_MIN || report->gyro_y == INT16_MAX ||
 		    report->gyro_z == INT16_MIN || report->gyro_z == INT16_MAX) {
-			m_synchronize.lock();
 			++m_sensor_data.gyro_range_hit_counter;
-			m_synchronize.unlock();
 		}
 
 		const float temp_c = float(report->temp) / 340.0f + 36.53f;
@@ -526,16 +511,13 @@ void MPU6050::_measure()
 					fabs(temp_c - _last_temp_c), (double)_last_temp_c, (double)temp_c);
 				reset_fifo();
 				_temp_initialized = false;
-				m_synchronize.lock();
 				++m_sensor_data.fifo_corruption_counter;
-				m_synchronize.unlock();
 				return;
 			}
 
 			_last_temp_c = temp_c;
 		}
 
-		m_synchronize.lock();
 		m_sensor_data.accel_m_s2_x = float(report->accel_x)
 					     * (MPU6050_ONE_G / 2048.0f);
 		m_sensor_data.accel_m_s2_y = float(report->accel_y)
@@ -576,9 +558,6 @@ void MPU6050::_measure()
 #endif
 
 		_publish(m_sensor_data);
-
-		m_synchronize.signal();
-		m_synchronize.unlock();
 	}
 }
 

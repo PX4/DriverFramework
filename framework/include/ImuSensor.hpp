@@ -117,26 +117,6 @@ public:
 
 	~ImuSensor() {}
 
-	static int getSensorData(DevHandle &h, struct imu_sensor_data &out_data, bool is_new_data_required)
-	{
-		ImuSensor *me = DevMgr::getDevObjByHandle<ImuSensor>(h);
-		int ret = -1;
-
-		if (me != nullptr) {
-			me->m_synchronize.lock();
-
-			if (is_new_data_required) {
-				me->m_synchronize.waitOnSignal(0);
-			}
-
-			out_data = me->m_sensor_data;
-			me->m_synchronize.unlock();
-			ret = 0;
-		}
-
-		return ret;
-	}
-
 	static void printImuValues(DevHandle &h, struct imu_sensor_data &data)
 	{
 		ImuSensor *me = DevMgr::getDevObjByHandle<ImuSensor>(h);
@@ -173,7 +153,6 @@ protected:
 
 	struct imu_sensor_data 		m_sensor_data;
 	bool						m_mag_enabled;
-	SyncObj 					m_synchronize;
 };
 
 } // namespace DriverFramework
