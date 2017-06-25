@@ -135,7 +135,7 @@ int MagTester::run()
 			if (m_read_counter != count) {
 				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
-				MagSensor::printValues(m_sensor_data);
+				printMagValues(m_sensor_data);
 			}
 
 		} else {
