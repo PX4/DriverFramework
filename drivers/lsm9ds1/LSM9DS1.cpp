@@ -445,9 +445,3 @@ void LSM9DS1::_measure()
 
 	_publish(m_sensor_data);
 }
-
-int LSM9DS1::_publish(struct imu_sensor_data &data)
-{
-	// TBD
-	return -1;
-}
