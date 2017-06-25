@@ -136,7 +136,7 @@ int PressureTester::run()
 			if (m_read_counter != count) {
 				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
-				BaroSensor::printPressureValues(m_sensor_data);
+				printPressureValues(m_sensor_data);
 			}
 
 		} else {

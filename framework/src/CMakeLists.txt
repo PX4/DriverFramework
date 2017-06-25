@@ -56,6 +56,7 @@ else()
 		I2CDevObj.cpp
 		SPIDevObj.cpp
 		ImuSensor.cpp
+		BaroSensor.cpp
 		)
 endif()
 
