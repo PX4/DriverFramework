@@ -138,7 +138,7 @@ int ImuTester::run()
 
 			if (m_read_counter != count) {
 				m_read_counter = count;
-				ImuSensor::printImuValues(h, data);
+				printImuValues(data);
 			}
 
 		} else {
