@@ -587,9 +587,3 @@ void MPU9250::_measure()
 		_publish(m_sensor_data);
 	}
 }
-
-int MPU9250::_publish(struct imu_sensor_data &data)
-{
-	// TBD
-	return -1;
-}
