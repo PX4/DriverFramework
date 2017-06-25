@@ -146,11 +146,6 @@ public:
 protected:
 	virtual void _measure() = 0;
 
-	virtual int _publish(struct imu_sensor_data &data)
-	{
-		return -1;
-	}
-
 	struct imu_sensor_data 		m_sensor_data;
 	bool						m_mag_enabled;
 };
