@@ -405,9 +405,3 @@ void AK8963::_measure()
 
 	return;
 }
-
-int AK8963::_publish(struct mag_sensor_data &data)
-{
-	//TBD
-	return -1;
-}
