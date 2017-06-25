@@ -49,8 +49,6 @@ private:
 	// Returns temperature in DegC, resolution is 0.01 DegC
 	// Output value of “5123” equals 51.23 DegC
 	int32_t convertTemperature(int32_t adc_temperature);
-
-	virtual int _publish(struct baro_sensor_data &data);
 };
 
 }; // namespace DriverFramework
