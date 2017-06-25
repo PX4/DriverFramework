@@ -88,7 +88,7 @@ public:
 	virtual int stop();
 
 protected:
-	virtual void _measure();
+	virtual void _measure() override;
 	virtual int _publish(struct baro_sensor_data &data);
 
 private:
