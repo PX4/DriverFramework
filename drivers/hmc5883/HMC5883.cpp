@@ -227,9 +227,3 @@ void HMC5883::_measure()
 
 	_measurement_requested = true;
 }
-
-int HMC5883::_publish(struct mag_sensor_data &data)
-{
-	// TBD
-	return -1;
-}

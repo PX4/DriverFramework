@@ -71,7 +71,7 @@ public:
 
 protected:
 	virtual void _measure();
-	virtual int _publish(struct mag_sensor_data &data);
+	virtual int _publish(struct mag_sensor_data &data) = 0;
 
 private:
 	int loadCalibration();
