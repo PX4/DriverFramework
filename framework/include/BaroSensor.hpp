@@ -63,6 +63,8 @@ struct baro_sensor_data {
 	uint64_t error_counter;		/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
+void printPressureValues(struct baro_sensor_data &data);
+
 #if defined(__BARO_USE_SPI)
 class BaroSensor : public SPIDevObj
 #else
@@ -83,11 +85,6 @@ public:
 	void setAltimeter(float altimeter_setting_in_mbars)
 	{
 		m_altimeter_mbars = altimeter_setting_in_mbars;
-	}
-
-	static void printPressureValues(struct baro_sensor_data &data)
-	{
-		DF_LOG_INFO("Pressure: %.2f Pa, temperature: %.2f C", (double)data.pressure_pa, (double)data.temperature_c);
 	}
 
 protected:
