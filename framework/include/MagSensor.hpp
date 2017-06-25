@@ -63,26 +63,6 @@ public:
 
 	~MagSensor() {}
 
-	static int getSensorData(DevHandle &h, struct mag_sensor_data &out_data, bool is_new_data_required)
-	{
-		MagSensor *me = DevMgr::getDevObjByHandle<MagSensor>(h);
-		int ret = -1;
-
-		if (me != nullptr) {
-			me->m_synchronize.lock();
-
-			if (is_new_data_required) {
-				me->m_synchronize.waitOnSignal(0);
-			}
-
-			out_data = me->m_sensor_data;
-			me->m_synchronize.unlock();
-			ret = 0;
-		}
-
-		return ret;
-	}
-
 	static void printValues(struct mag_sensor_data &data)
 	{
 		DF_LOG_INFO("Mag: [%.6f, %.6f, %.6f] Ga",
@@ -95,7 +75,6 @@ protected:
 	virtual void _measure() = 0;
 
 	struct mag_sensor_data		m_sensor_data;
-	SyncObj 			m_synchronize;
 };
 
 }; // namespace DriverFramework

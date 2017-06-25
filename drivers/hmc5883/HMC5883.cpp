@@ -69,12 +69,9 @@ int HMC5883::hmc5883_init()
 {
 
 	/* Zero the struct */
-	m_synchronize.lock();
-
 	m_sensor_data.last_read_time_usec = 0;
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
-	m_synchronize.unlock();
 
 	int result;
 	uint8_t sensor_id;
@@ -199,9 +196,7 @@ void HMC5883::_measure()
 		result = _readReg(HMC5883_REG_DATA_OUT_X_MSB, (uint8_t *)&hmc_report, sizeof(hmc_report));
 
 		if (result != 0) {
-			m_synchronize.lock();
 			m_sensor_data.error_counter++;
-			m_synchronize.unlock();
 
 		} else {
 
@@ -210,8 +205,6 @@ void HMC5883::_measure()
 			hmc_report.y = swap16(hmc_report.y);
 			hmc_report.z = swap16(hmc_report.z);
 
-			m_synchronize.lock();
-
 			m_sensor_data.field_x_ga = hmc_report.x * (1.0f / 1090.0f);
 			m_sensor_data.field_y_ga = hmc_report.y * (1.0f / 1090.0f);
 			m_sensor_data.field_z_ga = hmc_report.z * (1.0f / 1090.0f);
@@ -219,10 +212,6 @@ void HMC5883::_measure()
 			m_sensor_data.read_counter++;
 
 			_publish(m_sensor_data);
-
-			m_synchronize.signal();
-			m_synchronize.unlock();
-
 		}
 	}
 
