@@ -282,9 +282,3 @@ void BMP280::_measure()
 	_publish(m_sensor_data);
 
 }
-
-int BMP280::_publish(struct baro_sensor_data &data)
-{
-	// TBD
-	return -1;
-}
