@@ -89,7 +89,7 @@ public:
 
 protected:
 	virtual void _measure() override;
-	virtual int _publish(struct baro_sensor_data &data);
+	virtual int _publish(struct baro_sensor_data &data) = 0;
 
 private:
 	// Returns pressure in Pa as unsigned 32 bit integer in
