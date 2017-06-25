@@ -115,7 +115,7 @@ public:
 		m_mag_enabled(mag_enabled)
 	{}
 
-	~ImuSensor() {}
+	virtual ~ImuSensor() = default;
 
 	static void printImuValues(DevHandle &h, struct imu_sensor_data &data)
 	{
