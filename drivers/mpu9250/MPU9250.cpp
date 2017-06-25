@@ -457,14 +457,14 @@ void MPU9250::_measure()
 #if defined(__DF_EDISON)
 	//FIFO corrupt at 10MHz.
 	_setBusFrequency(SPI_FREQUENCY_5MHZ);
-#elif defined(__DF_ARM_GENERIC)
-	_setBusFrequency(SPI_FREQUENCY_5MHZ);
 #elif defined(__DF_RPI_SINGLE)
 	_setBusFrequency(SPI_FREQUENCY_5MHZ);
 #else
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
 #endif
+
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+
 	if (result != 0) {
 		m_synchronize.lock();
 		++m_sensor_data.error_counter;
