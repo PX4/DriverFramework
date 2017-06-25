@@ -57,6 +57,7 @@ else()
 		SPIDevObj.cpp
 		ImuSensor.cpp
 		BaroSensor.cpp
+		MagSensor.cpp
 		)
 endif()
 
