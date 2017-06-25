@@ -36,6 +36,46 @@
 
 using namespace DriverFramework;
 
+class MPU9250Tester : public MPU9250
+{
+public:
+	using MPU9250::MPU9250;
+
+	int getSensorData(struct imu_sensor_data &out_data, bool is_new_data_required);
+	virtual int _publish(struct imu_sensor_data &data) override;
+
+private:
+	SyncObj m_synchronize;
+	imu_sensor_data m_sensor_data_copy;
+};
+
+int MPU9250Tester::getSensorData(struct imu_sensor_data &out_data, bool is_new_data_required)
+{
+	int ret = -1;
+
+	m_synchronize.lock();
+
+	if (is_new_data_required) {
+		m_synchronize.waitOnSignal(0);
+	}
+
+	out_data = m_sensor_data_copy;
+	m_synchronize.unlock();
+	ret = 0;
+
+	return ret;
+}
+
+int MPU9250Tester::_publish(struct imu_sensor_data &data)
+{
+	m_synchronize.lock();
+	m_sensor_data_copy = data;
+	m_synchronize.signal();
+	m_synchronize.unlock();
+
+	return 0;
+}
+
 class ImuTester
 {
 public:
@@ -52,7 +92,7 @@ private:
 	void readSensor();
 	void wait();
 
-	MPU9250		m_sensor;
+	MPU9250Tester		m_sensor;
 	uint32_t	m_read_attempts = 0;
 	uint32_t	m_read_counter = 0;
 
@@ -86,7 +126,7 @@ int ImuTester::run(unsigned int num_read_attempts)
 
 		struct imu_sensor_data data;
 
-		ret = ImuSensor::getSensorData(h, data, true);
+		ret = m_sensor.getSensorData(data, true);
 
 		if (ret == 0) {
 			uint32_t count = data.read_counter;
