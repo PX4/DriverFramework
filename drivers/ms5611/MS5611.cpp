@@ -455,9 +455,3 @@ void MS5611::_measure()
 	}
 
 }
-
-int MS5611::_publish(struct baro_sensor_data &data)
-{
-	// TBD
-	return -1;
-}

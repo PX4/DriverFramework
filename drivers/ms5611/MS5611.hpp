@@ -104,7 +104,7 @@ public:
 
 protected:
 	void _measure();
-	virtual int _publish(struct baro_sensor_data &data);
+	virtual int _publish(struct baro_sensor_data &data) = 0;
 
 	// Returns pressure in Pa as unsigned 32 bit integer
 	// Output value of “24674867” represents
