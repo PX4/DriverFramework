@@ -151,7 +151,8 @@ namespace DriverFramework
 #define BITS_ACCEL_CONFIG_16G		0x18
 
 // This is ACCEL_FCHOICE_B which is the inverse of ACCEL_FCHOICE
-#define BITS_ACCEL_CONFIG2_BW_1130HZ	0x08
+#define BITS_ACCEL_CONFIG2_BW_1046HZ	0x08
+#define BITS_ACCEL_CONFIG2_BW_218HZ		0x01
 #define BITS_ACCEL_CONFIG2_BW_41HZ		0x03
 
 #define BITS_I2C_SLV0_EN    0x80
@@ -180,14 +181,64 @@ namespace DriverFramework
 #endif
 
 #if defined(__DF_EDISON)
-// update frequency 250 Hz
+/*
+ * Sample FIFO at 250 Hz
+ * FIFO runs at 1 KHz
+ */
 #define MPU9250_MEASURE_INTERVAL_US 4000
+#define MPU9250_ACCEL_SAMPLE_RATE_HZ 1000
+#define MPU9250_GYRO_SAMPLE_RATE_HZ 1000
+#define MPU9250_PACKETS_PER_CYCLE 4
+#define MPU9250_SPI_FIFO_FREQ SPI_FREQUENCY_5MHZ
 #elif defined(__DF_RPI_SINGLE)
-// update frequency 1000 Hz,if using rpi1,rpi zero,1000hz may be to higher,please reduce the frequency
+/*
+ * Sample FIFO at 1 KHz
+ * FIFO runs at 1 KHz
+ */
 #define MPU9250_MEASURE_INTERVAL_US 1000
+#define MPU9250_ACCEL_SAMPLE_RATE_HZ 1000
+#define MPU9250_GYRO_SAMPLE_RATE_HZ 1000
+#define MPU9250_PACKETS_PER_CYCLE 1
+#define MPU9250_SPI_FIFO_FREQ SPI_FREQUENCY_5MHZ
+#elif defined(__DF_RPI)
+/*
+ * Sample FIFO at 1 KHz
+ * FIFO runs at 1 KHz
+ */
+#define MPU9250_MEASURE_INTERVAL_US (1000000 / 1000)
+#define MPU9250_ACCEL_SAMPLE_RATE_HZ 1000
+#define MPU9250_GYRO_SAMPLE_RATE_HZ 1000
+#define MPU9250_PACKETS_PER_CYCLE 1
+#define MPU9250_SPI_FIFO_FREQ 18000000
+#elif defined(__DF_OCPOC)
+/*
+ * Sample FIFO at 1 KHz
+ * FIFO runs at 1 KHz
+ */
+#define MPU9250_MEASURE_INTERVAL_US (1000000 / 1000)
+#define MPU9250_ACCEL_SAMPLE_RATE_HZ 1000
+#define MPU9250_GYRO_SAMPLE_RATE_HZ 1000
+#define MPU9250_PACKETS_PER_CYCLE 1
+#elif defined(__DF_QURT)
+/*
+ * Sample FIFO at 1 KHz
+ * FIFO runs at 1 KHz
+ */
+#define MPU9250_MEASURE_INTERVAL_US (1000000 / 1000)
+#define MPU9250_ACCEL_SAMPLE_RATE_HZ 1000
+#define MPU9250_GYRO_SAMPLE_RATE_HZ 1000
+#define MPU9250_PACKETS_PER_CYCLE 1
+#define MPU9250_SPI_FIFO_FREQ SPI_FREQUENCY_10MHZ
 #else
-// update frequency 1000 Hz
+/*
+ * Sample FIFO at 1 KHz
+ * FIFO runs at 1 KHz
+ */
 #define MPU9250_MEASURE_INTERVAL_US 1000
+#define MPU9250_ACCEL_SAMPLE_RATE_HZ 1000
+#define MPU9250_GYRO_SAMPLE_RATE_HZ 1000
+#define MPU9250_PACKETS_PER_CYCLE 1
+#define MPU9250_SPI_FIFO_FREQ SPI_FREQUENCY_5MHZ
 #endif
 
 // -2000 to 2000 degrees/s, 16 bit signed register, deg to rad conversion
@@ -225,7 +276,7 @@ struct fifo_packet_with_mag {
 };
 // This data structure is a copy of the segment of the above fifo_packet_with_mag data
 // struture that contains mag data.
-struct mag_data {
+struct mag_data_packet {
 	char mag_st1; // mag ST1 (1B)
 	int16_t mag_x; // uT (2B)
 	int16_t mag_y; // uT (2B)
@@ -237,22 +288,7 @@ struct mag_data {
 class MPU9250: public ImuSensor
 {
 public:
-	MPU9250(const char *device_path, bool mag_enabled = false) :
-		ImuSensor(device_path, MPU9250_MEASURE_INTERVAL_US, mag_enabled), // true = mag is enabled
-		_last_temp_c(0.0f),
-		_temp_initialized(false),
-		_mag_enabled(mag_enabled),
-#if defined(__DF_EDISON)
-		_packets_per_cycle_filtered(4.0f), // The FIFO is supposed to run at 1kHz and we sample at 250Hz.
-#else
-		_packets_per_cycle_filtered(8.0f), // The FIFO is supposed to run at 8kHz and we sample at 1kHz.
-#endif
-		_mag(nullptr)
-	{
-		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
-		// TODO: does the WHOAMI make sense as an address?
-		m_id.dev_id_s.address = MPU_WHOAMI_9250;
-	}
+	MPU9250(const char *device_path, bool mag_enabled = false);
 
 	// @return 0 on success, -errno on failure
 	int writeReg(int reg, uint8_t val)
@@ -270,17 +306,58 @@ public:
 		return _modifyReg(address, clearbits, setbits);
 	}
 
+	int writeReg_checked(uint8_t addr, uint8_t val);
+
 	// @return 0 on success, -errno on failure
 	virtual int start() override;
 
 	// @return 0 on success, -errno on failure
 	virtual int stop() override;
 
+	int pinThread(int cpu);
+
 protected:
 	virtual void _measure() override;
-	virtual int _publish(struct imu_sensor_data &data) = 0;
+	virtual int measure();
+
+	virtual int _publish(const struct accel_data &data) = 0;
+	virtual int _publish(const struct gyro_data &data) = 0;
+	virtual int _publish(const struct mag_data &data) = 0;
+
+#if MPU9250_CHECK_DUPLICATES
+	bool check_duplicate_accel(const uint8_t *accel_data);
+	uint8_t _last_accel_data[6] = { 0 };
+
+	bool check_duplicate_gyro(const uint8_t *gyro_data);
+	uint8_t _last_gyro_data[6] = { 0 };
+
+	bool check_duplicate_mag(const uint8_t *mag_data);
+	uint8_t _last_mag_data[6] = { 0 };
+#endif
+
+	struct counters {
+		uint64_t accel_range_hits = { 0 };
+		uint64_t gyro_range_hits = { 0 };
+
+#if MPU9250_CHECK_DUPLICATES
+		uint64_t accel_duplicates = { 0 };
+		uint64_t gyro_duplicates = { 0 };
+		uint64_t mag_duplicates = { 0 };
+#endif
+		uint64_t mag_overflows = { 0 };
+		uint64_t mag_overruns = { 0 };
+
+		uint64_t fifo_overflows = { 0 };
+		uint64_t fifo_reads = { 0 };
+		float fifo_avg_packets = { 0 };
+		uint64_t fifo_corruptions = { 0 };
+
+		uint64_t errors = { 0 };
+	} _counters;
 
 private:
+	static void* threadFunc(void *arg);
+
 	// @returns 0 on success, -errno on failure
 	int mpu9250_init();
 
@@ -291,15 +368,27 @@ private:
 	int get_fifo_count();
 
 	void reset_fifo();
+	int read_fifo(int num_bytes);
 
 	void clear_int_status();
 
 	float _last_temp_c;
 	bool _temp_initialized;
 	bool _mag_enabled;
-	float _packets_per_cycle_filtered;
 
 	MPU9250_mag *_mag;
+
+	int _accel_reads = { 0 };
+	int _gyro_reads = { 0 };
+	int _mag_reads = { 0 };
+
+	int _size_of_fifo_packet;
+	int _max_buf_len;
+	uint8_t fifo_read_buf[MPU_MAX_LEN_FIFO_IN_BYTES + 1];
+
+	pthread_t m_thread_id = { 0 };
+
+	bool _started;
 };
 
 }

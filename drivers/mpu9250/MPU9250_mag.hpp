@@ -70,10 +70,12 @@ class MPU9250;
 #define BIT_MAG_CNTL1_FUSE_ROM_ACCESS_MODE		0xF
 #define BIT_MAG_CNTL1_16_BITS 				0x10
 #define BIT_MAG_HOFL					0x08
+#define BIT_MAG_OVERRUN					0x02
 
 #define BIT_MAG_CNTL2_SOFT_RESET			0x01
 
 #define MAG_ERROR_DATA_OVERFLOW				-3
+#define MAG_ERROR_DATA_OVERRUN				-4
 
 // 16bit mode: 0.15uTesla/LSB, 100 uTesla == 1 Gauss
 #define MAG_RAW_TO_GAUSS 	 (0.15f / 100.0f)
@@ -148,7 +150,7 @@ public:
 	// @return
 	// - 0 on success
 	// - -errno on failure
-	int process(const struct mag_data &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z);
+	int process(const struct mag_data_packet &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z);
 
 protected:
 	// @brief

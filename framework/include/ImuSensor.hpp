@@ -99,6 +99,24 @@ struct imu_sensor_data {
 	bool		is_last_fifo_sample;
 };
 
+struct accel_data {
+	float accel_m_s2_x;
+	float accel_m_s2_y;
+	float accel_m_s2_z;
+};
+
+struct gyro_data {
+	float gyro_rad_s_x;
+	float gyro_rad_s_y;
+	float gyro_rad_s_z;
+};
+
+struct mag_data {
+	float mag_ga_x;
+	float mag_ga_y;
+	float mag_ga_z;
+};
+
 void printImuValues(struct imu_sensor_data &data);
 
 #if defined(__IMU_USE_I2C)

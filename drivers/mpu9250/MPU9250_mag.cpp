@@ -473,7 +473,7 @@ int MPU9250_mag::write_reg(uint8_t reg, uint8_t val)
 }
 
 
-int MPU9250_mag::process(const struct mag_data &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z)
+int MPU9250_mag::process(const struct mag_data_packet &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z)
 {
 #ifdef MPU9250_MAG_DEBUG
 	static int hofl_bit_counter = 0;
@@ -489,7 +489,13 @@ int MPU9250_mag::process(const struct mag_data &data, float &mag_ga_x, float &ma
 		}
 
 #endif
+//		DF_LOG_ERR("MAG_ERROR_DATA_OVERFLOW");
 		return MAG_ERROR_DATA_OVERFLOW;
+	}
+
+	if (data.mag_st1 & BIT_MAG_OVERRUN) {
+//		DF_LOG_ERR("MAG_ERROR_DATA_OVERRUN");
+		return MAG_ERROR_DATA_OVERRUN;
 	}
 
 #ifdef MPU9250_MAG_DEBUG
@@ -500,7 +506,6 @@ int MPU9250_mag::process(const struct mag_data &data, float &mag_ga_x, float &ma
 	mag_ga_x = data.mag_x * _mag_sens_adj[0] * MAG_RAW_TO_GAUSS;
 	mag_ga_y = data.mag_y * _mag_sens_adj[1] * MAG_RAW_TO_GAUSS;
 	mag_ga_z = data.mag_z * _mag_sens_adj[2] * MAG_RAW_TO_GAUSS;
-
 
 	// Swap magnetometer x and y axis, and invert z because internal mag in MPU9250
 	// has a different orientation.
