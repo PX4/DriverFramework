@@ -478,10 +478,6 @@ int SPIDevObj::_setBusFrequency(uint32_t freq_hz)
 {
 #if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC)
 
-	/* implement sensor interface via rpi spi */
-	// RPI rounds down freq_hz to powers of 2
-	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
-	// in-reality 32Mbs is the upper limit of the SPI clock on RPI.
 	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
 
 #elif defined(__DF_EDISON)
