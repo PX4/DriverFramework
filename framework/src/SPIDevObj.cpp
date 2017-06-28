@@ -474,7 +474,7 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 #endif
 }
 
-int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
+int SPIDevObj::_setBusFrequency(uint32_t freq_hz)
 {
 #if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC)
 
@@ -482,36 +482,6 @@ int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
 	// RPI rounds down freq_hz to powers of 2
 	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
 	// in-reality 32Mbs is the upper limit of the SPI clock on RPI.
-	switch (freq_hz) {
-	case SPI_FREQUENCY_320KHZ :
-		DF_LOG_DEBUG("SPI speed set to 320KHz.");
-		break;
-
-	case SPI_FREQUENCY_1MHZ :
-		DF_LOG_DEBUG("SPI speed set to 1MHz.");
-		break;
-
-	case SPI_FREQUENCY_5MHZ :
-		DF_LOG_DEBUG("SPI speed set to 4MHz instead of 5MHz.");
-		break;
-
-	case SPI_FREQUENCY_10MHZ :
-		DF_LOG_DEBUG("SPI speed set to 8MHz instead of 10MHz.");
-		break;
-
-	case SPI_FREQUENCY_15MHZ :
-		DF_LOG_DEBUG("SPI speed set to 8MHz instead of 15MHz.");
-		break;
-
-	case SPI_FREQUENCY_20MHZ :
-		DF_LOG_DEBUG("SPI speed set to 16MHz instead of 20MHz.");
-		break;
-
-	default :
-		DF_LOG_ERR("SPI speed value not enum SPI_FREQUENCY.");
-		break;
-	}
-
 	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
 
 #elif defined(__DF_EDISON)
