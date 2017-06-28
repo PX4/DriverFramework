@@ -49,12 +49,12 @@ class SPIDevObj : public DevObj
 {
 public:
 	enum SPI_FREQUENCY {
-		SPI_FREQUENCY_320KHZ = 320000UL,
-		SPI_FREQUENCY_1MHZ = 1000000UL,
-		SPI_FREQUENCY_5MHZ = 5000000UL,
-		SPI_FREQUENCY_10MHZ = 10000000UL,
-		SPI_FREQUENCY_15MHZ = 15000000UL,
-		SPI_FREQUENCY_20MHZ = 20000000UL,
+		SPI_FREQUENCY_320KHZ = 320000,
+		SPI_FREQUENCY_1MHZ = 1000000,
+		SPI_FREQUENCY_5MHZ = 5000000,
+		SPI_FREQUENCY_10MHZ = 10000000,
+		SPI_FREQUENCY_15MHZ = 15000000,
+		SPI_FREQUENCY_20MHZ = 20000000,
 	};
 
 	SPIDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
@@ -83,7 +83,7 @@ protected:
 	int _transfer(uint8_t *write_buffer, uint8_t *read_buffer, uint8_t len);
 
 	int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
-	int _setBusFrequency(SPI_FREQUENCY freq_hz);
+	int _setBusFrequency(uint32_t freq_hz);
 
 	int m_fd = 0;
 };
