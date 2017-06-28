@@ -476,14 +476,8 @@ int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
 
 int SPIDevObj::_setBusFrequency(uint32_t freq_hz)
 {
-#if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC)
-
+#if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC) || defined(__DF_EDISON)
 	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
-
-#elif defined(__DF_EDISON)
-	//Speeds available: many values less 8MHz and 12.5MHz, 25MHz.
-	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
-
 #elif defined(__DF_QURT)
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
 	bus_freq.bus_frequency_in_hz = freq_hz;
