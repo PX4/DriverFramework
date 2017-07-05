@@ -513,7 +513,7 @@ void MPU6050::_measure()
 
 				// Initialize the temperature logic.
 				_last_temp_c = temp_c;
-				DF_LOG_INFO("IMU temperature initialized to: %f", (double) temp_c);
+				DF_LOG_INFO("IMU temperature initialized to: %f", (float) temp_c);
 				_temp_initialized = true;
 			}
 
@@ -523,7 +523,7 @@ void MPU6050::_measure()
 			if (fabsf(temp_c - _last_temp_c) > 2.0f) {
 				DF_LOG_ERR(
 					"FIFO corrupt, temp difference: %f, last temp: %f, current temp: %f",
-					fabs(temp_c - _last_temp_c), (double)_last_temp_c, (double)temp_c);
+					fabs(temp_c - _last_temp_c), (float)_last_temp_c, (float)temp_c);
 				reset_fifo();
 				_temp_initialized = false;
 				m_synchronize.lock();
