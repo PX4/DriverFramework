@@ -45,18 +45,17 @@
 namespace DriverFramework
 {
 
+/* Defines for common frequencies */
+#define SPI_FREQUENCY_320KHZ (320000)
+#define SPI_FREQUENCY_1MHZ (1000000)
+#define SPI_FREQUENCY_5MHZ (5000000)
+#define SPI_FREQUENCY_10MHZ (10000000)
+#define SPI_FREQUENCY_15MHZ (15000000)
+#define SPI_FREQUENCY_20MHZ (20000000)
+
 class SPIDevObj : public DevObj
 {
 public:
-	enum SPI_FREQUENCY {
-		SPI_FREQUENCY_320KHZ = 320000,
-		SPI_FREQUENCY_1MHZ = 1000000,
-		SPI_FREQUENCY_5MHZ = 5000000,
-		SPI_FREQUENCY_10MHZ = 10000000,
-		SPI_FREQUENCY_15MHZ = 15000000,
-		SPI_FREQUENCY_20MHZ = 20000000,
-	};
-
 	SPIDevObj(const char *name, const char *dev_path, const char *dev_class_path, unsigned int sample_interval_usec) :
 		DevObj(name, dev_path, dev_class_path, DeviceBusType_SPI, sample_interval_usec)
 	{
