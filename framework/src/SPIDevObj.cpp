@@ -453,27 +453,6 @@ int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 #endif
 }
 
-int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
-{
-#if defined(__DF_RPI) || defined(__DF_EDISON) || defined(__DF_BEBOP) || defined(__DF_OCPOC)
-	/* implement sensor interface via rpi2 spi */
-	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
-
-	if (obj) {
-		return obj->_setBusFrequency(freq_hz);
-	}
-
-	return -1;
-
-#elif defined(__DF_QURT)
-	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
-	bus_freq.bus_frequency_in_hz = freq_hz;
-	return h.ioctl(SPI_IOCTL_SET_BUS_FREQUENCY_IN_HZ, (unsigned long)&bus_freq);
-#else
-	return -1;
-#endif
-}
-
 int SPIDevObj::_setBusFrequency(uint32_t freq_hz)
 {
 #if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC) || defined(__DF_EDISON)
