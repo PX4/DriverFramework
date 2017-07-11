@@ -36,14 +36,6 @@
 #include <unistd.h>
 #include "DevMgrTest.hpp"
 
-static void setNotify(void *arg)
-{
-	DF_LOG_DEBUG("setNotify");
-	DevObj *p = reinterpret_cast<DevObj *>(arg);
-
-	DevMgr::updateNotify(*p);
-}
-
 bool DevMgrTest::verifyStart(TestDriver &test)
 {
 	// Register the driver
@@ -93,85 +85,12 @@ bool DevMgrTest::verifyRegisterDriver()
 
 }
 
-bool DevMgrTest::verifyUpdateNotify()
-{
-	char devname[strlen(TEST_DRIVER_CLASS_PATH) + 3];
-	snprintf(devname, sizeof(devname), "%s%d", TEST_DRIVER_CLASS_PATH, 0);
-
-	DevHandle h;
-	DevMgr::getHandle(devname, h);
-
-	if (!h.isValid()) {
-		DF_LOG_ERR("Failed to open %s (%d)", devname, h.getError());
-		return false;
-	}
-
-	TestDriver *p = DevMgr::getDevObjByHandle<TestDriver>(h);
-
-	if (p == nullptr) {
-		DF_LOG_ERR("Failed to get dev obj from handle");
-		return false;
-	}
-
-	// start task to write to device
-	WorkHandle wh;
-	WorkMgr::getWorkHandle(setNotify, p, 10, wh);
-
-	if (!wh.isValid()) {
-		DF_LOG_ERR("getWorkHandle failed");
-		return false;
-	}
-
-	int ret = WorkMgr::schedule(wh);
-
-	if (ret != 0) {
-		DF_LOG_ERR("schedule failed %d", ret);
-		return false;
-	}
-
-	UpdateList in_set, out_set;
-
-	in_set.pushBack(&h);
-
-	// Blocking read
-	ret = DevMgr::waitForUpdate(in_set, out_set, 0);
-
-	if (ret != 0 && out_set.size() != 1) {
-		DF_LOG_ERR("Failed to set handle error");
-	}
-
-	UpdateList::Index index = nullptr;
-	index = out_set.next(index);
-	DevHandle *ph = reinterpret_cast<DevHandle *>(out_set.get(index));
-
-	// Verify that the handle returned was the handle passed in
-	if (ph != &h) {
-		DF_LOG_ERR("handle address incorrect");
-		return false;
-	}
-
-	DevMgr::releaseHandle(h);
-
-	// Release an already released handle
-	DevMgr::releaseHandle(h);
-
-	DevMgr::setDevHandleError(h, 1);
-
-	if (h.getError() != 1) {
-		DF_LOG_ERR("Failed to set handle error");
-		return false;
-	}
-
-	return true;
-}
-
 void DevMgrTest::_doTests()
 {
 	TestDriver test;
 
 	reportResult("Verify start()", verifyStart(test));
 	reportResult("Verify registerDriver()", verifyRegisterDriver());
-	reportResult("Verify updateNotify()", verifyUpdateNotify());
 
 	test.stop();
 }

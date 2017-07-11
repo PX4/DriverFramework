@@ -53,7 +53,6 @@ protected:
 private:
 	bool verifyStart(TestDriver &test);
 	bool verifyRegisterDriver();
-	bool verifyUpdateNotify();
 
 };
 
