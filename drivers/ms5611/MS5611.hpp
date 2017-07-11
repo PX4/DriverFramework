@@ -84,15 +84,7 @@ struct ms5611_sensor_measurement {
 class MS5611 : public BaroSensor
 {
 public:
-	MS5611(const char *device_path) :
-		BaroSensor(device_path, MS5611_MEASURE_INTERVAL_US / 2),
-		m_temperature_from_sensor(0),
-		m_pressure_from_sensor(0),
-		m_measure_phase(0)
-	{
-		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MS5611;
-		m_id.dev_id_s.address = MS5611_SLAVE_ADDRESS;
-	}
+	MS5611(const char *device_path);
 
 	virtual ~MS5611() = default;
 
