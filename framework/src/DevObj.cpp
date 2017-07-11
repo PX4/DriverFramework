@@ -307,12 +307,6 @@ int DevObj::removeHandle(DevHandle &h)
 	return (int)m_handles.size();
 }
 
-void DevObj::updateNotify()
-{
-	DF_LOG_DEBUG("DevObj::updateNotify");
-	DevMgr::updateNotify(*this);
-}
-
 void DevObj::setSampleInterval(unsigned int sample_interval_usecs)
 {
 	m_sample_interval_usecs = sample_interval_usecs;

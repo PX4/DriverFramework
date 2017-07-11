@@ -114,7 +114,6 @@ protected:
 		m_lock.lock();
 		m_message[i % m_count].val = i;
 		i++;
-		updateNotify();
 		m_lock.unlock();
 	}
 
