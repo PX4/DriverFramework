@@ -63,9 +63,9 @@ struct ms5611_sensor_measurement {
 #define BARO_DEVICE_PATH "/dev/i2c-1"
 #endif
 
-// update frequency is 50 Hz (44.4-51.3Hz ) at 8x oversampling
-#define MS5611_MEASURE_INTERVAL_US 20000 // microseconds
-#define MS5611_CONVERSION_INTERVAL_US 10000 /*microseconds */
+#define MS5611_SCHED_POLICY (SCHED_FIFO)
+#define MS5611_SCHED_PRIORITY (sched_get_priority_max(SCHED_FIFO) - 10)
+#define MS5611_MEASURE_INTERVAL_US (20000)
 
 #define MS5611_BUS_FREQUENCY_IN_KHZ 400
 #define MS5611_TRANSFER_TIMEOUT_IN_USECS 9000
@@ -75,11 +75,7 @@ struct ms5611_sensor_measurement {
 
 #define DRV_DF_DEVTYPE_MS5611 0x45
 
-#define MS5611_SLAVE_ADDRESS 0x77       /* 7-bit slave address */
-
-#if MS5611_MEASURE_INTERVAL_US < (MS5611_CONVERSION_INTERVAL_US * 2)
-#error "MS5611_MEASURE_INTERVAL_US Must >= MS5611_CONVERSION_INTERVAL_US * 2"
-#endif
+#define MS5611_SLAVE_ADDRESS 0x77 /* 7-bit slave address */
 
 class MS5611 : public BaroSensor
 {
@@ -116,19 +112,19 @@ protected:
 
 	bool crc4(uint16_t *n_prom);
 
-	// returns 0 on success, -errno on failure
-	int ms5611_init();
-
 	// Send reset to device
 	int reset();
 
 	struct ms5611_sensor_calibration	m_sensor_calibration;
 	struct ms5611_sensor_measurement m_raw_sensor_convertion;
 
-	uint32_t m_temperature_from_sensor;
-	uint32_t m_pressure_from_sensor;
+private:
+	static void* threadFunc(void *arg);
 
-	int m_measure_phase;
+private:
+	pthread_t _thread_id;
+	bool _started;
+
 };
 
 }; // namespace DriverFramework
