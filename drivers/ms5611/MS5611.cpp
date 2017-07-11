@@ -32,9 +32,12 @@
  *
  ****************************************************************************/
 
-#include <string.h>
 #include "DriverFramework.hpp"
 #include "MS5611.hpp"
+
+#include <string.h>
+#include <signal.h>
+#include <asm/unistd.h>
 
 using namespace DriverFramework;
 
@@ -57,11 +60,23 @@ using namespace DriverFramework;
 
 #define POW2(_x) ((_x) * (_x))
 
+/* #define MS5611_DEBUG_TIMING 1 */
+
+static void timespec_inc(struct timespec *timespec, long dt)
+{
+	timespec->tv_nsec += dt;
+
+	while (timespec->tv_nsec >= 1000000000) {
+		/* timespec nsec overflow */
+		timespec->tv_sec++;
+		timespec->tv_nsec -= 1000000000;
+	}
+}
+
 MS5611::MS5611(const char *device_path)
-	: BaroSensor(device_path, MS5611_MEASURE_INTERVAL_US / 2)
-	, m_temperature_from_sensor(0)
-	, m_pressure_from_sensor(0)
-	, m_measure_phase(0)
+	: BaroSensor(device_path, 0)
+	, _thread_id(0)
+	, _started(false)
 {
 	m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MS5611;
 	m_id.dev_id_s.address = MS5611_SLAVE_ADDRESS;
@@ -218,52 +233,6 @@ int MS5611::loadCalibration()
 	return (crc4((uint16_t *)&m_sensor_calibration) && !bits_stuck) ? 0 : -1;
 }
 
-int MS5611::ms5611_init()
-{
-	/* Zero the struct */
-
-	m_sensor_data.pressure_pa = 0.0f;
-	m_sensor_data.temperature_c = 0.0f;
-	m_sensor_data.last_read_time_usec = 0;
-	m_sensor_data.read_counter = 0;
-	m_sensor_data.error_counter = 0;
-
-#if defined(__BARO_USE_SPI)
-	int result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
-#else
-	int result = _setSlaveConfig(MS5611_SLAVE_ADDRESS,
-				     MS5611_BUS_FREQUENCY_IN_KHZ,
-				     MS5611_TRANSFER_TIMEOUT_IN_USECS);
-#endif
-
-	if (result < 0) {
-		DF_LOG_ERR("could not set slave config");
-	}
-
-	/* Reset sensor and load calibration data into internal register */
-	result = reset();
-
-	if (result < 0) {
-		DF_LOG_ERR("error: unable to communicate with the MS5611 pressure sensor");
-		return -EIO;
-	}
-
-	result = loadCalibration();
-
-	if (result != 0) {
-		DF_LOG_ERR("error: unable to complete initialization of the MS5611 pressure sensor");
-		return -EIO;
-	}
-
-	// Request to convert the temperature
-	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
-		DF_LOG_ERR("error: temp measure failed");
-		return -EIO;
-	}
-
-	return 0;
-}
-
 int MS5611::reset()
 {
 	int result;
@@ -292,7 +261,17 @@ int MS5611::reset()
 
 int MS5611::start()
 {
-	int result = 0;
+	pthread_attr_t attr;
+	struct sched_param param = {};
+
+	int result;
+
+	if (_started) {
+		DF_LOG_ERR("MS5611 already started");
+		return 0;
+	}
+
+	_started = true;
 
 #if defined(__BARO_USE_SPI)
 	result = SPIDevObj::start();
@@ -305,12 +284,39 @@ int MS5611::start()
 		goto exit;
 	}
 
-	/* Initialize the pressure sensor.*/
-	result = ms5611_init();
+	/* Zero the struct */
+
+	m_sensor_data.pressure_pa = 0.0f;
+	m_sensor_data.temperature_c = 0.0f;
+	m_sensor_data.last_read_time_usec = 0;
+	m_sensor_data.read_counter = 0;
+	m_sensor_data.error_counter = 0;
+
+#if defined(__BARO_USE_SPI)
+	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
+#else
+	result = _setSlaveConfig(MS5611_SLAVE_ADDRESS,
+				     MS5611_BUS_FREQUENCY_IN_KHZ,
+				     MS5611_TRANSFER_TIMEOUT_IN_USECS);
+#endif
+
+	if (result < 0) {
+		DF_LOG_ERR("could not set slave config");
+	}
+
+	/* Reset sensor and load calibration data into internal register */
+	result = reset();
+
+	if (result < 0) {
+		DF_LOG_ERR("error: unable to communicate with the MS5611 pressure sensor");
+		return -EIO;
+	}
+
+	result = loadCalibration();
 
 	if (result != 0) {
-		DF_LOG_ERR("error: pressure sensor initialization failed, sensor read thread not started");
-		goto exit;
+		DF_LOG_ERR("error: unable to complete initialization of the MS5611 pressure sensor");
+		return -EIO;
 	}
 
 	result = DevObj::start();
@@ -320,6 +326,49 @@ int MS5611::start()
 		goto exit;
 	}
 
+	result = pthread_attr_init(&attr);
+
+	if (result != 0) {
+		DF_LOG_ERR("pthread_attr_init: %d", result);
+		goto exit;
+	}
+
+	result = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+
+	if (result != 0) {
+		DF_LOG_ERR("pthread_attr_setinheritsched: %d", result);
+		goto exit;
+	}
+
+	result = pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+
+	if (result != 0) {
+		DF_LOG_ERR("pthread_attr_setschedpolicy: %d", result);
+		goto exit;
+	}
+
+	param.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+	result = pthread_attr_setschedparam(&attr, &param);
+
+	if (result != 0) {
+		DF_LOG_ERR("pthread_attr_setschedparam: %d", result);
+		goto exit;
+	}
+
+	result = pthread_create(&_thread_id, &attr, MS5611::threadFunc, this);
+
+	if (result != 0) {
+		if (result == EPERM) {
+			DF_LOG_ERR("pthread_create: %d; run as root!", result);
+			goto exit;
+		} else {
+			DF_LOG_ERR("pthread_create: %d", result);
+			goto exit;
+		}
+	}
+
+	pthread_attr_destroy(&attr);
+
 exit:
 
 	return result;
@@ -327,11 +376,23 @@ exit:
 
 int MS5611::stop()
 {
+	void *retval;
 	int result = DevObj::stop();
 
 	if (result != 0) {
 		DF_LOG_ERR("DevObj stop failed");
 		return result;
+	}
+
+	result = pthread_kill(_thread_id, SIGUSR1);
+	if (result != 0) {
+		DF_LOG_ERR("pthread_kill: %d", result);
+		return result;
+	}
+
+	result = pthread_join(_thread_id, &retval);
+	if (result != 0) {
+		DF_LOG_ERR("pthread_join: %d", result);
 	}
 
 	return 0;
@@ -413,55 +474,149 @@ int MS5611::_collect(uint32_t &raw)
 
 void MS5611::_measure()
 {
-	if (m_measure_phase == 0) {
-		if (_collect(m_temperature_from_sensor) < 0) {
-			DF_LOG_ERR("error: temp collect failed");
-			reset();
+	struct timespec next_wakeup;
+	int ret;
 
-			/* collect fails, re-initiate a temperature read command
-			 * or we are stuck.
-			 */
-			if (_request(ADDR_CMD_CONVERT_D2) < 0) {
-				DF_LOG_ERR("error: temp measure failed");
-			}
+	uint32_t temperature_from_sensor;
+	uint32_t pressure_from_sensor;
 
-			return;
-		}
-
-		// Request to convert the pressure
-		if (_request(ADDR_CMD_CONVERT_D1) < 0) {
-			DF_LOG_ERR("error: pressure measure failed");
-		}
-
-		m_measure_phase++;
-
-	} else {
-		if (_collect(m_pressure_from_sensor) < 0) {
-			DF_LOG_ERR("error: pressure collect failed");
-			reset();
-
-			/* collect fails, re-initiate a pressure read command
-			 * or we are stuck.
-			 */
-			if (_request(ADDR_CMD_CONVERT_D1) < 0) {
-				DF_LOG_ERR("error: pressure measure failed");
-			}
-
-			return;
-		}
-
-		// Request to convert the temperature
-		if (_request(ADDR_CMD_CONVERT_D2) < 0) {
-			DF_LOG_ERR("error: temp measure failed");
-		}
-
-		m_measure_phase = 0;
-
-		m_sensor_data.temperature_c = convertTemperature(m_temperature_from_sensor) / 100.0;
-		m_sensor_data.pressure_pa = convertPressure(m_pressure_from_sensor);
-		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-		m_sensor_data.read_counter++;
-		_publish(m_sensor_data);
+	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+		DF_LOG_ERR("error: temp measure failed");
+		return;
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
+	timespec_inc(&next_wakeup, 2280000); /* 2.28 ms */
+	ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
+	if (ret == EINTR) {
+		DF_LOG_ERR("MS5611 (%d) someone sent me a signal", __LINE__);
+		return;
+	} else if (ret != 0) {
+		DF_LOG_ERR("MS5611 (%d) failed to sleep: %d", __LINE__, ret);
+		return;
+	}
+
+	if (_collect(temperature_from_sensor) < 0) {
+		DF_LOG_ERR("error: temp collect failed");
+		reset();
+		return;
+	}
+
+	if (temperature_from_sensor == 0) {
+		DF_LOG_ERR("MS5611: invalid temperature sample!");
+		return;
+	}
+
+	// Request to convert the pressure
+	if (_request(ADDR_CMD_CONVERT_D1) < 0) {
+		DF_LOG_ERR("error: pressure measure failed");
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
+	timespec_inc(&next_wakeup, 2280000); /* 2.28 ms */
+	ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
+	if (ret == EINTR) {
+		DF_LOG_ERR("MS5611 (%d) someone sent me a signal", __LINE__);
+		return;
+	} else if (ret != 0) {
+		DF_LOG_ERR("MS5611 (%d) failed to sleep: %d", __LINE__, ret);
+		return;
+	}
+
+	if (_collect(pressure_from_sensor) < 0) {
+		DF_LOG_ERR("error: pressure collect failed");
+		reset();
+
+		return;
+	}
+
+	if (pressure_from_sensor == 0) {
+		DF_LOG_ERR("MS5611: invalid presure sample!");
+		return;
+	}
+
+	// Request to convert the temperature
+	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+		DF_LOG_ERR("error: temp measure failed");
+	}
+
+	m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
+	m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor);
+	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+	m_sensor_data.read_counter++;
+
+	_publish(m_sensor_data);
 }
+
+#ifdef MS5611_DEBUG_TIMING
+static long int timespec_diff(struct timespec *start, struct timespec *stop)
+{
+	long int diff = (stop->tv_sec - start->tv_sec) * 1000000000LL + (stop->tv_nsec - start->tv_nsec);
+	return diff;
+}
+#endif
+
+void* MS5611::threadFunc(void *arg)
+{
+	MS5611 *instance = static_cast<MS5611*>(arg);
+
+	long wakeup_period_ns = MS5611_MEASURE_INTERVAL_US * 1000;
+	struct timespec next_wakeup;
+#ifdef MS5611_DEBUG_TIMING
+	struct timespec start_time;
+	struct timespec end_time;
+	struct timespec sleep_time;
+	long int sleep_dt;
+	long int exec_dt;
+	double sleep_dt_mean = 0;
+	double exec_dt_mean = 0;
+	int stats_print_cnt = 0;
+
+	clock_gettime(CLOCK_MONOTONIC, &sleep_time);
+#endif
+
+	DF_LOG_ERR("MS5611 TID: %d", (long int)syscall(__NR_gettid));
+
+	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
+	while (1) {
+#ifdef MS5611_DEBUG_TIMING
+		clock_gettime(CLOCK_MONOTONIC, &start_time);
+#endif
+		instance->_measure();
+#ifdef MS5611_DEBUG_TIMING
+		clock_gettime(CLOCK_MONOTONIC, &end_time);
+#endif
+
+#ifdef MS5611_DEBUG_TIMING
+		sleep_dt = timespec_diff(&sleep_time, &start_time);
+		exec_dt = timespec_diff(&start_time, &end_time);
+		sleep_dt_mean = (sleep_dt_mean + sleep_dt) / 2.0;
+		exec_dt_mean = (exec_dt_mean + exec_dt) / 2.0;
+
+		if (stats_print_cnt / 100 != 0) {
+			printf("MS5611 sleep_dt_mean: %f\n", sleep_dt_mean);
+			printf("MS5611 exec_dt_mean: %f\n", exec_dt_mean);
+			stats_print_cnt = 0;
+		} else {
+			stats_print_cnt++;
+		}
+#endif
+
+		timespec_inc(&next_wakeup, wakeup_period_ns);
+
+#ifdef MS5611_DEBUG_TIMING
+		clock_gettime(CLOCK_MONOTONIC, &sleep_time);
+#endif
+		int ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
+		if (ret == EINTR) {
+			DF_LOG_ERR("MS5611 someone sent me a signal");
+			return NULL;
+		} else if (ret != 0) {
+			DF_LOG_ERR("MS5611 fail to sleep: %d", ret);
+			return NULL;
+		}
+	}
+
+	return NULL;
+}
+
