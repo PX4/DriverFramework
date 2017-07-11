@@ -369,10 +369,8 @@ int SPIDevObj::_bulkRead(uint8_t address, uint8_t *out_buffer, int length)
 
 	// automatic write buffer
 	uint8_t *write_buffer = (uint8_t *)alloca(transfer_bytes);
-	memset(write_buffer, 0, transfer_bytes);
 	// automatic read buffer
 	uint8_t *read_buffer = (uint8_t *)alloca(transfer_bytes);
-	memset(read_buffer, 0, transfer_bytes);
 
 	write_buffer[0] = address | DIR_READ; // read mode
 
