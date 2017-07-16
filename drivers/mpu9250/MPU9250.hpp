@@ -285,6 +285,9 @@ struct mag_data_packet {
 };
 #pragma pack(pop)
 
+#define MPU9250_MAX_PACKET_SIZE (22) /* sizeof(fifo_packet_with_mag) */
+#define MPU9250_SW_FIFO_SIZE (8 * MPU9250_MAX_PACKET_SIZE + 1)
+
 class MPU9250: public ImuSensor
 {
 public:
@@ -368,7 +371,7 @@ private:
 	int get_fifo_count();
 
 	void reset_fifo();
-	int read_fifo(int num_bytes);
+	int read_fifo(uint8_t *dst, int num_bytes);
 
 	void clear_int_status();
 
@@ -384,7 +387,6 @@ private:
 
 	int _size_of_fifo_packet;
 	int _max_buf_len;
-	uint8_t fifo_read_buf[MPU_MAX_LEN_FIFO_IN_BYTES + 1];
 
 	pthread_t m_thread_id = { 0 };
 

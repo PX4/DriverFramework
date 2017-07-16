@@ -47,7 +47,7 @@
 
 #define MIN(_x, _y) (_x) > (_y) ? (_y) : (_x)
 
-#define MPU9250_DEBUG_TIMING 1
+#define MPU9250_DEBUG_TIMING (0)
 
 using namespace DriverFramework;
 
@@ -526,11 +526,11 @@ void MPU9250::_measure()
 {
 }
 
-int MPU9250::read_fifo(int num_bytes)
+int MPU9250::read_fifo(uint8_t *dst, int num_bytes)
 {
 	int ret;
 
-	uint8_t write_buf[45];
+	uint8_t write_buf[MPU9250_SW_FIFO_SIZE];
 
 	struct spi_ioc_transfer spi_transfer;
 
@@ -538,8 +538,9 @@ int MPU9250::read_fifo(int num_bytes)
 
 	memset(&spi_transfer, 0, sizeof(spi_ioc_transfer));
 
-	spi_transfer.rx_buf = (unsigned long)fifo_read_buf;
+	spi_transfer.rx_buf = (unsigned long)dst;
 	spi_transfer.len = num_bytes + 1;
+	spi_transfer.speed_hz = MPU9250_SPI_FIFO_FREQ;
 	spi_transfer.tx_buf = (unsigned long)write_buf;
 	spi_transfer.bits_per_word = 8;
 	spi_transfer.delay_usecs = 0;
@@ -560,6 +561,7 @@ int MPU9250::measure()
 	int read_len;
 	int packets;
 	uint8_t int_status;
+	uint8_t fifo_read_buf[8 * MPU9250_MAX_PACKET_SIZE + 1];
 
 	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
 	if (result != 0) {
@@ -582,6 +584,15 @@ int MPU9250::measure()
 		}
 	} while (true);
 
+	if (bytes_to_read > (sizeof(fifo_read_buf) - 1)) {
+		reset_fifo();
+
+		_counters.fifo_overflows++;
+		DF_LOG_ERR("bytes_to_read too big");
+
+		goto out;
+	}
+
 	result = _readReg(MPUREG_INT_STATUS, int_status);
 
 	if (result != 0) {
@@ -599,6 +610,7 @@ int MPU9250::measure()
 		goto out;
 	}
 
+	/* read multiple of packet size */
 	bytes_to_read = (bytes_to_read / _size_of_fifo_packet) * _size_of_fifo_packet;
 
 	_counters.fifo_avg_packets = (0.95f * _counters.fifo_avg_packets) + (0.05f * (bytes_to_read / _size_of_fifo_packet));
@@ -611,7 +623,7 @@ int MPU9250::measure()
 		DF_LOG_ERR("_setBusFrequency failed: %d\n", result);
 	}
 
-	result = read_fifo(read_len);
+	result = read_fifo(fifo_read_buf, read_len);
 
 	if (result != 0) {
 		_counters.errors++;
@@ -619,7 +631,7 @@ int MPU9250::measure()
 	}
 
 	packets = read_len / _size_of_fifo_packet;
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 	if (packets != 1) {
 		DF_LOG_INFO("packets: %d", packets);
 	}
@@ -808,7 +820,7 @@ bool MPU9250::check_duplicate_mag(const uint8_t *data)
 }
 #endif
 
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 static long int timespec_diff(struct timespec *start, struct timespec *stop)
 {
 	long int diff = (stop->tv_sec - start->tv_sec) * 1000000000LL + (stop->tv_nsec - start->tv_nsec);
@@ -835,7 +847,7 @@ void* MPU9250::threadFunc(void *arg)
 
 	long wakeup_period_ns = MPU9250_MEASURE_INTERVAL_US * 1000 - (7 * 1000);
 	struct timespec next_wakeup;
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 	struct timespec start_time;
 	struct timespec end_time;
 	struct timespec sleep_time;
@@ -852,15 +864,15 @@ void* MPU9250::threadFunc(void *arg)
 
 	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
 	while (1) {
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 		clock_gettime(CLOCK_MONOTONIC, &start_time);
 #endif
 		int jitter = instance->measure();
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 		clock_gettime(CLOCK_MONOTONIC, &end_time);
 #endif
 
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 		sleep_dt = timespec_diff(&sleep_time, &start_time);
 		exec_dt = timespec_diff(&start_time, &end_time);
 		sleep_dt_mean = (sleep_dt_mean + sleep_dt) / 2.0;
@@ -872,7 +884,7 @@ void* MPU9250::threadFunc(void *arg)
 		}
 
 
-		if (stats_print_cnt / 1000 != 0) {
+		if (stats_print_cnt / 100 != 0) {
 			printf("MPU9250 sleep_dt_mean: %f\n", sleep_dt_mean);
 			printf("MPU9250 exec_dt_mean: %f\n", exec_dt_mean);
 			stats_print_cnt = 0;
@@ -883,7 +895,7 @@ void* MPU9250::threadFunc(void *arg)
 
 		timespec_inc(&next_wakeup, wakeup_period_ns + jitter);
 
-#ifdef MPU9250_DEBUG_TIMING
+#if MPU9250_DEBUG_TIMING
 		clock_gettime(CLOCK_MONOTONIC, &sleep_time);
 #endif
 		int ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
