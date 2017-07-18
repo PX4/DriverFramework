@@ -42,8 +42,8 @@ else()
 		)
 
 	target_link_libraries(df_ms5607_test
-		df_driver_framework
 		df_ms5607
+		df_driver_framework
 		${df_link_libs}
 		)
 endif()
