@@ -37,7 +37,6 @@
 
 #include <string.h>
 #include <signal.h>
-#include <asm/unistd.h>
 
 using namespace DriverFramework;
 
@@ -578,8 +577,6 @@ void* MS5611::threadFunc(void *arg)
 
 	clock_gettime(CLOCK_MONOTONIC, &sleep_time);
 #endif
-
-	DF_LOG_ERR("MS5611 TID: %d", (long int)syscall(__NR_gettid));
 
 	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
 	while (1) {
