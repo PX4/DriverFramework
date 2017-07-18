@@ -52,8 +52,12 @@ using namespace DriverFramework;
 #define ADDR_CMD_CONVERT_D2_OSR1024		0x54	/* write to this address to start temperature conversion */
 #define ADDR_CMD_CONVERT_D2_OSR2048		0x56	/* write to this address to start temperature conversion */
 #define ADDR_CMD_CONVERT_D2_OSR4096		0x58	/* write to this address to start temperature conversion */
+
+#define MS5611_CONVERT_TIME_OSR1024_US (2280) /* 2.28 ms */
+
 #define ADDR_CMD_CONVERT_D1   ADDR_CMD_CONVERT_D1_OSR1024
 #define ADDR_CMD_CONVERT_D2   ADDR_CMD_CONVERT_D2_OSR1024
+#define MS5611_CONVERT_TIME_US (MS5611_CONVERT_TIME_OSR1024_US)
 
 #define ADDR_CMD_ADC_READ     0x00
 #define ADDR_PROM_SETUP       0xA0  /* address of 8x 2 bytes factory and calibration data */
@@ -79,7 +83,7 @@ MS5611::MS5611(const char *device_path)
 	, _started(false)
 {
 	m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MS5611;
-	m_id.dev_id_s.address = MS5611_SLAVE_ADDRESS;
+	m_id.dev_id_s.address = MS5611_I2C_ADDR;
 }
 
 // convertPressure must be called after convertTemperature
@@ -293,11 +297,11 @@ int MS5611::start()
 	m_sensor_data.error_counter = 0;
 
 #if defined(__BARO_USE_SPI)
-	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
+	result = _setBusFrequency(MS5611_SPI_FREQ_HZ);
 #else
-	result = _setSlaveConfig(MS5611_SLAVE_ADDRESS,
-				     MS5611_BUS_FREQUENCY_IN_KHZ,
-				     MS5611_TRANSFER_TIMEOUT_IN_USECS);
+	result = _setSlaveConfig(MS5611_I2C_ADDR,
+				     MS5611_I2C_FREQ_KHZ,
+				     MS5611_I2C_TIMEOUT_US);
 #endif
 
 	if (result < 0) {
@@ -486,7 +490,7 @@ void MS5611::_measure()
 	}
 
 	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
-	timespec_inc(&next_wakeup, 2280000); /* 2.28 ms */
+	timespec_inc(&next_wakeup, MS5611_CONVERT_TIME_US * 1000);
 	ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
 	if (ret == EINTR) {
 		DF_LOG_ERR("MS5611 (%d) someone sent me a signal", __LINE__);
@@ -513,7 +517,7 @@ void MS5611::_measure()
 	}
 
 	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
-	timespec_inc(&next_wakeup, 2280000); /* 2.28 ms */
+	timespec_inc(&next_wakeup, MS5611_CONVERT_TIME_US * 1000);
 	ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
 	if (ret == EINTR) {
 		DF_LOG_ERR("MS5611 (%d) someone sent me a signal", __LINE__);

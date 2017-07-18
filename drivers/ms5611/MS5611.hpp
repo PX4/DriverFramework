@@ -67,15 +67,17 @@ struct ms5611_sensor_measurement {
 #define MS5611_SCHED_PRIORITY (sched_get_priority_max(SCHED_FIFO) - 10)
 #define MS5611_MEASURE_INTERVAL_US (20000)
 
-#define MS5611_BUS_FREQUENCY_IN_KHZ 400
-#define MS5611_TRANSFER_TIMEOUT_IN_USECS 9000
+#define MS5611_SPI_FREQ_HZ (1000000)
+
+#define MS5611_I2C_FREQ_KHZ (400)
+#define MS5611_I2C_TIMEOUT_US (9000)
+#define MS5611_I2C_ADDR (0x77) /* 7-bit slave address */
 
 #define MS5611_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES 6
 #define MS5611_MAX_LEN_CALIB_VALUES 16
 
 #define DRV_DF_DEVTYPE_MS5611 0x45
 
-#define MS5611_SLAVE_ADDRESS 0x77 /* 7-bit slave address */
 
 class MS5611 : public BaroSensor
 {
