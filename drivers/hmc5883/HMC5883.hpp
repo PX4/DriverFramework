@@ -43,8 +43,13 @@ namespace DriverFramework
 #define MAG_DEVICE_PATH "/dev/iic-2"
 #endif
 
+#if defined(__DF_OCPOC)
+// 75 Hz (max sample rate supported in Continuous Measurement mode)
+#define HMC5883_MEASURE_INTERVAL_US (1000000/75)
+#else
 // 150 Hz (supported in single measurment mode is up to 160 Hz
 #define HMC5883_MEASURE_INTERVAL_US (1000000/150)
+#endif
 
 // TODO: include some common header file (currently in drv_sensor.h).
 #define DRV_DF_DEVTYPE_HMC5883 0x43
