@@ -163,7 +163,15 @@ int HMC5883::start()
 		goto exit;
 	}
 
+#if defined(__DF_OCPOC)
+	result = I2CDevObj::stop();
 
+	if (result != 0) {
+		DF_LOG_ERR("error: could not stop I2CDevObj");
+		goto exit;
+	}
+
+#endif
 	result = DevObj::start();
 
 	if (result != 0) {
@@ -203,6 +211,22 @@ void HMC5883::_measure()
 		}	hmc_report {};
 #pragma pack(pop)
 
+#if defined(__DF_OCPOC)
+
+		if (I2CDevObj::start() != 0) {
+			DF_LOG_ERR("error: could not start I2CDevObj");
+		}
+
+		/* Configure the I2C bus parameters for the mag sensor. */
+		result = _setSlaveConfig(HMC5883_SLAVE_ADDRESS,
+					 HMC5883_BUS_FREQUENCY_IN_KHZ,
+					 HMC5883_TRANSFER_TIMEOUT_IN_USECS);
+
+		if (result != 0) {
+			DF_LOG_ERR("I2C slave configuration failed");
+		}
+
+#endif
 		result = _readReg(HMC5883_REG_DATA_OUT_X_MSB, (uint8_t *)&hmc_report, sizeof(hmc_report));
 
 		if (result != 0) {
@@ -223,6 +247,14 @@ void HMC5883::_measure()
 
 			_publish(m_sensor_data);
 		}
+
+#if defined(__DF_OCPOC)
+
+		if (I2CDevObj::stop() != 0) {
+			DF_LOG_ERR("error: could not stop I2CDevObj");
+		}
+
+#endif
 	}
 
 #if !defined(__DF_OCPOC)

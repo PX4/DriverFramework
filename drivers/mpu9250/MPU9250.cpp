@@ -231,12 +231,28 @@ int MPU9250::mpu9250_init()
 
 int MPU9250::mpu9250_deinit()
 {
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::start() != 0) {
+		DF_LOG_ERR("error: could not start SPIDevObj");
+	}
+
+#endif
+
 	// Leave the IMU in a reset state (turned off).
 	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
 
 	if (result != 0) {
 		DF_LOG_ERR("reset failed");
 	}
+
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::stop() != 0) {
+		DF_LOG_ERR("error: could not stop SPIDevObj");
+	}
+
+#endif
 
 	// Deallocate the resources for the mag driver, if enabled.
 	if (_mag_enabled && _mag != nullptr) {
@@ -289,6 +305,15 @@ int MPU9250::start()
 		goto exit;
 	}
 
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::stop() != 0) {
+		DF_LOG_ERR("error: could not stop SPIDevObj");
+		goto exit;
+	}
+
+#endif
+
 	result = DevObj::start();
 
 	if (result != 0) {
@@ -326,12 +351,28 @@ int MPU9250::stop()
 
 int MPU9250::get_fifo_count()
 {
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::start() != 0) {
+		DF_LOG_ERR("error: could not start SPIDevObj");
+	}
+
+#endif
+
 	int16_t num_bytes = 0x0;
 
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	int ret = _bulkRead(MPUREG_FIFO_COUNTH, (uint8_t *) &num_bytes,
 			    sizeof(num_bytes));
+
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::stop() != 0) {
+		DF_LOG_ERR("error: could not stop SPIDevObj");
+	}
+
+#endif
 
 	if (ret == 0) {
 
@@ -377,10 +418,26 @@ void MPU9250::clear_int_status()
 
 void MPU9250::_measure()
 {
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::start() != 0) {
+		DF_LOG_ERR("error: could not start SPIDevObj");
+	}
+
+#endif
+
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 	uint8_t int_status = 0;
 	int result = _readReg(MPUREG_INT_STATUS, int_status);
+
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::stop() != 0) {
+		DF_LOG_ERR("error: could not stop SPIDevObj");
+	}
+
+#endif
 
 	if (result != 0) {
 		++m_sensor_data.error_counter;
@@ -388,7 +445,22 @@ void MPU9250::_measure()
 	}
 
 	if (int_status & BITS_INT_STATUS_FIFO_OVERFLOW) {
+#if defined(__DF_OCPOC)
+
+		if (SPIDevObj::start() != 0) {
+			DF_LOG_ERR("error: could not start SPIDevObj");
+		}
+
+#endif
 		reset_fifo();
+
+#if defined(__DF_OCPOC)
+
+		if (SPIDevObj::stop() != 0) {
+			DF_LOG_ERR("error: could not stop SPIDevObj");
+		}
+
+#endif
 
 		++m_sensor_data.fifo_overflow_counter;
 		DF_LOG_ERR("FIFO overflow");
@@ -433,6 +505,14 @@ void MPU9250::_measure()
 	const unsigned read_len = MIN((unsigned)bytes_to_read, buf_len);
 	memset(fifo_read_buf, 0x0, buf_len);
 
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::start() != 0) {
+		DF_LOG_ERR("error: could not start SPIDevObj");
+	}
+
+#endif
+
 	// According to the protocol specs, all sensor and interrupt registers may be read at 20 MHz.
 	// It is unclear what rate the FIFO register can be read at.
 	// If the FIFO buffer was read at 20 MHz, two effects were seen:
@@ -453,6 +533,14 @@ void MPU9250::_measure()
 #endif
 
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+
+#if defined(__DF_OCPOC)
+
+	if (SPIDevObj::stop() != 0) {
+		DF_LOG_ERR("error: could not stop SPIDevObj");
+	}
+
+#endif
 
 	if (result != 0) {
 		++m_sensor_data.error_counter;
@@ -512,7 +600,24 @@ void MPU9250::_measure()
 				DF_LOG_ERR(
 					"FIFO corrupt, temp difference: %f, last temp: %f, current temp: %f",
 					(double)fabsf(temp_c - _last_temp_c), (double)_last_temp_c, (double)temp_c);
+
+#if defined(__DF_OCPOC)
+
+				if (SPIDevObj::start() != 0) {
+					DF_LOG_ERR("error: could not start SPIDevObj");
+				}
+
+#endif
 				reset_fifo();
+
+#if defined(__DF_OCPOC)
+
+				if (SPIDevObj::stop() != 0) {
+					DF_LOG_ERR("error: could not stop SPIDevObj");
+				}
+
+#endif
+
 				_temp_initialized = false;
 				++m_sensor_data.fifo_corruption_counter;
 				return;
