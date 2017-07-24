@@ -41,6 +41,8 @@ namespace DriverFramework
 #define MAG_DEVICE_PATH "/dev/i2c-0"
 #elif defined(__DF_ARM_GENERIC)
 #define MAG_DEVICE_PATH __DF_HMC5883_DEV
+#elif defined(__DF_RPI_SINGLE)
+#define MAG_DEVICE_PATH "/dev/i2c-1"
 #elif defined(__DF_RPI)
 #define MAG_DEVICE_PATH "/dev/i2c-0"
 #else
