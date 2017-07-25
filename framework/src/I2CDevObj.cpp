@@ -67,6 +67,7 @@ int I2CDevObj::stop()
 	// close the device
 	if (m_fd >= 0) {
 		int ret = ::close(m_fd);
+		m_fd = -1;
 
 		if (ret < 0) {
 			DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::close()");
