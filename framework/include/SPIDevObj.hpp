@@ -83,7 +83,7 @@ protected:
 	int _bulkRead(uint8_t address, uint8_t *out_buffer, int length);
 	int _setBusFrequency(uint32_t freq_hz);
 
-	int m_fd = 0;
+	int m_fd = -1;
 };
 
 };

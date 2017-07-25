@@ -105,7 +105,7 @@ int I2CDevObj::writeReg(DevHandle &h, uint8_t address, uint8_t *in_buffer, size_
 int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, size_t length)
 {
 
-	if (m_fd == 0) {
+	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
 	}
@@ -152,7 +152,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, size_t length)
 int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, size_t length)
 {
 
-	if (m_fd == 0) {
+	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
 	}
@@ -182,7 +182,7 @@ int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, size_t length)
 int I2CDevObj::_simple_read(uint8_t *out_buffer, size_t length)
 {
 
-	if (m_fd == 0) {
+	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
 	}
@@ -209,7 +209,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, size_t length)
 #if defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
 
-	if (m_fd == 0) {
+	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
 	}
@@ -257,7 +257,7 @@ int I2CDevObj::_writeReg16(uint16_t address, uint16_t *in_buffer, size_t length)
 #if defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
 
-	if (m_fd == 0) {
+	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
 		return -1;
 	}
