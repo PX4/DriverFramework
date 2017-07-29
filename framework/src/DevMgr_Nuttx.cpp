@@ -90,7 +90,7 @@ void DevMgr::setDevHandleError(DevHandle &h, int error)
 
 int DevMgr::getNextDeviceName(unsigned int &index, const char **dev_path)
 {
-	int idx = 0;
+	unsigned int idx = 0;
 
 	/* list directory */
 	DIR *d = ::opendir("/dev");
