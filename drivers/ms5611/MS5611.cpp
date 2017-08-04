@@ -53,11 +53,19 @@ using namespace DriverFramework;
 #define ADDR_CMD_CONVERT_D2_OSR2048		0x56	/* write to this address to start temperature conversion */
 #define ADDR_CMD_CONVERT_D2_OSR4096		0x58	/* write to this address to start temperature conversion */
 
-#define MS5611_CONVERT_TIME_OSR1024_US (2280) /* 2.28 ms */
+#define MS5611_CONVERT_TIME_MAX_OSR1024_US (2280) /* 2.28 ms */
+#define MS5611_CONVERT_TIME_MAX_OSR2048_US (4540) /* 4.54 ms */
 
-#define ADDR_CMD_CONVERT_D1   ADDR_CMD_CONVERT_D1_OSR1024
-#define ADDR_CMD_CONVERT_D2   ADDR_CMD_CONVERT_D2_OSR1024
-#define MS5611_CONVERT_TIME_US (MS5611_CONVERT_TIME_OSR1024_US)
+#define MS5611_CONVERT_TIME_MIN_OSR4096_US (7400) /* 7.40 ms */
+#define MS5611_CONVERT_TIME_TYP_OSR4096_US (8220) /* 8.22 ms */
+#define MS5611_CONVERT_TIME_MAX_OSR4096_US (9040) /* 9.04 ms */
+
+
+#define MS5611_SAMPLES_PER_TEMPERATURE (1)
+
+#define ADDR_CMD_CONVERT_D1   ADDR_CMD_CONVERT_D1_OSR4096
+#define ADDR_CMD_CONVERT_D2   ADDR_CMD_CONVERT_D2_OSR4096
+#define MS5611_CONVERT_TIME_US (MS5611_CONVERT_TIME_TYP_OSR4096_US)
 
 #define ADDR_CMD_ADC_READ     0x00
 #define ADDR_PROM_SETUP       0xA0  /* address of 8x 2 bytes factory and calibration data */
@@ -511,45 +519,47 @@ void MS5611::_measure()
 		return;
 	}
 
-	// Request to convert the pressure
-	if (_request(ADDR_CMD_CONVERT_D1) < 0) {
-		DF_LOG_ERR("error: pressure measure failed");
+	for (unsigned int i = 0; i < MS5611_SAMPLES_PER_TEMPERATURE; i++) {
+		// Request to convert the pressure
+		if (_request(ADDR_CMD_CONVERT_D1) < 0) {
+			DF_LOG_ERR("error: pressure measure failed");
+		}
+
+		clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
+		timespec_inc(&next_wakeup, MS5611_CONVERT_TIME_US * 1000);
+		ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
+		if (ret == EINTR) {
+			DF_LOG_ERR("MS5611 (%d) someone sent me a signal", __LINE__);
+			return;
+		} else if (ret != 0) {
+			DF_LOG_ERR("MS5611 (%d) failed to sleep: %d", __LINE__, ret);
+			return;
+		}
+
+		if (_collect(pressure_from_sensor) < 0) {
+			DF_LOG_ERR("error: pressure collect failed");
+			reset();
+
+			return;
+		}
+
+		if (pressure_from_sensor == 0) {
+			DF_LOG_ERR("MS5611: invalid presure sample!");
+			return;
+		}
+
+		// Request to convert the temperature
+		if (_request(ADDR_CMD_CONVERT_D2) < 0) {
+			DF_LOG_ERR("error: temp measure failed");
+		}
+
+		m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
+		m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor);
+		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
+		m_sensor_data.read_counter++;
+
+		_publish(m_sensor_data);
 	}
-
-	clock_gettime(CLOCK_MONOTONIC, &next_wakeup);
-	timespec_inc(&next_wakeup, MS5611_CONVERT_TIME_US * 1000);
-	ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_wakeup, NULL);
-	if (ret == EINTR) {
-		DF_LOG_ERR("MS5611 (%d) someone sent me a signal", __LINE__);
-		return;
-	} else if (ret != 0) {
-		DF_LOG_ERR("MS5611 (%d) failed to sleep: %d", __LINE__, ret);
-		return;
-	}
-
-	if (_collect(pressure_from_sensor) < 0) {
-		DF_LOG_ERR("error: pressure collect failed");
-		reset();
-
-		return;
-	}
-
-	if (pressure_from_sensor == 0) {
-		DF_LOG_ERR("MS5611: invalid presure sample!");
-		return;
-	}
-
-	// Request to convert the temperature
-	if (_request(ADDR_CMD_CONVERT_D2) < 0) {
-		DF_LOG_ERR("error: temp measure failed");
-	}
-
-	m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
-	m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor);
-	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
-	m_sensor_data.read_counter++;
-
-	_publish(m_sensor_data);
 }
 
 #ifdef MS5611_DEBUG_TIMING
