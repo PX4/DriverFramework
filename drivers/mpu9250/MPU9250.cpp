@@ -235,7 +235,7 @@ int MPU9250::mpu9250_init()
 			// Initialize the magnetometer, providing the output data rate for
 			// data read from the IMU FIFO.  This is used to calculate the I2C
 			// delay for reading the magnetometer.
-			result = _mag->initialize(MPU9250_MEASURE_INTERVAL_US);
+			result = _mag->initialize(1000);
 
 			if (result != 0) {
 				DF_LOG_ERR("Magnetometer initialization failed");
