@@ -561,7 +561,7 @@ int MPU9250::measure()
 	int read_len;
 	int packets;
 	uint8_t int_status;
-	uint8_t fifo_read_buf[8 * MPU9250_MAX_PACKET_SIZE + 1];
+	uint8_t fifo_read_buf[MPU9250_SW_FIFO_SIZE];
 
 	result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
 	if (result != 0) {
@@ -588,7 +588,7 @@ int MPU9250::measure()
 		reset_fifo();
 
 		_counters.fifo_overflows++;
-		DF_LOG_ERR("bytes_to_read too big");
+		DF_LOG_ERR("bytes_to_read too big: %d", bytes_to_read);
 
 		goto out;
 	}
