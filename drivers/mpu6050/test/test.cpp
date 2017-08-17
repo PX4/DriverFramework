@@ -36,6 +36,46 @@
 
 using namespace DriverFramework;
 
+class MPU6050Tester : public MPU6050
+{
+public:
+	using MPU6050::MPU6050;
+
+	int getSensorData(struct imu_sensor_data &out_data, bool is_new_data_required);
+	virtual int _publish(struct imu_sensor_data &data) override;
+
+private:
+	SyncObj m_synchronize;
+	imu_sensor_data m_sensor_data_copy;
+};
+
+int MPU6050Tester::getSensorData(struct imu_sensor_data &out_data, bool is_new_data_required)
+{
+	int ret = -1;
+
+	m_synchronize.lock();
+
+	if (is_new_data_required) {
+		m_synchronize.waitOnSignal(0);
+	}
+
+	out_data = m_sensor_data_copy;
+	m_synchronize.unlock();
+	ret = 0;
+
+	return ret;
+}
+
+int MPU6050Tester::_publish(struct imu_sensor_data &data)
+{
+	m_synchronize.lock();
+	m_sensor_data_copy = data;
+	m_synchronize.signal();
+	m_synchronize.unlock();
+
+	return 0;
+}
+
 class ImuTester
 {
 public:
@@ -54,7 +94,7 @@ private:
 	void readSensor();
 	void wait();
 
-	MPU6050		m_sensor;
+	MPU6050Tester		m_sensor;
 	uint32_t	m_read_attempts = 0;
 	uint32_t	m_read_counter = 0;
 
@@ -88,7 +128,7 @@ int ImuTester::run()
 
 		struct imu_sensor_data data;
 
-		ret = ImuSensor::getSensorData(h, data, true);
+		ret = m_sensor.getSensorData(data, true);
 
 		if (ret == 0) {
 			uint32_t count = data.read_counter;
@@ -96,7 +136,7 @@ int ImuTester::run()
 
 			if (m_read_counter != count) {
 				m_read_counter = count;
-				ImuSensor::printImuValues(h, data);
+				printImuValues(data);
 			}
 
 		} else {

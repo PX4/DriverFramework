@@ -271,14 +271,14 @@ public:
 	}
 
 	// @return 0 on success, -errno on failure
-	virtual int start();
+	virtual int start() override;
 
 	// @return 0 on success, -errno on failure
-	virtual int stop();
+	virtual int stop() override;
 
 protected:
-	virtual void _measure();
-	virtual int _publish(struct imu_sensor_data &data);
+	virtual void _measure() override;
+	virtual int _publish(struct imu_sensor_data &data) = 0;
 
 private:
 	// @returns 0 on success, -errno on failure

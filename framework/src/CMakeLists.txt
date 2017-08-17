@@ -55,6 +55,9 @@ else()
 		DFDiag.cpp
 		I2CDevObj.cpp
 		SPIDevObj.cpp
+		ImuSensor.cpp
+		BaroSensor.cpp
+		MagSensor.cpp
 		)
 endif()
 

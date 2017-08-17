@@ -75,6 +75,7 @@ int SPIDevObj::stop()
 {
 	if (m_fd >= 0) {
 		int ret = ::close(m_fd);
+		m_fd = -1;
 
 		if (ret < 0) {
 			DF_LOG_ERR("Error: SPIDevObj::stop failed on ::close()");
@@ -453,71 +454,10 @@ int SPIDevObj::setLoopbackMode(DevHandle &h, bool enable)
 #endif
 }
 
-int SPIDevObj::setBusFrequency(DevHandle &h, SPI_FREQUENCY freq_hz)
+int SPIDevObj::_setBusFrequency(uint32_t freq_hz)
 {
-#if defined(__DF_RPI) || defined(__DF_EDISON) || defined(__DF_BEBOP) || defined(__DF_OCPOC)
-	/* implement sensor interface via rpi2 spi */
-	SPIDevObj *obj = DevMgr::getDevObjByHandle<SPIDevObj>(h);
-
-	if (obj) {
-		return obj->_setBusFrequency(freq_hz);
-	}
-
-	return -1;
-
-#elif defined(__DF_QURT)
-	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
-	bus_freq.bus_frequency_in_hz = freq_hz;
-	return h.ioctl(SPI_IOCTL_SET_BUS_FREQUENCY_IN_HZ, (unsigned long)&bus_freq);
-#else
-	return -1;
-#endif
-}
-
-int SPIDevObj::_setBusFrequency(SPI_FREQUENCY freq_hz)
-{
-#if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC)
-
-	/* implement sensor interface via rpi spi */
-	// RPI rounds down freq_hz to powers of 2
-	// Speeds available: 0.5, 1, 2, 4, 8, 16, and 32 MHz
-	// in-reality 32Mbs is the upper limit of the SPI clock on RPI.
-	switch (freq_hz) {
-	case SPI_FREQUENCY_320KHZ :
-		DF_LOG_DEBUG("SPI speed set to 320KHz.");
-		break;
-
-	case SPI_FREQUENCY_1MHZ :
-		DF_LOG_DEBUG("SPI speed set to 1MHz.");
-		break;
-
-	case SPI_FREQUENCY_5MHZ :
-		DF_LOG_DEBUG("SPI speed set to 4MHz instead of 5MHz.");
-		break;
-
-	case SPI_FREQUENCY_10MHZ :
-		DF_LOG_DEBUG("SPI speed set to 8MHz instead of 10MHz.");
-		break;
-
-	case SPI_FREQUENCY_15MHZ :
-		DF_LOG_DEBUG("SPI speed set to 8MHz instead of 15MHz.");
-		break;
-
-	case SPI_FREQUENCY_20MHZ :
-		DF_LOG_DEBUG("SPI speed set to 16MHz instead of 20MHz.");
-		break;
-
-	default :
-		DF_LOG_ERR("SPI speed value not enum SPI_FREQUENCY.");
-		break;
-	}
-
+#if defined(__DF_RPI) || defined(__DF_BEBOP) || defined(__DF_OCPOC) || defined(__DF_EDISON)
 	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
-
-#elif defined(__DF_EDISON)
-	//Speeds available: many values less 8MHz and 12.5MHz, 25MHz.
-	return ::ioctl(m_fd, SPI_IOC_WR_MAX_SPEED_HZ, &freq_hz);
-
 #elif defined(__DF_QURT)
 	struct dspal_spi_ioctl_set_bus_frequency bus_freq;
 	bus_freq.bus_frequency_in_hz = freq_hz;

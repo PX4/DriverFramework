@@ -57,23 +57,6 @@ bool DevMgr::m_initialized = false;
 
 static DFPointerList g_driver_list;
 
-class WaitList
-{
-public:
-	WaitList(UpdateList &in_set, UpdateList &out_set) :
-		m_in_set(in_set),
-		m_out_set(out_set)
-	{}
-
-	~WaitList() = default;
-
-	UpdateList 	&m_in_set;
-	UpdateList 	&m_out_set;
-	SyncObj 	m_lock;
-};
-
-static DFPointerList g_wait_list;
-
 int DevMgr::initialize()
 {
 	g_lock_dev_mgr = new SyncObj();
@@ -94,8 +77,6 @@ void DevMgr::finalize()
 	m_initialized = false;
 
 	g_driver_list.clear();
-
-	g_wait_list.clear();
 
 	g_lock_dev_mgr->unlock();
 	delete g_lock_dev_mgr;
@@ -311,76 +292,6 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **instancename)
 
 	g_lock_dev_mgr->unlock();
 	return ret;
-}
-
-int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
-{
-	WaitList wl(in_set, out_set);
-
-	g_lock_dev_mgr->lock();	  // HERE M7
-	wl.m_lock.lock(); // HERE M11
-	g_wait_list.pushFront(&wl);
-	g_lock_dev_mgr->unlock();
-
-	int ret = wl.m_lock.waitOnSignal(timeout_ms * 1000); // usecs needed
-	wl.m_lock.unlock();
-
-	// Remove the List item
-	g_lock_dev_mgr->lock();
-	DFPointerList::Index idx = nullptr;
-	idx = g_wait_list.next(idx);
-
-	while (idx != nullptr) {
-		WaitList *lwl = reinterpret_cast<WaitList *>(g_wait_list.get(idx));
-
-		if (lwl == &wl) {
-			idx = g_wait_list.erase(idx);
-			break;
-		}
-
-		idx = g_wait_list.next(idx);
-	}
-
-	g_lock_dev_mgr->unlock();
-
-	return ret;
-}
-
-void  DevMgr::updateNotify(DevObj &obj)
-{
-	g_lock_dev_mgr->lock(); // HERE M7
-	DFPointerList::Index idx = nullptr;
-	idx = g_wait_list.next(idx);
-
-	while (idx != nullptr) {
-		WaitList *lwl = reinterpret_cast<WaitList *>(g_wait_list.get(idx));
-
-		DFPointerList::Index it = nullptr;
-		it = lwl->m_in_set.next(it);
-
-		while (it != nullptr) {
-			DevHandle *h = reinterpret_cast<DevHandle *>(lwl->m_in_set.get(it));
-
-			// If the obj is equal the obj of DevHandle
-			if (h->m_handle == &obj) {
-
-				// Add obj to the out set
-				lwl->m_out_set.pushBack(h);
-			}
-
-			lwl->m_in_set.next(it);
-		}
-
-		if (!lwl->m_out_set.empty()) {
-			lwl->m_lock.lock(); // HERE M11
-			lwl->m_lock.signal();
-			lwl->m_lock.unlock();
-		}
-
-		idx = g_wait_list.next(idx);
-	}
-
-	g_lock_dev_mgr->unlock();
 }
 
 //------------------------------------------------------------------------

@@ -116,8 +116,6 @@ public:
 
 	virtual ssize_t devWrite(const void *buf, size_t count);
 
-	void updateNotify();
-
 	// _measure() is the periodic callback that is called every
 	// m_sample_interval_usecs
 	virtual void _measure() = 0; // periodic callback

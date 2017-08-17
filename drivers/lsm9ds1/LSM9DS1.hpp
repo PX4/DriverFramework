@@ -210,7 +210,7 @@ public:
 
 protected:
 	virtual void _measure();
-	virtual int _publish(struct imu_sensor_data &data);
+	virtual int _publish(struct imu_sensor_data &data) = 0;
 
 private:
 

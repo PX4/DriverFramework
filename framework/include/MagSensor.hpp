@@ -54,6 +54,8 @@ struct mag_sensor_data {
 	uint64_t error_counter;		/*! the total number of errors detected when reading the pressure, since the system was started */
 };
 
+void printMagValues(struct mag_sensor_data &data);
+
 class MagSensor : public I2CDevObj
 {
 public:
@@ -61,41 +63,12 @@ public:
 		I2CDevObj("MagSensor", device_path, MAG_CLASS_PATH, sample_interval_usec)
 	{}
 
-	~MagSensor() {}
-
-	static int getSensorData(DevHandle &h, struct mag_sensor_data &out_data, bool is_new_data_required)
-	{
-		MagSensor *me = DevMgr::getDevObjByHandle<MagSensor>(h);
-		int ret = -1;
-
-		if (me != nullptr) {
-			me->m_synchronize.lock();
-
-			if (is_new_data_required) {
-				me->m_synchronize.waitOnSignal(0);
-			}
-
-			out_data = me->m_sensor_data;
-			me->m_synchronize.unlock();
-			ret = 0;
-		}
-
-		return ret;
-	}
-
-	static void printValues(struct mag_sensor_data &data)
-	{
-		DF_LOG_INFO("Mag: [%.6f, %.6f, %.6f] Ga",
-			    (double)data.field_x_ga,
-			    (double)data.field_y_ga,
-			    (double)data.field_z_ga);
-	}
+	virtual ~MagSensor() = default;
 
 protected:
 	virtual void _measure() = 0;
 
 	struct mag_sensor_data		m_sensor_data;
-	SyncObj 			m_synchronize;
 };
 
 }; // namespace DriverFramework

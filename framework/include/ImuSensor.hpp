@@ -106,6 +106,8 @@ struct imu_sensor_data {
 	bool		is_last_fifo_sample;
 };
 
+void printImuValues(struct imu_sensor_data &data);
+
 #if defined(__IMU_USE_I2C)
 class ImuSensor : public I2CDevObj
 #else
@@ -122,65 +124,13 @@ public:
 		m_mag_enabled(mag_enabled)
 	{}
 
-	~ImuSensor() {}
-
-	static int getSensorData(DevHandle &h, struct imu_sensor_data &out_data, bool is_new_data_required)
-	{
-		ImuSensor *me = DevMgr::getDevObjByHandle<ImuSensor>(h);
-		int ret = -1;
-
-		if (me != nullptr) {
-			me->m_synchronize.lock();
-
-			if (is_new_data_required) {
-				me->m_synchronize.waitOnSignal(0);
-			}
-
-			out_data = me->m_sensor_data;
-			me->m_synchronize.unlock();
-			ret = 0;
-		}
-
-		return ret;
-	}
-
-	static void printImuValues(DevHandle &h, struct imu_sensor_data &data)
-	{
-		ImuSensor *me = DevMgr::getDevObjByHandle<ImuSensor>(h);
-
-		if (me != nullptr) {
-			DF_LOG_INFO("IMU: accel: [%.2f, %.2f, %.2f] m/s^2",
-				    (double)data.accel_m_s2_x,
-				    (double)data.accel_m_s2_y,
-				    (double)data.accel_m_s2_z);
-			DF_LOG_INFO("     gyro:  [%.2f, %.2f, %.2f] rad/s",
-				    (double)data.gyro_rad_s_x,
-				    (double)data.gyro_rad_s_y,
-				    (double)data.gyro_rad_s_z);
-
-			if (me->m_mag_enabled) {
-				DF_LOG_INFO("     mag:  [%.6f, %.6f, %.6f] ga",
-					    (double)data.mag_ga_x,
-					    (double)data.mag_ga_y,
-					    (double)data.mag_ga_z);
-			}
-
-			DF_LOG_INFO("     temp:  %.2f C",
-				    (double)data.temp_c);
-		}
-	}
+	virtual ~ImuSensor() = default;
 
 protected:
 	virtual void _measure() = 0;
 
-	virtual int _publish(struct imu_sensor_data &data)
-	{
-		return -1;
-	}
-
 	struct imu_sensor_data 		m_sensor_data;
 	bool						m_mag_enabled;
-	SyncObj 					m_synchronize;
 };
 
 } // namespace DriverFramework

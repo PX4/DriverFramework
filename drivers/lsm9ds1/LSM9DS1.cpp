@@ -96,7 +96,6 @@ int LSM9DS1::lsm9ds1_init()
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 
 	/* Zero the struct */
-	m_synchronize.lock();
 
 	m_sensor_data.accel_m_s2_x = 0.0f;
 	m_sensor_data.accel_m_s2_y = 0.0f;
@@ -113,8 +112,6 @@ int LSM9DS1::lsm9ds1_init()
 	m_sensor_data.error_counter = 0;
 	m_sensor_data.gyro_range_hit_counter = 0;
 	m_sensor_data.accel_range_hit_counter = 0;
-
-	m_synchronize.unlock();
 
 	// Enable Gyroscope
 	_writeReg(LSM9DS1XG_CTRL_REG4, BITS_XEN_G | BITS_YEN_G | BITS_ZEN_G);
@@ -334,10 +331,8 @@ void LSM9DS1::_measure()
 	int result = _readReg(LSM9DS1XG_STATUS_REG, int_status);
 
 	if (result != 0) {
-		m_synchronize.lock();
 		DF_LOG_ERR("ACC_GYRO Error");
 		++m_sensor_data.error_counter;
-		m_synchronize.unlock();
 		return;
 	}
 
@@ -381,8 +376,6 @@ void LSM9DS1::_measure()
 
 	DF_LOG_DEBUG("accel x: %d, y: %d, z: %d", report.accel_x, report.accel_y, report.accel_z);
 	DF_LOG_DEBUG("gyro x: %d, y: %d, z: %d", report.gyro_x, report.gyro_y, report.gyro_z);
-
-	m_synchronize.lock();
 
 	// Check if the full accel range of the accel has been used. If this occurs, it is
 	// either a spike due to a crash/landing or a sign that the vibrations levels
@@ -451,13 +444,4 @@ void LSM9DS1::_measure()
 #endif
 
 	_publish(m_sensor_data);
-
-	m_synchronize.signal();
-	m_synchronize.unlock();
-}
-
-int LSM9DS1::_publish(struct imu_sensor_data &data)
-{
-	// TBD
-	return -1;
 }

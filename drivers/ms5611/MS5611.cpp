@@ -211,14 +211,12 @@ int MS5611::loadCalibration()
 int MS5611::ms5611_init()
 {
 	/* Zero the struct */
-	m_synchronize.lock();
 
 	m_sensor_data.pressure_pa = 0.0f;
 	m_sensor_data.temperature_c = 0.0f;
 	m_sensor_data.last_read_time_usec = 0;
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
-	m_synchronize.unlock();
 
 #if defined(__BARO_USE_SPI)
 	int result = _setBusFrequency(SPI_FREQUENCY_1MHZ);
@@ -449,23 +447,11 @@ void MS5611::_measure()
 
 		m_measure_phase = 0;
 
-		m_synchronize.lock();
-
 		m_sensor_data.temperature_c = convertTemperature(m_temperature_from_sensor) / 100.0;
 		m_sensor_data.pressure_pa = convertPressure(m_pressure_from_sensor);
 		m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
 		m_sensor_data.read_counter++;
 		_publish(m_sensor_data);
-
-		m_synchronize.signal();
-		m_synchronize.unlock();
-
 	}
 
-}
-
-int MS5611::_publish(struct baro_sensor_data &data)
-{
-	// TBD
-	return -1;
 }

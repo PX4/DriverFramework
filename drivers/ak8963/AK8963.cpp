@@ -255,12 +255,9 @@ int AK8963::ak8963_init()
 {
 
 	/* Zero the struct */
-	m_synchronize.lock();
-
 	m_sensor_data.last_read_time_usec = 0;
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
-	m_synchronize.unlock();
 
 	// Perform soft-reset
 	uint8_t bits = AK8963_BITS_CNTL2_SOFT_RESET;
@@ -373,9 +370,7 @@ void AK8963::_measure()
 
 	if (result != 0) {
 		DF_LOG_ERR("Error reading status");
-		m_synchronize.lock();
 		m_sensor_data.error_counter++;
-		m_synchronize.unlock();
 		return;
 	}
 
@@ -389,21 +384,15 @@ void AK8963::_measure()
 
 		if (result != 0) {
 			DF_LOG_ERR("Error reading data");
-			m_synchronize.lock();
 			m_sensor_data.error_counter++;
-			m_synchronize.unlock();
 			return;
 		}
 
 		if (ak8963_report.st2 & AK8963_BITS_ST2_HOFL) {
 			DF_LOG_ERR("Magnetic sensor overflow");
-			m_synchronize.lock();
 			m_sensor_data.error_counter++;
-			m_synchronize.unlock();
 			return;
 		}
-
-		m_synchronize.lock();
 
 		m_sensor_data.field_x_ga = static_cast<float>(ak8963_report.val[0]) * _mag_sens_adj[0] * MAG_RAW_TO_GAUSS;
 		m_sensor_data.field_y_ga = static_cast<float>(ak8963_report.val[1]) * _mag_sens_adj[1] * MAG_RAW_TO_GAUSS;
@@ -412,16 +401,7 @@ void AK8963::_measure()
 		m_sensor_data.read_counter++;
 
 		_publish(m_sensor_data);
-
-		m_synchronize.signal();
-		m_synchronize.unlock();
 	}
 
 	return;
-}
-
-int AK8963::_publish(struct mag_sensor_data &data)
-{
-	//TBD
-	return -1;
 }

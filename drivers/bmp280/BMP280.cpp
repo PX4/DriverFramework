@@ -129,14 +129,12 @@ int BMP280::loadCalibration()
 int BMP280::bmp280_init()
 {
 	/* Zero the struct */
-	m_synchronize.lock();
 
 	m_sensor_data.pressure_pa = 0.0f;
 	m_sensor_data.temperature_c = 0.0f;
 	m_sensor_data.last_read_time_usec = 0;
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
-	m_synchronize.unlock();
 
 	int result;
 	uint8_t sensor_id;
@@ -276,8 +274,6 @@ void BMP280::_measure()
 	 * to obtain the latest temperature reading.
 	 */
 
-	m_synchronize.lock();
-
 	m_sensor_data.temperature_c = convertTemperature(temperature_from_sensor) / 100.0;
 	m_sensor_data.pressure_pa = convertPressure(pressure_from_sensor) / 256.0;
 	m_sensor_data.last_read_time_usec = DriverFramework::offsetTime();
@@ -285,13 +281,4 @@ void BMP280::_measure()
 
 	_publish(m_sensor_data);
 
-	m_synchronize.signal();
-	m_synchronize.unlock();
-
-}
-
-int BMP280::_publish(struct baro_sensor_data &data)
-{
-	// TBD
-	return -1;
 }

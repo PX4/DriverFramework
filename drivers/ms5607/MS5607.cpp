@@ -77,9 +77,3 @@ int32_t MS5607::convertTemperature(int32_t adc_T)
 	m_raw_sensor_convertion.off = off;
 	return temp;
 }
-
-int MS5607::_publish(struct baro_sensor_data &data)
-{
-	// TBD
-	return -1;
-}

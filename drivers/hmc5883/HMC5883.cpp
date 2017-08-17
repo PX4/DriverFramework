@@ -69,12 +69,9 @@ int HMC5883::hmc5883_init()
 {
 
 	/* Zero the struct */
-	m_synchronize.lock();
-
 	m_sensor_data.last_read_time_usec = 0;
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
-	m_synchronize.unlock();
 
 	int result;
 	uint8_t sensor_id;
@@ -124,6 +121,16 @@ int HMC5883::hmc5883_init()
 		return -EIO;
 	}
 
+#if defined(__DF_OCPOC)
+	// Set continuous measurement mode
+	uint8_t mode = HMC5883_BITS_CONFIG_A_CONTINUOUS_75HZ;
+	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
+
+	if (result != 0) {
+		DF_LOG_ERR("error: setting sensor mode failed");
+	}
+
+#endif
 
 	usleep(1000);
 	return 0;
@@ -134,7 +141,7 @@ int HMC5883::start()
 	int result = I2CDevObj::start();
 
 	if (result != 0) {
-		DF_LOG_ERR("error: could not start DevObj");
+		DF_LOG_ERR("error: could not start I2CDevObj");
 		goto exit;
 	}
 
@@ -199,9 +206,7 @@ void HMC5883::_measure()
 		result = _readReg(HMC5883_REG_DATA_OUT_X_MSB, (uint8_t *)&hmc_report, sizeof(hmc_report));
 
 		if (result != 0) {
-			m_synchronize.lock();
 			m_sensor_data.error_counter++;
-			m_synchronize.unlock();
 
 		} else {
 
@@ -210,8 +215,6 @@ void HMC5883::_measure()
 			hmc_report.y = swap16(hmc_report.y);
 			hmc_report.z = swap16(hmc_report.z);
 
-			m_synchronize.lock();
-
 			m_sensor_data.field_x_ga = hmc_report.x * (1.0f / 1090.0f);
 			m_sensor_data.field_y_ga = hmc_report.y * (1.0f / 1090.0f);
 			m_sensor_data.field_z_ga = hmc_report.z * (1.0f / 1090.0f);
@@ -219,14 +222,10 @@ void HMC5883::_measure()
 			m_sensor_data.read_counter++;
 
 			_publish(m_sensor_data);
-
-			m_synchronize.signal();
-			m_synchronize.unlock();
-
 		}
 	}
 
-
+#if !defined(__DF_OCPOC)
 	/* Request next measurement. */
 	uint8_t mode = HMC5883_BITS_MODE_SINGLE_MODE;
 	result = _writeReg(HMC5883_REG_MODE, &mode, sizeof(mode));
@@ -236,11 +235,6 @@ void HMC5883::_measure()
 		DF_LOG_ERR("error: setting sensor mode failed");
 	}
 
+#endif
 	_measurement_requested = true;
-}
-
-int HMC5883::_publish(struct mag_sensor_data &data)
-{
-	// TBD
-	return -1;
 }

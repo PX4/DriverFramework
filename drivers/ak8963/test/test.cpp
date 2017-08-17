@@ -37,6 +37,46 @@
 
 using namespace DriverFramework;
 
+class AK8963Tester : public AK8963
+{
+public:
+	using AK8963::AK8963;
+
+	int getSensorData(struct mag_sensor_data &out_data, bool is_new_data_required);
+	virtual int _publish(struct mag_sensor_data &data) override;
+
+private:
+	SyncObj m_synchronize;
+	mag_sensor_data m_sensor_data_copy;
+};
+
+int AK8963Tester::getSensorData(struct mag_sensor_data &out_data, bool is_new_data_required)
+{
+	int ret = -1;
+
+	m_synchronize.lock();
+
+	if (is_new_data_required) {
+		m_synchronize.waitOnSignal(0);
+	}
+
+	out_data = m_sensor_data_copy;
+	m_synchronize.unlock();
+	ret = 0;
+
+	return ret;
+}
+
+int AK8963Tester::_publish(struct mag_sensor_data &data)
+{
+	m_synchronize.lock();
+	m_sensor_data_copy = data;
+	m_synchronize.signal();
+	m_synchronize.unlock();
+
+	return 0;
+}
+
 class MagTester
 {
 public:
@@ -53,7 +93,7 @@ private:
 	void readSensor();
 	void wait();
 
-	AK8963		m_sensor;
+	AK8963Tester		m_sensor;
 	uint32_t 	m_read_attempts = 0;
 	uint32_t 	m_read_counter = 0;
 	struct mag_sensor_data m_sensor_data;
@@ -87,7 +127,7 @@ int MagTester::run()
 
 	while (!m_done) {
 		++m_read_attempts;
-		ret = MagSensor::getSensorData(h, m_sensor_data, true);
+		ret = m_sensor.getSensorData(m_sensor_data, true);
 
 		if (ret == 0) {
 			uint32_t count = m_sensor_data.read_counter;
@@ -95,7 +135,7 @@ int MagTester::run()
 			if (m_read_counter != count) {
 				DF_LOG_INFO("count: %d", count);
 				m_read_counter = count;
-				MagSensor::printValues(m_sensor_data);
+				printMagValues(m_sensor_data);
 			}
 
 		} else {

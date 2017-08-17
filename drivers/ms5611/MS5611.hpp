@@ -100,14 +100,14 @@ public:
 	virtual ~MS5611() = default;
 
 	// @return 0 on success, -errno on failure
-	int start();
+	virtual int start() override;
 
 	// @return 0 on success, -errno on failure
-	int stop();
+	virtual int stop() override;
 
 protected:
-	void _measure();
-	virtual int _publish(struct baro_sensor_data &data);
+	virtual void _measure() override;
+	virtual int _publish(struct baro_sensor_data &data) = 0;
 
 	// Returns pressure in Pa as unsigned 32 bit integer
 	// Output value of “24674867” represents
