@@ -122,26 +122,23 @@ static uint64_t TsToAbstime(struct timespec *ts)
 	return result;
 }
 
-static inline uint64_t getStartTime()
+static uint64_t starttime = 0;
+
+static void initStartTime()
 {
-	static uint64_t starttime = 0;
-
-	if (starttime) {
-		return starttime;
-	}
-
-	// the first time this is called is in DriverFramework::initialize(), which is guaranteed to be race-free,
-	// so no locking required here
 	struct timespec ts = {};
 	int ret = absoluteTime(ts);
 
 	if (ret != 0) {
-		printf("ERROR: absoluteTime returned (%d)", ret);
-		return 0;
+		printf("ERROR: absoluteTime returned (%d)\n", ret);
+		return;
 	}
 
 	starttime = TsToAbstime(&ts);
+}
 
+static inline uint64_t getStartTime()
+{
 	return starttime;
 }
 
@@ -242,6 +239,8 @@ void Framework::shutdown()
 
 int Framework::initialize()
 {
+	initStartTime(); // must be initialized before any other timing methods are called
+
 	DF_LOG_DEBUG("Framework::initialize");
 
 	g_framework = new SyncObj;
@@ -266,9 +265,6 @@ int Framework::initialize()
 		DF_LOG_ERR("ERROR: absoluteTime returned (%d)", ret);
 		return -4;
 	}
-
-	// make sure the time offset is initialized
-	(void) offsetTime();
 
 	ret = HRTWorkQueue::instance().initialize();
 
