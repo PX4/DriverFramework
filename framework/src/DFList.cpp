@@ -189,14 +189,10 @@ DFPointerList::Index DFPointerList::next(Index &idx)
 
 void *DFPointerList::get(Index idx)
 {
-	m_sync.lock();
-
 	if (idx) {
-		m_sync.unlock();
 		return idx->m_item;
 	}
 
-	m_sync.unlock();
 	return nullptr;
 }
 
@@ -342,15 +338,11 @@ DFUIntList::Index DFUIntList::next(Index &idx)
 
 bool DFUIntList::get(Index idx, unsigned int &val)
 {
-	m_sync.lock();
-
 	if (idx) {
 		val = idx->m_item;
-		m_sync.unlock();
 		return true;
 	}
 
-	m_sync.unlock();
 	return false;
 }
 
