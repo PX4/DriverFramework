@@ -113,47 +113,6 @@ int DevMgr::getNextDeviceName(unsigned int &index, const char **dev_path)
 	return -1;
 }
 
-int DevMgr::waitForUpdate(UpdateList &in_set, UpdateList &out_set, unsigned int timeout_ms)
-{
-	// poll on a set of file descriptors
-	int num = in_set.size();
-	struct pollfd fds[num];
-
-	size_t i = 0;
-	DFPointerList::Index it = nullptr;
-	it = in_set.next(it);
-
-	while (it != nullptr) {
-		DevHandle *h = reinterpret_cast<DevHandle *>(in_set.get(it));
-		fds[i].fd = h->m_fd;
-		fds[i].events = POLLIN;
-		++i;
-		it = in_set.next(it);
-	}
-
-	int ret = poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), timeout_ms);
-
-	if (ret > 0) {
-		// build the out_set
-		i = 0;
-		it = nullptr;
-		it = in_set.next(it);
-
-		while (it != nullptr) {
-			DevHandle *h = reinterpret_cast<DevHandle *>(in_set.get(it));
-
-			if (fds[i].revents & POLLIN) {
-				out_set.pushBack(h);
-			}
-
-			++i;
-			it = in_set.next(it);
-		}
-	}
-
-	return ret;
-}
-
 //------------------------------------------------------------------------
 // DevHandle
 //------------------------------------------------------------------------
