@@ -488,10 +488,10 @@ void HRTWorkQueue::process()
 			m_reschedule.lock();
 			m_reschedule.waitOnSignal(wait_time_usec);
 			m_reschedule.unlock();
-			DF_LOG_DEBUG("Done wait");
+			DF_LOG_DEBUG("HRTWorkQueue::process done wait");
 		}
 
-		DF_LOG_DEBUG("not waiting for work (%" PRIi64 "usec)", wait_time_usec);
+		DF_LOG_DEBUG("HRTWorkQueue::process not waiting for work");
 	}
 };
 
