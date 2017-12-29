@@ -244,6 +244,14 @@ void BMP280::_measure()
 	uint8_t pdata[BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES];
 	memset(pdata, 0, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
 
+	/* Configure the I2C bus parameters for the pressure sensor every time */
+	if (_setSlaveConfig(BMP280_SLAVE_ADDRESS,
+				 BMP280_BUS_FREQUENCY_IN_KHZ,
+				 BMP280_TRANSFER_TIMEOUT_IN_USECS)) {
+		DF_LOG_ERR("BMP280: I2C slave configuration failed");
+		return;
+	}
+
 	/* Read the data from the pressure sensor. */
 	int result = _readReg(BMP280_REG_PRESS_MSB, pdata, BMP280_MAX_LEN_SENSOR_DATA_BUFFER_IN_BYTES);
 
