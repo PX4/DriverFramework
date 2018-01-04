@@ -246,8 +246,8 @@ void BMP280::_measure()
 
 	/* Configure the I2C bus parameters for the pressure sensor every time */
 	if (_setSlaveConfig(BMP280_SLAVE_ADDRESS,
-				 BMP280_BUS_FREQUENCY_IN_KHZ,
-				 BMP280_TRANSFER_TIMEOUT_IN_USECS)) {
+			    BMP280_BUS_FREQUENCY_IN_KHZ,
+			    BMP280_TRANSFER_TIMEOUT_IN_USECS)) {
 		DF_LOG_ERR("BMP280: I2C slave configuration failed");
 		return;
 	}
