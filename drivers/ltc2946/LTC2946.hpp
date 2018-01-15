@@ -93,7 +93,7 @@ public:
 
 protected:
 	virtual void _measure();
-	virtual int _publish(struct ltc2946_sensor_data &data);
+	virtual int _publish(const struct ltc2946_sensor_data &data);
 
 	struct ltc2946_sensor_data m_sensor_data;
 	SyncObj m_synchronize;

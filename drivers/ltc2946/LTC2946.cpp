@@ -269,7 +269,7 @@ void LTC2946::_measure(void)
 }
 
 
-int LTC2946::_publish(struct ltc2946_sensor_data &data)
+int LTC2946::_publish(const struct ltc2946_sensor_data &data)
 {
 	// TBD
 	return -1;
