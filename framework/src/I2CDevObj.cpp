@@ -40,22 +40,56 @@
 #include "OSConfig.h"
 #include "I2CDevObj.hpp"
 #include "DevIOCTL.h"
+
 #ifdef __DF_QURT
 #include "dev_fs_lib_i2c.h"
+
 #elif defined(__DF_LINUX)
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
+
+#ifdef __DF_BBBLUE
+#include <stdlib.h>
+
+#define RC_AUTOPILOT_EXT
+#include <roboticscape.h>
+#endif
+
 #endif
 
 using namespace DriverFramework;
 
 int I2CDevObj::start()
 {
+#ifdef __DF_BBBLUE
+	m_bus_num = atoi(m_dev_path + (strlen(m_dev_path) - 1));
+
+	if(m_bus_num != 1 && m_bus_num != 2) {
+		m_fd = -1;
+		DF_LOG_ERR("Error: I2CDevObj::start failed: %s : i2c bus must be 1 or 2", m_dev_path);
+		return m_fd;
+	}
+
+	if (m_id.dev_id_s.address == 0) {
+		m_fd = -1;
+		DF_LOG_ERR("Error: I2CDevObj::start failed: %s : slave address is not set yet", m_dev_path);
+		return m_fd;
+	}
+
+	if (rc_i2c_init(m_bus_num, m_id.dev_id_s.address) != 0) {
+		m_fd = -1;
+		DF_LOG_ERR("Error: I2CDevObj::start init failed on %s", m_dev_path);
+		return m_fd;
+	}
+
+	m_fd = rc_i2c_get_fd(m_bus_num);
+#else
 	m_fd = ::open(m_dev_path, O_RDWR);
+#endif
 
 	if (m_fd < 0) {
-		DF_LOG_ERR("Error: I2CDevObj::init failed on ::open() %s", m_dev_path);
+		DF_LOG_ERR("Error: I2CDevObj::start failed on ::open() %s", m_dev_path);
 		return m_fd;
 	}
 
@@ -66,11 +100,15 @@ int I2CDevObj::stop()
 {
 	// close the device
 	if (m_fd >= 0) {
+#ifdef __DF_BBBLUE
+		int ret = rc_i2c_close(m_bus_num);
+#else
 		int ret = ::close(m_fd);
+#endif
 		m_fd = -1;
 
 		if (ret < 0) {
-			DF_LOG_ERR("Error: I2CDevObj::~I2CDevObj() failed on ::close()");
+			DF_LOG_ERR("Error: I2CDevObj::stop() failed on ::close()");
 			return ret;
 		}
 	}
@@ -124,12 +162,27 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, size_t length)
 
 	if (bytes_read != (ssize_t)length) {
 		DF_LOG_ERR(
-			"error: read register reports a read of %d bytes, but attempted to set %d bytes",
+			"error: read register reports a read of %d bytes, but attempted to read %d bytes",
 			bytes_read, length);
 		return -1;
 	}
 
 	return 0;
+
+#elif defined(__DF_BBBLUE)
+
+	ssize_t bytes_read = 0;
+
+	bytes_read = rc_i2c_read_data(m_bus_num, address, length, out_buffer);
+
+	if (bytes_read != (ssize_t)length) {
+		DF_LOG_ERR("error: I2CDevObj::_readReg reports a read of %zd bytes at address 0x%X, but attempted to read %zd bytes",
+			   bytes_read, address, length);
+		return -1;
+	}
+
+	return 0;
+
 #elif defined(__DF_LINUX)
 	int result = _writeReg(address, nullptr, 0);
 
@@ -151,6 +204,10 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, size_t length)
 
 int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, size_t length)
 {
+#ifdef __DF_BBBLUE
+	DF_LOG_ERR("error: I2CDevObj::_readReg16 is not supported on BBBLUE");
+	return -1;
+#endif
 
 	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
@@ -181,6 +238,10 @@ int I2CDevObj::_readReg16(uint16_t address, uint16_t *out_buffer, size_t length)
 // read from a register without ioctl
 int I2CDevObj::_simple_read(uint8_t *out_buffer, size_t length)
 {
+#ifdef __DF_BBBLUE
+	DF_LOG_ERR("error: I2CDevObj::_simple_read is not supported on BBBLUE");
+	return -1;
+#endif
 
 	if (m_fd < 0) {
 		DF_LOG_ERR("error: i2c bus is not yet opened");
@@ -206,7 +267,29 @@ int I2CDevObj::_simple_read(uint8_t *out_buffer, size_t length)
 
 int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, size_t length)
 {
-#if defined(__DF_QURT) || defined(__DF_LINUX)
+#if defined(__DF_BBBLUE)
+	unsigned retry_count = 0;
+
+	if (m_fd < 0) {
+		DF_LOG_ERR("error: i2c bus is not yet opened");
+		return -1;
+	}
+
+	do {
+		int ret = rc_i2c_write_bytes(m_bus_num, address, length, in_buffer);
+
+		if (ret == 0) {
+			return 0;
+
+		} else {
+			DF_LOG_ERR("Error: I2CDevObj::_writeReg failed. retry_count: %zd ",
+					   retry_count);
+		}
+	} while (retry_count++ < _retries);
+
+	return -1;
+
+#elif defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
 
 	if (m_fd < 0) {
@@ -254,6 +337,11 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, size_t length)
 
 int I2CDevObj::_writeReg16(uint16_t address, uint16_t *in_buffer, size_t length)
 {
+#ifdef __DF_BBBLUE
+	DF_LOG_ERR("error: I2CDevObj::_writeReg16 is not supported on BBBLUE");
+	return -1;
+#endif
+
 #if defined(__DF_QURT) || defined(__DF_LINUX)
 	unsigned retry_count = 0;
 
@@ -319,3 +407,32 @@ int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_kh
 	return -1;
 #endif
 }
+
+
+int I2CDevObj::_readReg(uint8_t address, uint8_t &val)
+{
+	return _readReg(address, &val, 1);
+}
+
+int I2CDevObj::_writeReg(uint8_t address, uint8_t val)
+{
+	return _writeReg(address, &val, 1);
+}
+
+int I2CDevObj::_modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits)
+{
+	int ret;
+	uint8_t	val;
+
+	ret = _readReg(address, val);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	val &= ~clearbits;
+	val |= setbits;
+
+	return _writeReg(address, val);
+}
+

@@ -63,7 +63,10 @@ public:
 
 protected:
 	int _readReg(uint8_t address, uint8_t *out_buffer, size_t length);
+	int _readReg(uint8_t address, uint8_t &val);
 	int _writeReg(uint8_t address, uint8_t *out_buffer, size_t length);
+	int _writeReg(uint8_t address, uint8_t val);
+	int _modifyReg(uint8_t address, uint8_t clearbits, uint8_t setbits);
 	int _readReg16(uint16_t address, uint16_t *out_buffer, size_t length);
 	int _writeReg16(uint16_t address, uint16_t *out_buffer, size_t length);
 
@@ -74,6 +77,8 @@ protected:
 
 	int m_fd{ -1};
 	unsigned _retries{0};
+	int m_bus_num{0};
+	//uint32_t m_slave_address{0};
 };
 
 };

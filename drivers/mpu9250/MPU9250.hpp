@@ -33,6 +33,10 @@
 
 #pragma once
 
+#if defined(__DF_BBBLUE)
+#define __IMU_USE_I2C
+#endif
+
 #include "ImuSensor.hpp"
 #include "MPU9250_mag.hpp"
 
@@ -108,10 +112,12 @@ namespace DriverFramework
 #define MPU_CLK_SEL_AUTO	0x01
 
 #define BITS_USER_CTRL_FIFO_EN		0x40
-#define BITS_USER_CTRL_FIFO_RST		0x04
 #define BITS_USER_CTRL_I2C_MST_EN  	0x20
 #define BITS_USER_CTRL_I2C_IF_DIS  	0x10
-#define BITS_USER_CTRL_I2C_MST_RST  	0x02
+#define BITS_USER_CTRL_DMP_RST		0x08
+#define BITS_USER_CTRL_FIFO_RST		0x04
+#define BITS_USER_CTRL_I2C_MST_RST  0x02
+#define BITS_USER_CTRL_SIG_COND_RST 0x01
 
 #define BITS_CONFIG_FIFO_MODE_OVERWRITE	0x00
 #define BITS_CONFIG_FIFO_MODE_STOP	0x40
@@ -199,6 +205,21 @@ namespace DriverFramework
 #define MPU_WHOAMI_9250			0x71
 #define MPU_WHOAMI_9250_REAL		0x73
 
+#if defined(__IMU_USE_I2C)
+#if defined(__DF_BBBLUE)
+extern pthread_mutex_t _mutex_shared_i2c_2_bus;
+#endif
+
+#define MPU9250_SLAVE_ADDRESS 0x68       /* 7-bit slave address */
+
+// Currently for __DF_LINUX, int I2CDevObj::_setSlaveConfig(uint32_t slave_address, uint32_t bus_frequency_khz, uint32_t transfer_timeout_usec)
+// does not actually set bus_frequency_khz, transfer_timeout_usec
+// so the following 2 parameters are listed here, but have no effect for __DF_LINUX for now
+#define MPU9250_I2C_BUS_FREQUENCY_IN_KHZ 400
+#define MPU9250_TRANSFER_TIMEOUT_IN_USECS 900
+
+#endif
+
 #pragma pack(push, 1)
 struct fifo_packet {
 	int16_t accel_x;
@@ -250,8 +271,15 @@ public:
 		_mag(nullptr)
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_MPU9250;
+
+#if defined(__IMU_USE_I2C)
+		_retries = 1;
+		m_id.dev_id_s.address = MPU9250_SLAVE_ADDRESS;
+#else
 		// TODO: does the WHOAMI make sense as an address?
 		m_id.dev_id_s.address = MPU_WHOAMI_9250;
+
+#endif
 	}
 
 	// @return 0 on success, -errno on failure
@@ -293,6 +321,11 @@ private:
 	void reset_fifo();
 
 	void clear_int_status();
+
+	int set_i2c_slave_config();
+
+	int _start();
+	void _measureData();
 
 	float _last_temp_c;
 	bool _temp_initialized;

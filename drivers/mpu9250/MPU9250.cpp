@@ -38,6 +38,16 @@
 #include "MPU9250.hpp"
 #include "MPU9250_mag.hpp"
 
+#ifdef __DF_BBBLUE
+#define RC_AUTOPILOT_EXT
+#include <roboticscape.h>
+
+namespace DriverFramework
+{
+	pthread_mutex_t _mutex_shared_i2c_2_bus = PTHREAD_MUTEX_INITIALIZER;
+}
+#endif
+
 #define MPU9250_ONE_G	9.80665f
 
 #define MIN(_x, _y) (_x) > (_y) ? (_y) : (_x)
@@ -47,11 +57,29 @@
 
 using namespace DriverFramework;
 
+int MPU9250::set_i2c_slave_config()
+{
+	int result = 0;
+
+#if defined(__IMU_USE_I2C)
+#ifdef __DF_BBBLUE
+	result = rc_i2c_set_device_address(m_bus_num, MPU9250_SLAVE_ADDRESS);
+#else
+	result = _setSlaveConfig(MPU9250_SLAVE_ADDRESS,
+				     MPU9250_I2C_BUS_FREQUENCY_IN_KHZ,
+				     MPU9250_TRANSFER_TIMEOUT_IN_USECS);
+#endif
+
+	if (result < 0) {
+		DF_LOG_ERR("Could not set slave config, result: %d", result);
+	}
+#endif
+
+	return result;
+}
+
 int MPU9250::mpu9250_init()
 {
-	// Use 1 MHz for normal registers.
-	_setBusFrequency(SPI_FREQUENCY_1MHZ);
-
 	/* Zero the struct */
 
 	m_sensor_data.accel_m_s2_x = 0.0f;
@@ -75,10 +103,39 @@ int MPU9250::mpu9250_init()
 	m_sensor_data.fifo_sample_interval_us = 0;
 	m_sensor_data.is_last_fifo_sample = false;
 
+#if defined(__DF_BBBLUE)
+	/*
+	rc_imu_data_t data;
+
+	// start with default config
+	rc_imu_config_t conf = rc_default_imu_config();
+
+	conf.enable_magnetometer = 1;
+	conf.dmp_sample_rate = 200; // Hz
+	// dmp_sample_rate should be set to a divisor of 200 (200,100,50,40,25,20,10,8,5,4)
+
+	// set up the imu for dmp interrupt operation
+	if (rc_initialize_imu_dmp(&data, conf)) {
+		DF_LOG_ERR("MPU9250::mpu9250_init: rc_initialize_imu_dmp failed");
+		return -1;
+	}
+
+	return 0;
+	*/
+#endif
+
+#if defined(__IMU_USE_I2C)
+	set_i2c_slave_config();
+
+#else
+	// Use 1 MHz for normal registers.
+	_setBusFrequency(SPI_FREQUENCY_1MHZ);
+#endif
+
 	int result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
 
 	if (result != 0) {
-		DF_LOG_ERR("reset failed");
+		DF_LOG_ERR("MPU9250::mpu9250_init: reset failed");
 	}
 
 	usleep(100000);
@@ -87,11 +144,12 @@ int MPU9250::mpu9250_init()
 	result = _writeReg(MPUREG_PWR_MGMT_1, 0);
 
 	if (result != 0) {
-		DF_LOG_ERR("wakeup sensor failed");
+		DF_LOG_ERR("MPU9250::mpu9250_init: wakeup sensor failed");
 	}
 
 	usleep(1000);
 
+	// eanble X/Y/Z Accel & Gyro
 	result = _writeReg(MPUREG_PWR_MGMT_2, 0);
 
 	if (result != 0) {
@@ -100,24 +158,39 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-	// Reset I2C master and device.
+	// clear first, and separate *_RST from *_EN
+	// refer to mpu_reset_fifo() in Robotics Cape library, Invensense open source codebase and _fifo_reset() in ArduPilot
+	_writeReg(MPUREG_USER_CTRL, 0);
+	_writeReg(MPUREG_FIFO_EN,   0);
+
+	usleep(1000);
+
 	result = _writeReg(MPUREG_USER_CTRL,
-			   BITS_USER_CTRL_I2C_MST_RST |
-			   BITS_USER_CTRL_I2C_IF_DIS);
+						BITS_USER_CTRL_DMP_RST      |
+						BITS_USER_CTRL_FIFO_RST     |
+						BITS_USER_CTRL_I2C_MST_RST  |
+						BITS_USER_CTRL_SIG_COND_RST);
 
 	if (result != 0) {
-		DF_LOG_ERR("user ctrl 1 failed");
+		DF_LOG_ERR("Write to regiter USER_CTRL low 4bit (RST) failed");
 	}
 
 	usleep(1000);
 
-	// Reset and enable FIFO.
+#if defined(__IMU_USE_I2C)
 	result = _writeReg(MPUREG_USER_CTRL,
-			   BITS_USER_CTRL_FIFO_RST |
-			   BITS_USER_CTRL_FIFO_EN);
+						BITS_USER_CTRL_FIFO_EN    |
+						BITS_USER_CTRL_I2C_MST_EN);
+
+#else
+	result = _writeReg(MPUREG_USER_CTRL,
+						BITS_USER_CTRL_FIFO_EN    |
+						BITS_USER_CTRL_I2C_MST_EN |
+						BITS_USER_CTRL_I2C_IF_DIS);
+#endif
 
 	if (result != 0) {
-		DF_LOG_ERR("user ctrl 2 failed");
+		DF_LOG_ERR("Write to regiter USER_CTRL high 4 bits (EN) failed");
 	}
 
 	usleep(1000);
@@ -167,6 +240,9 @@ int MPU9250::mpu9250_init()
 #elif defined(__DF_RPI_SINGLE)
 	result = _writeReg(MPUREG_CONFIG,
 			   BITS_DLPF_CFG_184HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
+#elif defined(__DF_BBBLUE)
+	result = _writeReg(MPUREG_CONFIG,
+			   BITS_DLPF_CFG_184HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
 #else
 	result = _writeReg(MPUREG_CONFIG,
 			   BITS_DLPF_CFG_92HZ | BITS_CONFIG_FIFO_MODE_OVERWRITE);
@@ -177,6 +253,22 @@ int MPU9250::mpu9250_init()
 	}
 
 	usleep(1000);
+
+#if defined(__DF_BBBLUE)
+    /*
+	////////////////////////////////////////////////////////////////////
+	// after reset Sample Rate Divider is 0
+	result = _writeReg(MPUREG_SMPLRT_DIV, 1);
+
+	if (result < 0) {
+		DF_LOG_ERR("Set sample divider failed");
+		return -1;
+	}
+
+	usleep(1000);
+    ////////////////////////////////////////////////////////////////////
+    */
+#endif
 
 	result = _writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS | BITS_BW_LT3600HZ);
 
@@ -220,6 +312,10 @@ int MPU9250::mpu9250_init()
 		}
 	}
 
+#if defined(__DF_BBBLUE)
+	//_writeReg(MPUREG_INT_ENABLE, BIT_RAW_RDY_EN);
+#endif
+
 	// Enable/clear the FIFO of any residual data
 	reset_fifo();
 
@@ -249,8 +345,55 @@ int MPU9250::mpu9250_deinit()
 
 int MPU9250::start()
 {
+#if defined(__DF_BBBLUE)
+	// on BBBLUE, MPU9250 and BMP280 are on the same I2C bus
+	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
+		rc_i2c_lock_bus(2);
+		int ret = _start();
+		rc_i2c_unlock_bus(2);
+	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
+	return ret;
+#else
+	return _start();
+#endif
+}
+
+int MPU9250::_start()
+{
 	/* Open the device path specified in the class initialization. */
 	// attempt to open device in start()
+#if defined(__IMU_USE_I2C)
+	rc_init();
+
+	int	result = I2CDevObj::start();
+
+	if (result != 0) {
+		DF_LOG_ERR("DevObj start failed");
+		DF_LOG_ERR("Unable to open the device path: %s", m_dev_path);
+		return result;
+	}
+
+	set_i2c_slave_config();
+
+	result = _writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);
+
+	if (result != 0) {
+		DF_LOG_ERR("MPU9250::start: reset failed");
+	}
+
+	usleep(100000);
+
+	//make sure all other power management features are off
+	result = _writeReg(MPUREG_PWR_MGMT_1, 0);
+
+	if (result != 0) {
+		DF_LOG_ERR("MPU9250::start: wakeup sensor failed");
+	}
+
+	usleep(1000);
+
+
+#else
 	int result = SPIDevObj::start();
 
 	if (result != 0) {
@@ -265,6 +408,7 @@ int MPU9250::start()
 	if (result != 0) {
 		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
 	}
+#endif
 
 	/* Try to talk to the sensor. */
 	uint8_t sensor_id;
@@ -272,21 +416,21 @@ int MPU9250::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("Unable to communicate with the MPU9250 sensor");
-		goto exit;
+		return result;
 	}
 
 	if (MPU_WHOAMI_9250 != sensor_id && MPU_WHOAMI_9250_REAL != sensor_id) {
 		DF_LOG_ERR("MPU9250 sensor WHOAMI wrong: 0x%X, should be: 0x%X",
 			   sensor_id, MPU_WHOAMI_9250);
 		result = -1;
-		goto exit;
+		return result;
 	}
 
 	result = mpu9250_init();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
-		goto exit;
+		return result;
 	}
 
 	result = DevObj::start();
@@ -296,7 +440,24 @@ int MPU9250::start()
 		return result;
 	}
 
-exit:
+
+#ifdef __DF_BBBLUE
+	//usleep(200);
+	// There seems to be some timing issue related to DevObj::start()
+
+	uint8_t regUserCtrl, regFifoEn;
+	_readReg(MPUREG_USER_CTRL, regUserCtrl);
+	_readReg(MPUREG_FIFO_EN,   regFifoEn);
+
+	int fifo_cnt = get_fifo_count();
+	DF_LOG_INFO("MPU9250 : USER_CTRL:  0x%X, FIFO EN:  0x%X, FIFO count: %d",
+			    regUserCtrl, regFifoEn, fifo_cnt);
+
+	if (fifo_cnt >= 80) {
+		reset_fifo();
+	}
+#endif
+
 	return result;
 }
 
@@ -328,10 +489,18 @@ int MPU9250::get_fifo_count()
 {
 	int16_t num_bytes = 0x0;
 
+#if defined(__IMU_USE_I2C)
+	 set_i2c_slave_config();
+
+	int ret = _readReg(MPUREG_FIFO_COUNTH, (uint8_t *) &num_bytes,
+				       sizeof(num_bytes));
+#else
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
+
 	int ret = _bulkRead(MPUREG_FIFO_COUNTH, (uint8_t *) &num_bytes,
-			    sizeof(num_bytes));
+			            sizeof(num_bytes));
+#endif
 
 	if (ret == 0) {
 
@@ -348,19 +517,32 @@ int MPU9250::get_fifo_count()
 
 void MPU9250::reset_fifo()
 {
-	// Use 1 MHz for normal registers.
+#if defined(__IMU_USE_I2C)
+	 set_i2c_slave_config();
+#else
+	 // Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
+#endif
 
-	int result;
-
-	result = _modifyReg(MPUREG_USER_CTRL,
-			    0,
-			    BITS_USER_CTRL_FIFO_RST |
-			    BITS_USER_CTRL_FIFO_EN);
+	int result = _modifyReg(MPUREG_USER_CTRL,
+								BITS_USER_CTRL_FIFO_EN,      // clear bits
+								BITS_USER_CTRL_FIFO_RST );   // set bits
 
 	if (result != 0) {
-		DF_LOG_ERR("FIFO reset failed");
+		DF_LOG_ERR("MPU9250::reset_fifo: reset failed");
 	}
+
+	usleep(1000);
+
+	result = _modifyReg(MPUREG_USER_CTRL,
+									0,      // clear bits
+									BITS_USER_CTRL_FIFO_EN );   // set bits
+
+	if (result != 0) {
+		DF_LOG_ERR("MPU9250::reset_fifo: enable failed");
+	}
+
+	usleep(1000);
 }
 
 void MPU9250::clear_int_status()
@@ -377,8 +559,26 @@ void MPU9250::clear_int_status()
 
 void MPU9250::_measure()
 {
-	// Use 1 MHz for normal registers.
+#if defined(__DF_BBBLUE)
+	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
+		rc_i2c_lock_bus(2);
+		_measureData();
+		rc_i2c_unlock_bus(2);
+	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
+#else
+	_measureData();
+#endif
+}
+
+void MPU9250::_measureData()
+{
+#if defined(__IMU_USE_I2C)
+	 set_i2c_slave_config();
+#else
+	 // Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
+#endif
+
 	uint8_t int_status = 0;
 	int result = _readReg(MPUREG_INT_STATUS, int_status);
 
@@ -405,9 +605,12 @@ void MPU9250::_measure()
 		size_of_fifo_packet = sizeof(fifo_packet);
 	}
 
+	int fifo_cnt = get_fifo_count();
+
+	if (fifo_cnt <= 0) DF_LOG_INFO("MPU9250::_measureData: FIFO Count: %d", fifo_cnt);
+
 	// Get FIFO byte count to read and floor it to the report size.
-	int bytes_to_read = get_fifo_count() / size_of_fifo_packet
-			    * size_of_fifo_packet;
+	int bytes_to_read =  fifo_cnt / size_of_fifo_packet * size_of_fifo_packet;
 
 	// It looks like the FIFO doesn't actually deliver at 8kHz like it is supposed to.
 	// Therefore, we need to adapt the interval which we pass on to the integrator.
@@ -415,7 +618,7 @@ void MPU9250::_measure()
 	// because of the fact that the bytes we fetch per _measure() cycle varies.
 	_packets_per_cycle_filtered = (0.95f * _packets_per_cycle_filtered) + (0.05f * (bytes_to_read / size_of_fifo_packet));
 
-	if (bytes_to_read < 0) {
+	if (bytes_to_read <= 0) {
 		++m_sensor_data.error_counter;
 		return;
 	}
@@ -424,11 +627,6 @@ void MPU9250::_measure()
 	// sensor FIFO.
 	const unsigned buf_len = (MPU_MAX_LEN_FIFO_IN_BYTES / size_of_fifo_packet) * size_of_fifo_packet;
 	uint8_t fifo_read_buf[buf_len];
-
-	if (bytes_to_read <= 0) {
-		++m_sensor_data.error_counter;
-		return;
-	}
 
 	const unsigned read_len = MIN((unsigned)bytes_to_read, buf_len);
 	memset(fifo_read_buf, 0x0, buf_len);
@@ -443,6 +641,9 @@ void MPU9250::_measure()
 	//
 	// Luckily 10 MHz seems to work fine.
 
+#if defined(__IMU_USE_I2C)
+	 set_i2c_slave_config();
+#else
 #if defined(__DF_EDISON)
 	//FIFO corrupt at 10MHz.
 	_setBusFrequency(SPI_FREQUENCY_5MHZ);
@@ -451,8 +652,19 @@ void MPU9250::_measure()
 #else
 	_setBusFrequency(SPI_FREQUENCY_10MHZ);
 #endif
+#endif
 
+#if defined(__IMU_USE_I2C)
+	/*
+	if (read_len > 128) {
+		DF_LOG_INFO("MPU9250::_measureData: _readReg read_len (%d) is too large, FIFO Count: %d, buf_len: %d",
+				read_len, fifo_cnt, buf_len);
+	} */
+
+	result = _readReg( MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+#else
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+#endif
 
 	if (result != 0) {
 		++m_sensor_data.error_counter;
@@ -532,10 +744,12 @@ void MPU9250::_measure()
 		m_sensor_data.gyro_rad_s_y = float(report->gyro_y) * GYRO_RAW_TO_RAD_S;
 		m_sensor_data.gyro_rad_s_z = float(report->gyro_z) * GYRO_RAW_TO_RAD_S;
 
+		int mag_error = 0;
+
 		if (_mag_enabled) {
 			struct fifo_packet_with_mag *report_with_mag_data = (struct fifo_packet_with_mag *)report;
 
-			int mag_error = _mag->process((const struct mag_data &)report_with_mag_data->mag_st1,
+			mag_error = _mag->process((const struct mag_data &)report_with_mag_data->mag_st1,
 						      m_sensor_data.mag_ga_x,
 						      m_sensor_data.mag_ga_y,
 						      m_sensor_data.mag_ga_z);
@@ -583,6 +797,7 @@ void MPU9250::_measure()
 		}
 
 #endif
+		//DF_LOG_INFO("MPU9250::_measureData: BEFORE _publish, FIFO Count: %d", fifo_cnt);
 
 		_publish(m_sensor_data);
 	}

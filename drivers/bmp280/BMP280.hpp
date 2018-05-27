@@ -35,6 +35,11 @@
 
 #include "BaroSensor.hpp"
 
+#ifdef __DF_BBBLUE
+#define RC_AUTOPILOT_EXT
+#include <roboticscape.h>
+#endif
+
 namespace DriverFramework
 {
 
@@ -53,8 +58,13 @@ struct bmp280_sensor_calibration {
 	int16_t dig_P9;
 };
 
-
+#if defined(__DF_BBBLUE)
+#define BARO_DEVICE_PATH "/dev/i2c-2"
+extern pthread_mutex_t _mutex_shared_i2c_2_bus;
+#else
 #define BARO_DEVICE_PATH "/dev/iic-3"
+#endif
+
 
 // update frequency is 50 Hz (44.4-51.3Hz ) at 8x oversampling
 #define BMP280_MEASURE_INTERVAL_US 20000
@@ -79,6 +89,10 @@ public:
 	{
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_BMP280;
 		m_id.dev_id_s.address = BMP280_SLAVE_ADDRESS;
+
+		#ifdef __DF_BBBLUE
+		_retries = 1;
+		#endif
 	}
 
 	// @return 0 on success, -errno on failure
@@ -108,6 +122,16 @@ private:
 	int bmp280_init();
 
 	struct bmp280_sensor_calibration 	m_sensor_calibration;
+
+	int _start();
+	void _measureData();
+
+	int set_i2c_slave_config();
+	void _measureDataRC();
+
+#if defined(__DF_BBBLUE)
+	rc_filter_t  m_low_pass_filter;
+#endif
 };
 
 }; // namespace DriverFramework

@@ -38,9 +38,15 @@
 
 #if defined(__IMU_USE_I2C)
 #include "I2CDevObj.hpp"
+
+#if defined(__DF_BBBLUE)
+#define IMU_DEVICE_PATH "/dev/i2c-2"
 #else
-#include "SPIDevObj.hpp"
+#define IMU_DEVICE_PATH "/dev/iic-2"
 #endif
+
+#else  // !defined(__IMU_USE_I2C)
+#include "SPIDevObj.hpp"
 
 #if defined(__DF_QURT)
 #include "dev_fs_lib_spi.h"
@@ -57,6 +63,8 @@
 #define IMU_DEVICE_PATH "/dev/spidev0.0"
 #endif
 
+#endif // __IMU_USE_I2C
+
 #if defined(__DF_RPI)
 #include <linux/spi/spidev.h>
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.3"
@@ -64,9 +72,14 @@
 #elif defined(__DF_RPI_SINGLE)
 #define IMU_DEVICE_ACC_GYRO "/dev/spidev0.1"
 #define IMU_DEVICE_MAG "/dev/spidev0.1"
+
+#elif defined(__DF_BBBLUE)
+#define IMU_DEVICE_ACC_GYRO "/dev/i2c-2"
+#define IMU_DEVICE_MAG      "/dev/i2c-2"
+
 #else
 #define IMU_DEVICE_ACC_GYRO ""
-#define IMU_DEVICE_MAG ""
+#define IMU_DEVICE_MAG      ""
 #endif
 
 #define IMU_CLASS_PATH  "/dev/imu"
