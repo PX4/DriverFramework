@@ -78,7 +78,6 @@ protected:
 	int m_fd{ -1};
 	unsigned _retries{0};
 	int m_bus_num{0};
-	//uint32_t m_slave_address{0};
 };
 
 };

@@ -51,7 +51,7 @@
 
 #ifdef __DF_BBBLUE
 #include <stdlib.h>
-#include <roboticscape.h>
+#include <robotcontrol.h>
 #endif
 
 #endif
@@ -63,7 +63,7 @@ int I2CDevObj::start()
 #ifdef __DF_BBBLUE
 	m_bus_num = atoi(m_dev_path + (strlen(m_dev_path) - 1));
 
-	if(m_bus_num != 1 && m_bus_num != 2) {
+	if (m_bus_num != 1 && m_bus_num != 2) {
 		m_fd = -1;
 		DF_LOG_ERR("Error: I2CDevObj::start failed: %s : i2c bus must be 1 or 2", m_dev_path);
 		return m_fd;
@@ -281,7 +281,7 @@ int I2CDevObj::_writeReg(uint8_t address, uint8_t *in_buffer, size_t length)
 
 		} else {
 			DF_LOG_ERR("Error: I2CDevObj::_writeReg failed. retry_count: %zd ",
-					   retry_count);
+				   retry_count);
 		}
 	} while (retry_count++ < _retries);
 

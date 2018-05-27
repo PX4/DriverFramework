@@ -39,11 +39,11 @@
 #include "MPU9250_mag.hpp"
 
 #ifdef __DF_BBBLUE
-#include <roboticscape.h>
+#include <robotcontrol.h>
 
 namespace DriverFramework
 {
-	pthread_mutex_t _mutex_shared_i2c_2_bus = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t _mutex_shared_i2c_2_bus = PTHREAD_MUTEX_INITIALIZER;
 }
 #endif
 
@@ -65,13 +65,14 @@ int MPU9250::set_i2c_slave_config()
 	result = rc_i2c_set_device_address(m_bus_num, MPU9250_SLAVE_ADDRESS);
 #else
 	result = _setSlaveConfig(MPU9250_SLAVE_ADDRESS,
-				     MPU9250_I2C_BUS_FREQUENCY_IN_KHZ,
-				     MPU9250_TRANSFER_TIMEOUT_IN_USECS);
+				 MPU9250_I2C_BUS_FREQUENCY_IN_KHZ,
+				 MPU9250_TRANSFER_TIMEOUT_IN_USECS);
 #endif
 
 	if (result < 0) {
 		DF_LOG_ERR("Could not set slave config, result: %d", result);
 	}
+
 #endif
 
 	return result;
@@ -101,6 +102,10 @@ int MPU9250::mpu9250_init()
 
 	m_sensor_data.fifo_sample_interval_us = 0;
 	m_sensor_data.is_last_fifo_sample = false;
+
+#if defined(__DF_BBBLUE)
+	rc_init();
+#endif
 
 #if defined(__IMU_USE_I2C)
 	set_i2c_slave_config();
@@ -143,10 +148,10 @@ int MPU9250::mpu9250_init()
 	usleep(1000);
 
 	result = _writeReg(MPUREG_USER_CTRL,
-						BITS_USER_CTRL_DMP_RST      |
-						BITS_USER_CTRL_FIFO_RST     |
-						BITS_USER_CTRL_I2C_MST_RST  |
-						BITS_USER_CTRL_SIG_COND_RST);
+			   BITS_USER_CTRL_DMP_RST      |
+			   BITS_USER_CTRL_FIFO_RST     |
+			   BITS_USER_CTRL_I2C_MST_RST  |
+			   BITS_USER_CTRL_SIG_COND_RST);
 
 	if (result != 0) {
 		DF_LOG_ERR("Write to regiter USER_CTRL low 4bit (RST) failed");
@@ -156,13 +161,13 @@ int MPU9250::mpu9250_init()
 
 #if defined(__IMU_USE_I2C)
 	result = _writeReg(MPUREG_USER_CTRL,
-						BITS_USER_CTRL_FIFO_EN    |
-						BITS_USER_CTRL_I2C_MST_EN);
+			   BITS_USER_CTRL_FIFO_EN    |
+			   BITS_USER_CTRL_I2C_MST_EN);
 #else
 	result = _writeReg(MPUREG_USER_CTRL,
-						BITS_USER_CTRL_FIFO_EN    |
-						BITS_USER_CTRL_I2C_MST_EN |
-						BITS_USER_CTRL_I2C_IF_DIS);
+			   BITS_USER_CTRL_FIFO_EN    |
+			   BITS_USER_CTRL_I2C_MST_EN |
+			   BITS_USER_CTRL_I2C_IF_DIS);
 #endif
 
 	if (result != 0) {
@@ -304,9 +309,11 @@ int MPU9250::start()
 #if defined(__DF_BBBLUE)
 	// on BBBLUE, MPU9250 and BMP280 are on the same I2C bus
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
-		rc_i2c_lock_bus(m_bus_num);
-		int ret = _start();
-		rc_i2c_unlock_bus(m_bus_num);
+
+	rc_i2c_lock_bus(m_bus_num);
+	int ret = _start();
+	rc_i2c_unlock_bus(m_bus_num);
+
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 	return ret;
 #else
@@ -321,7 +328,7 @@ int MPU9250::_start()
 #if defined(__IMU_USE_I2C)
 	rc_init();
 
-	int	result = I2CDevObj::start();
+	int result = I2CDevObj::start();
 
 	if (result != 0) {
 		DF_LOG_ERR("DevObj start failed");
@@ -364,6 +371,7 @@ int MPU9250::_start()
 	if (result != 0) {
 		DF_LOG_ERR("failed setting SPI bus frequency: %d", result);
 	}
+
 #endif
 
 	/* Try to talk to the sensor. */
@@ -407,11 +415,12 @@ int MPU9250::_start()
 
 	int fifo_cnt = get_fifo_count();
 	DF_LOG_INFO("MPU9250 Reg: USER_CTRL:  0x%X, FIFO EN:  0x%X, FIFO count: %d",
-			    regUserCtrl, regFifoEn, fifo_cnt);
+		    regUserCtrl, regFifoEn, fifo_cnt);
 
 	if (fifo_cnt >= 80) {
 		reset_fifo();
 	}
+
 #endif
 
 	return result;
@@ -446,16 +455,16 @@ int MPU9250::get_fifo_count()
 	int16_t num_bytes = 0x0;
 
 #if defined(__IMU_USE_I2C)
-	 set_i2c_slave_config();
+	set_i2c_slave_config();
 
 	int ret = _readReg(MPUREG_FIFO_COUNTH, (uint8_t *) &num_bytes,
-				       sizeof(num_bytes));
+			   sizeof(num_bytes));
 #else
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 
 	int ret = _bulkRead(MPUREG_FIFO_COUNTH, (uint8_t *) &num_bytes,
-			            sizeof(num_bytes));
+			    sizeof(num_bytes));
 #endif
 
 	if (ret == 0) {
@@ -473,15 +482,15 @@ int MPU9250::get_fifo_count()
 void MPU9250::reset_fifo()
 {
 #if defined(__IMU_USE_I2C)
-	 set_i2c_slave_config();
+	set_i2c_slave_config();
 #else
-	 // Use 1 MHz for normal registers.
+	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 #endif
 
 	int result = _modifyReg(MPUREG_USER_CTRL,
-								BITS_USER_CTRL_FIFO_EN,      // clear bits
-								BITS_USER_CTRL_FIFO_RST );   // set bits
+				BITS_USER_CTRL_FIFO_EN,      // clear bits
+				BITS_USER_CTRL_FIFO_RST);    // set bits
 
 	if (result != 0) {
 		DF_LOG_ERR("MPU9250::reset_fifo: reset failed");
@@ -490,8 +499,8 @@ void MPU9250::reset_fifo()
 	usleep(1000);
 
 	result = _modifyReg(MPUREG_USER_CTRL,
-									0,      // clear bits
-									BITS_USER_CTRL_FIFO_EN );   // set bits
+			    0,      // clear bits
+			    BITS_USER_CTRL_FIFO_EN);    // set bits
 
 	if (result != 0) {
 		DF_LOG_ERR("MPU9250::reset_fifo: enable failed");
@@ -516,9 +525,9 @@ void MPU9250::_measure()
 {
 #if defined(__DF_BBBLUE)
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
-		rc_i2c_lock_bus(m_bus_num);
-		_measureData();
-		rc_i2c_unlock_bus(m_bus_num);
+	rc_i2c_lock_bus(m_bus_num);
+	_measureData();
+	rc_i2c_unlock_bus(m_bus_num);
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 #else
 	_measureData();
@@ -528,9 +537,9 @@ void MPU9250::_measure()
 void MPU9250::_measureData()
 {
 #if defined(__IMU_USE_I2C)
-	 set_i2c_slave_config();
+	set_i2c_slave_config();
 #else
-	 // Use 1 MHz for normal registers.
+	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
 #endif
 
@@ -562,7 +571,7 @@ void MPU9250::_measureData()
 
 	int fifo_cnt = get_fifo_count();
 
-	if (fifo_cnt <= 0) DF_LOG_INFO("MPU9250::_measureData: FIFO Count: %d", fifo_cnt);
+	if (fifo_cnt <= 0) { DF_LOG_INFO("MPU9250::_measureData: FIFO Count: %d", fifo_cnt); }
 
 	// Get FIFO byte count to read and floor it to the report size.
 	int bytes_to_read =  fifo_cnt / size_of_fifo_packet * size_of_fifo_packet;
@@ -597,7 +606,7 @@ void MPU9250::_measureData()
 	// Luckily 10 MHz seems to work fine.
 
 #if defined(__IMU_USE_I2C)
-	 set_i2c_slave_config();
+	set_i2c_slave_config();
 #else
 #if defined(__DF_EDISON)
 	//FIFO corrupt at 10MHz.
@@ -610,7 +619,7 @@ void MPU9250::_measureData()
 #endif
 
 #if defined(__IMU_USE_I2C)
-	result = _readReg( MPUREG_FIFO_R_W, fifo_read_buf, read_len);
+	result = _readReg(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 #else
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 #endif
@@ -699,9 +708,9 @@ void MPU9250::_measureData()
 			struct fifo_packet_with_mag *report_with_mag_data = (struct fifo_packet_with_mag *)report;
 
 			mag_error = _mag->process((const struct mag_data &)report_with_mag_data->mag_st1,
-						      m_sensor_data.mag_ga_x,
-						      m_sensor_data.mag_ga_y,
-						      m_sensor_data.mag_ga_z);
+						  m_sensor_data.mag_ga_x,
+						  m_sensor_data.mag_ga_y,
+						  m_sensor_data.mag_ga_z);
 
 			if (mag_error == MAG_ERROR_DATA_OVERFLOW) {
 				m_sensor_data.mag_fifo_overflow_counter++;
