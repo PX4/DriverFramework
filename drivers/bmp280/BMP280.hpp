@@ -36,7 +36,7 @@
 #include "BaroSensor.hpp"
 
 #ifdef __DF_BBBLUE
-#include <roboticscape.h>
+#include <robotcontrol.h>
 #endif
 
 namespace DriverFramework
@@ -89,9 +89,9 @@ public:
 		m_id.dev_id_s.devtype = DRV_DF_DEVTYPE_BMP280;
 		m_id.dev_id_s.address = BMP280_SLAVE_ADDRESS;
 
-		#ifdef __DF_BBBLUE
+#ifdef __DF_BBBLUE
 		_retries = 1;
-		#endif
+#endif
 	}
 
 	// @return 0 on success, -errno on failure
@@ -127,10 +127,6 @@ private:
 
 	int set_i2c_slave_config();
 	void _measureDataRC();
-
-#if defined(__DF_BBBLUE)
-	rc_filter_t  m_low_pass_filter;
-#endif
 };
 
 }; // namespace DriverFramework

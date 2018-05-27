@@ -43,10 +43,6 @@ if("${DF_TARGET}" STREQUAL "nuttx")
 		)
 	add_dependencies(df_driver_framework prebuild_targets)
 else()
-	include_directories(../../../Robotics_Cape_Installer/library/include)
-
-	add_definitions(-DRC_AUTOPILOT_EXT)
-
 	df_add_library(df_driver_framework
 		DriverFramework.cpp
 		WorkMgr.cpp

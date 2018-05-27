@@ -45,7 +45,9 @@
 #include "WorkMgr.hpp"
 #endif
 
+#ifdef __DF_BBBLUE
 #include <board_config.h>
+#endif
 
 #ifdef __DF_LINUX
 // Show backtrace on error

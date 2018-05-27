@@ -53,14 +53,6 @@
 #define BMP280_BITS_CONFIG_FILTER_OFF	0b00000000
 #define BMP280_BITS_CONFIG_SPI_OFF	0b00000000
 
-#if defined(__DF_BBBLUE)
-#define BMP280_FILTER_ORDER			2
-#define BMP280_FILTER_CUTOFF_FREQ	2.0f
-                                    // 2rad/s, about 0.3hz
-#define BMP280_FILTER_CHECK_HZ		25
-#define	BMP280_FILTER_DT			1.0f/BMP280_FILTER_CHECK_HZ
-#endif
-
 using namespace DriverFramework;
 
 int BMP280::set_i2c_slave_config()
@@ -68,13 +60,13 @@ int BMP280::set_i2c_slave_config()
 #if defined(__BARO_USE_SPI)
 	return -1;
 #else
-  #ifdef __DF_BBBLUE
+#ifdef __DF_BBBLUE
 	int result = rc_i2c_set_device_address(m_bus_num, BMP280_SLAVE_ADDRESS);
-  #else
+#else
 	int result = _setSlaveConfig(BMP280_SLAVE_ADDRESS,
-				 BMP280_BUS_FREQUENCY_IN_KHZ,
-				 BMP280_TRANSFER_TIMEOUT_IN_USECS);
-  #endif
+				     BMP280_BUS_FREQUENCY_IN_KHZ,
+				     BMP280_TRANSFER_TIMEOUT_IN_USECS);
+#endif
 
 	if (result < 0) {
 		DF_LOG_ERR("Could not set slave config, result: %d", result);
@@ -165,32 +157,16 @@ int BMP280::bmp280_init()
 	m_sensor_data.read_counter = 0;
 	m_sensor_data.error_counter = 0;
 
+#if defined(__DF_BBBLUE)
+	rc_init();
+#endif
+
 #if defined(__DF_BBBLUE_USE_RC_BMP280_IMP)
-	// use an implementation with Robotics Cape library and a second order
-	// low pass filter to filter out the high frequency noise inherent in MEMS barometers.
-	m_low_pass_filter = rc_filter_empty();
 
 	if (rc_bmp_init(BMP_OVERSAMPLE_16, BMP_FILTER_OFF) < 0) {
 		DF_LOG_ERR("ERROR: rc_initialize_barometer failed");
 		return -1;
 	}
-
-	// create the lowpass filter and prefill with current altitude
-	if (rc_filter_butterworth_lowpass(&m_low_pass_filter, BMP280_FILTER_ORDER,
-			                   BMP280_FILTER_DT, BMP280_FILTER_CUTOFF_FREQ)) {
-		DF_LOG_ERR("ERROR: failed to make butterworth filter");
-		return -1;
-	}
-
-	rc_bmp_data_t data;
-	if (rc_bmp_read(&data)) {
-		DF_LOG_ERR("ERROR: rc_bmp_read failed");
-		return -1;
-	}
-
-	// prefill low pass filter
-	rc_filter_prefill_inputs (&m_low_pass_filter, data.alt_m);
-	rc_filter_prefill_outputs(&m_low_pass_filter, data.alt_m);
 
 #else
 	int result;
@@ -238,6 +214,7 @@ int BMP280::bmp280_init()
 		DF_LOG_ERR("error: BMP280 sensor configuration failed");
 		return -EIO;
 	}
+
 #endif
 
 	DF_LOG_INFO("BMP280 sensor configuration succeeded");
@@ -251,7 +228,9 @@ int BMP280::start()
 #if defined(__DF_BBBLUE)
 	// on BBBLUE, MPU9250 and BMP280 are on the same I2C bus
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
-		int ret = _start();
+
+	int ret = _start();
+
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 	return ret;
 #else
@@ -261,8 +240,6 @@ int BMP280::start()
 
 int BMP280::_start()
 {
-	rc_init();
-
 	int result = I2CDevObj::start();
 
 	if (result != 0) {
@@ -315,23 +292,17 @@ void BMP280::_measure()
 {
 #if defined(__DF_BBBLUE)
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
-		int busInUse = rc_i2c_get_lock(2);
-		if (!busInUse) {  // give priority to MPU9250
-			#ifdef __RC_V0_3
-			    // in version 0.4.x, rc_bmp_read(...) handles the lock/unlock internally
-				rc_i2c_lock_bus(m_bus_num);
-			#endif
 
-			#if defined(__DF_BBBLUE_USE_RC_BMP280_IMP)
-				_measureDataRC();
-			#else
-				_measureData();
-			#endif
+	int busInUse = rc_i2c_get_lock(m_bus_num);
 
-			#ifdef __RC_V0_3
-				rc_i2c_unlock_bus(m_bus_num);
-			#endif
-		}
+	if (!busInUse) {  // give priority to MPU9250
+#if defined(__DF_BBBLUE_USE_RC_BMP280_IMP)
+		_measureDataRC();
+#else
+		_measureData();
+#endif
+	}
+
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 #else
 	_measureData();
@@ -392,6 +363,7 @@ void BMP280::_measureDataRC()
 {
 #if defined(__DF_BBBLUE_USE_RC_BMP280_IMP)
 	rc_bmp_data_t data;
+
 	if (rc_bmp_read(&data)) {
 		DF_LOG_ERR("BMP280: Can't read Barometer");
 		return;
@@ -399,7 +371,7 @@ void BMP280::_measureDataRC()
 
 	m_sensor_data.temperature_c 		= data.temp_c;
 	m_sensor_data.pressure_pa 			= data.pressure_pa;
-	m_sensor_data.altitude_m 			= rc_filter_march(&m_low_pass_filter, data.alt_m);
+	m_sensor_data.altitude_m 			= data.alt_m;
 	m_sensor_data.last_read_time_usec 	= DriverFramework::offsetTime();
 	m_sensor_data.read_counter++;
 
