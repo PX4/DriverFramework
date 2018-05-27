@@ -37,6 +37,8 @@ include_directories(
 	../../framework/include
 	)
 
+include_directories(../../../Robotics_Cape_Installer/library/include)
+
 get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 df_add_library(df_${drivername}
 	MPU9250.cpp

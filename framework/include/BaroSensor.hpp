@@ -61,6 +61,9 @@ struct baro_sensor_data {
 	uint64_t read_counter;		/*! the total number of pressure sensor readings since the system was started */
 	uint64_t last_read_time_usec; 	/*! time stamp indicating the time at which the pressure in this data structure was read */
 	uint64_t error_counter;		/*! the total number of errors detected when reading the pressure, since the system was started */
+#if defined(__DF_BBBLUE_USE_RC_BMP280_IMP)
+	float    altitude_m;        /*! current altitude in meter at which the pressure was read */
+#endif
 };
 
 void printPressureValues(struct baro_sensor_data &data);

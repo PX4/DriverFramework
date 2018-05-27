@@ -45,6 +45,8 @@
 #include "WorkMgr.hpp"
 #endif
 
+#include <board_config.h>
+
 #ifdef __DF_LINUX
 // Show backtrace on error
 #define DF_ENABLE_BACKTRACE 1

@@ -102,6 +102,45 @@ public:
 	int initialize(int output_data_rate_in_hz);
 
 	// @brief
+	// Process the data passed in to generate mag values in Gauss units.
+	// @param mag_ga_x: Use to return mag value in Gauss for x
+	// @param mag_ga_y: Use to return mag value in Gauss for y
+	// @param mag_ga_z: Use to return mag value in Gauss for z
+	// @return
+	// - 0 on success
+	// - -errno on failure
+	int process(const struct mag_data &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z);
+
+protected:
+	// @brief
+	// Used internally to perform a complete mag initialization.  Called
+	// multiple times by the initialize() function if the first initialization
+	// attempt fails.
+	// @param
+	// output_data_rate_in_hz
+	// The rate at which the sensor produces new IMU data (accel, gyro, and temperature data)
+	// @return
+	// - 0 on success
+	// - -errno on failure
+	int _initialize(int output_data_rate_in_hz);
+
+	// @brief
+	// Convert the magnetometer sample rate enum to an equivalent number in Hz.
+	// @return
+	// - 0 on success
+	// - -errno on failure
+	int _convert_sample_rate_enum_to_hz(enum mag_sample_rate_e sample_rate);
+
+private:
+	float _mag_sens_adj[3];
+	bool _mag_initialized;
+	mag_sample_rate_e _sample_rate;
+
+	// Internal reference to the MPU9250 object that instantiated this mag class.
+	MPU9250 &_imu;
+
+
+	// @brief
 	// Reads the sensitivity values contained in the FUSE memory of the mag and
 	// generates values used internally to process mag measurements.
 	// @return
@@ -140,43 +179,6 @@ public:
 	// - -errno on failure
 	int write_reg(uint8_t reg, uint8_t val);
 
-	// @brief
-	// Process the data passed in to generate mag values in Gauss units.
-	// @param mag_ga_x: Use to return mag value in Gauss for x
-	// @param mag_ga_y: Use to return mag value in Gauss for y
-	// @param mag_ga_z: Use to return mag value in Gauss for z
-	// @return
-	// - 0 on success
-	// - -errno on failure
-	int process(const struct mag_data &data, float &mag_ga_x, float &mag_ga_y, float &mag_ga_z);
-
-protected:
-	// @brief
-	// Used internally to perform a complete mag initialization.  Called
-	// multiple times by the initialize() function if the first initialization
-	// attempt fails.
-	// @param
-	// output_data_rate_in_hz
-	// The rate at which the sensor produces new IMU data (accel, gyro, and temperature data)
-	// @return
-	// - 0 on success
-	// - -errno on failure
-	int _initialize(int output_data_rate_in_hz);
-
-	// @brief
-	// Convert the magnetometer sample rate enum to an equivalent number in Hz.
-	// @return
-	// - 0 on success
-	// - -errno on failure
-	int _convert_sample_rate_enum_to_hz(enum mag_sample_rate_e sample_rate);
-
-private:
-	float _mag_sens_adj[3];
-	bool _mag_initialized;
-	mag_sample_rate_e _sample_rate;
-
-	// Internal reference to the MPU9250 object that instantiated this mag class.
-	MPU9250 &_imu;
 };
 
 }
