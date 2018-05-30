@@ -37,6 +37,8 @@ include_directories(../../framework/include)
 
 include_directories(../../../Robotics_Cape_Installer/library/include)
 
+add_definitions(-DRC_AUTOPILOT_EXT)
+
 if("${DF_TARGET}" STREQUAL "ocpoc")
 else()
 	get_filename_component(drivername ${CMAKE_CURRENT_SOURCE_DIR} NAME)

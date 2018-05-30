@@ -36,7 +36,6 @@
 #include "BaroSensor.hpp"
 
 #ifdef __DF_BBBLUE
-#define RC_AUTOPILOT_EXT
 #include <roboticscape.h>
 #endif
 

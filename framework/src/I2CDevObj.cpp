@@ -51,8 +51,6 @@
 
 #ifdef __DF_BBBLUE
 #include <stdlib.h>
-
-#define RC_AUTOPILOT_EXT
 #include <roboticscape.h>
 #endif
 

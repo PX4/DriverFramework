@@ -39,7 +39,6 @@
 #include "MPU9250_mag.hpp"
 
 #ifdef __DF_BBBLUE
-#define RC_AUTOPILOT_EXT
 #include <roboticscape.h>
 
 namespace DriverFramework
@@ -103,30 +102,8 @@ int MPU9250::mpu9250_init()
 	m_sensor_data.fifo_sample_interval_us = 0;
 	m_sensor_data.is_last_fifo_sample = false;
 
-#if defined(__DF_BBBLUE)
-	/*
-	rc_imu_data_t data;
-
-	// start with default config
-	rc_imu_config_t conf = rc_default_imu_config();
-
-	conf.enable_magnetometer = 1;
-	conf.dmp_sample_rate = 200; // Hz
-	// dmp_sample_rate should be set to a divisor of 200 (200,100,50,40,25,20,10,8,5,4)
-
-	// set up the imu for dmp interrupt operation
-	if (rc_initialize_imu_dmp(&data, conf)) {
-		DF_LOG_ERR("MPU9250::mpu9250_init: rc_initialize_imu_dmp failed");
-		return -1;
-	}
-
-	return 0;
-	*/
-#endif
-
 #if defined(__IMU_USE_I2C)
 	set_i2c_slave_config();
-
 #else
 	// Use 1 MHz for normal registers.
 	_setBusFrequency(SPI_FREQUENCY_1MHZ);
@@ -181,7 +158,6 @@ int MPU9250::mpu9250_init()
 	result = _writeReg(MPUREG_USER_CTRL,
 						BITS_USER_CTRL_FIFO_EN    |
 						BITS_USER_CTRL_I2C_MST_EN);
-
 #else
 	result = _writeReg(MPUREG_USER_CTRL,
 						BITS_USER_CTRL_FIFO_EN    |
@@ -254,22 +230,6 @@ int MPU9250::mpu9250_init()
 
 	usleep(1000);
 
-#if defined(__DF_BBBLUE)
-    /*
-	////////////////////////////////////////////////////////////////////
-	// after reset Sample Rate Divider is 0
-	result = _writeReg(MPUREG_SMPLRT_DIV, 1);
-
-	if (result < 0) {
-		DF_LOG_ERR("Set sample divider failed");
-		return -1;
-	}
-
-	usleep(1000);
-    ////////////////////////////////////////////////////////////////////
-    */
-#endif
-
 	result = _writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS | BITS_BW_LT3600HZ);
 
 	if (result != 0) {
@@ -312,10 +272,6 @@ int MPU9250::mpu9250_init()
 		}
 	}
 
-#if defined(__DF_BBBLUE)
-	//_writeReg(MPUREG_INT_ENABLE, BIT_RAW_RDY_EN);
-#endif
-
 	// Enable/clear the FIFO of any residual data
 	reset_fifo();
 
@@ -348,9 +304,9 @@ int MPU9250::start()
 #if defined(__DF_BBBLUE)
 	// on BBBLUE, MPU9250 and BMP280 are on the same I2C bus
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
-		rc_i2c_lock_bus(2);
+		rc_i2c_lock_bus(m_bus_num);
 		int ret = _start();
-		rc_i2c_unlock_bus(2);
+		rc_i2c_unlock_bus(m_bus_num);
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 	return ret;
 #else
@@ -450,7 +406,7 @@ int MPU9250::_start()
 	_readReg(MPUREG_FIFO_EN,   regFifoEn);
 
 	int fifo_cnt = get_fifo_count();
-	DF_LOG_INFO("MPU9250 : USER_CTRL:  0x%X, FIFO EN:  0x%X, FIFO count: %d",
+	DF_LOG_INFO("MPU9250 Reg: USER_CTRL:  0x%X, FIFO EN:  0x%X, FIFO count: %d",
 			    regUserCtrl, regFifoEn, fifo_cnt);
 
 	if (fifo_cnt >= 80) {
@@ -503,7 +459,6 @@ int MPU9250::get_fifo_count()
 #endif
 
 	if (ret == 0) {
-
 		/* TODO: add ifdef for endianness */
 		num_bytes = swap16(num_bytes);
 
@@ -561,9 +516,9 @@ void MPU9250::_measure()
 {
 #if defined(__DF_BBBLUE)
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
-		rc_i2c_lock_bus(2);
+		rc_i2c_lock_bus(m_bus_num);
 		_measureData();
-		rc_i2c_unlock_bus(2);
+		rc_i2c_unlock_bus(m_bus_num);
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 #else
 	_measureData();
@@ -655,12 +610,6 @@ void MPU9250::_measureData()
 #endif
 
 #if defined(__IMU_USE_I2C)
-	/*
-	if (read_len > 128) {
-		DF_LOG_INFO("MPU9250::_measureData: _readReg read_len (%d) is too large, FIFO Count: %d, buf_len: %d",
-				read_len, fifo_cnt, buf_len);
-	} */
-
 	result = _readReg( MPUREG_FIFO_R_W, fifo_read_buf, read_len);
 #else
 	result = _bulkRead(MPUREG_FIFO_R_W, fifo_read_buf, read_len);
@@ -797,7 +746,6 @@ void MPU9250::_measureData()
 		}
 
 #endif
-		//DF_LOG_INFO("MPU9250::_measureData: BEFORE _publish, FIFO Count: %d", fifo_cnt);
 
 		_publish(m_sensor_data);
 	}

@@ -316,8 +316,11 @@ void BMP280::_measure()
 #if defined(__DF_BBBLUE)
 	pthread_mutex_lock(&_mutex_shared_i2c_2_bus);
 		int busInUse = rc_i2c_get_lock(2);
-		if (!busInUse) {
-			rc_i2c_lock_bus(2);
+		if (!busInUse) {  // give priority to MPU9250
+			#ifdef __RC_V0_3
+			    // in version 0.4.x, rc_bmp_read(...) handles the lock/unlock internally
+				rc_i2c_lock_bus(m_bus_num);
+			#endif
 
 			#if defined(__DF_BBBLUE_USE_RC_BMP280_IMP)
 				_measureDataRC();
@@ -325,7 +328,9 @@ void BMP280::_measure()
 				_measureData();
 			#endif
 
-			rc_i2c_unlock_bus(2);
+			#ifdef __RC_V0_3
+				rc_i2c_unlock_bus(m_bus_num);
+			#endif
 		}
 	pthread_mutex_unlock(&_mutex_shared_i2c_2_bus);
 #else
@@ -399,7 +404,7 @@ void BMP280::_measureDataRC()
 	m_sensor_data.read_counter++;
 
 	//DF_LOG_DEBUG("BMP280::_measureDataRC: pressure: %9.2f pa, unfiltered alt: %9.2f m, altitude: %9.2f m, temp: %7.2f C",
-	//		    m_sensor_data.pressure_pa, alt_m, m_sensor_data.altitude_m, m_sensor_data.temperature_c);
+	//		       m_sensor_data.pressure_pa, alt_m, m_sensor_data.altitude_m, m_sensor_data.temperature_c);
 
 	_publish(m_sensor_data);
 #endif
