@@ -258,7 +258,7 @@ int DevObj::addHandle(DevHandle &h)
 
 		if (ret < 0) {
 			DF_LOG_DEBUG("DevObj::addHandle init failed (%p)", &h);
-			goto exit;
+			goto exit_return;
 		}
 	}
 
@@ -278,7 +278,7 @@ int DevObj::addHandle(DevHandle &h)
 		ret = -1;
 	}
 
-exit:
+exit_return:
 	m_handle_lock.unlock();
 	DF_LOG_DEBUG("DevObj::addHandle end (%p)", &h);
 	return (ret < 0) ? -1 : 0;
