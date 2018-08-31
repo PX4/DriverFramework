@@ -50,7 +50,7 @@ int ISL29501::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Configure the I2C bus parameters for the sensor. */
@@ -61,11 +61,11 @@ int ISL29501::start()
 
 	} else {
 		DF_LOG_ERR("Unable to connect to the device: %s", m_dev_path);
-		goto exit;
+		goto start_exit;
 	}
 
 	init_params();
-exit:
+start_exit:
 
 	if (result != 0) {
 		DF_LOG_ERR("error: Failed to start ISL");

@@ -292,7 +292,7 @@ int MS5611::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Initialize the pressure sensor.*/
@@ -300,17 +300,17 @@ int MS5611::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: pressure sensor initialization failed, sensor read thread not started");
-		goto exit;
+		goto start_exit;
 	}
 
 	result = DevObj::start();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
-exit:
+start_exit:
 
 	return result;
 }

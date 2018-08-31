@@ -202,21 +202,21 @@ int LSM9DS1::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("Unable to communicate with the LSM9DS1 sensor");
-		goto exit;
+		goto start_exit;
 	}
 
 	if (sensor_id != LSM9DS1_WHO_AM_I_ACC_GYRO) {
 		DF_LOG_ERR("LSM9DS1 sensor WHOAMI wrong: 0x%X, should be: 0x%X",
 			   sensor_id, LSM9DS1_WHO_AM_I_ACC_GYRO);
 		result = -1;
-		goto exit;
+		goto start_exit;
 	}
 
 	result = lsm9ds1_init();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: IMU sensor initialization failed, sensor read thread not started");
-		goto exit;
+		goto start_exit;
 	}
 
 	result = DevObj::start();
@@ -226,7 +226,7 @@ int LSM9DS1::start()
 		return result;
 	}
 
-exit:
+start_exit:
 
 	return result;
 }
@@ -256,13 +256,13 @@ int LSM9DS1::LSM9DS1M::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("Unable to communicate with the LSM9DS1M sensor");
-		goto exit;
+		goto start_exit;
 	}
 
 	if (sensor_id != LSM9DS1_WHO_AM_I_MAG) {
 		DF_LOG_ERR("LSM9DS1M sensor WHOAMI wrong: 0x%X, should be: 0x%X", sensor_id, LSM9DS1_WHO_AM_I_MAG);
 		result = -1;
-		goto exit;
+		goto start_exit;
 	}
 
 	lsm9ds1m_init();
@@ -273,7 +273,7 @@ int LSM9DS1::LSM9DS1M::start()
 		return result;
 	}
 
-exit:
+start_exit:
 
 	return result;
 

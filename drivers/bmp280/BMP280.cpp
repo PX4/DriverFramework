@@ -244,7 +244,7 @@ int BMP280::_start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Configure the I2C bus parameters for the pressure sensor. */
@@ -253,7 +253,7 @@ int BMP280::_start()
 
 	if (result != 0) {
 		DF_LOG_ERR("I2C slave configuration failed");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Initialize the pressure sensor for active and continuous operation. */
@@ -261,7 +261,7 @@ int BMP280::_start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: pressure sensor initialization failed, sensor read thread not started");
-		goto exit;
+		goto start_exit;
 	}
 
 
@@ -269,10 +269,10 @@ int BMP280::_start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
-exit:
+start_exit:
 	return result;
 }
 

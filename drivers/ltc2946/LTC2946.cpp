@@ -105,7 +105,7 @@ int LTC2946::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error:LTC2946 Unable to open the device path: %s", m_dev_path);
-		goto exit;
+		goto start_exit;
 	}
 
 	DF_LOG_ERR("LTC2946: Open the device path: %s", m_dev_path);
@@ -115,7 +115,7 @@ int LTC2946::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("I2C slave configuration failed");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Initialize the sensor for active and continuous operation. */
@@ -123,17 +123,17 @@ int LTC2946::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: sensor initialization failed, sensor read thread not started");
-		goto exit;
+		goto start_exit;
 	}
 
 	result = DevObj::start();
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
-exit:
+start_exit:
 
 	if (result != 0) {
 		DF_LOG_ERR("error: Failed to start ISL");

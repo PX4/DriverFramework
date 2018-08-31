@@ -142,7 +142,7 @@ int HMC5883::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start I2CDevObj");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Configure the I2C bus parameters for the mag sensor. */
@@ -152,7 +152,7 @@ int HMC5883::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("I2C slave configuration failed");
-		goto exit;
+		goto start_exit;
 	}
 
 	/* Initialize the mag sensor. */
@@ -160,7 +160,7 @@ int HMC5883::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: mag sensor initialization failed, sensor read thread not started");
-		goto exit;
+		goto start_exit;
 	}
 
 
@@ -168,10 +168,10 @@ int HMC5883::start()
 
 	if (result != 0) {
 		DF_LOG_ERR("error: could not start DevObj");
-		goto exit;
+		goto start_exit;
 	}
 
-exit:
+start_exit:
 	return result;
 }
 
