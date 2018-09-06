@@ -508,7 +508,7 @@ void MPU6050::_measure()
 			if (fabsf(temp_c - _last_temp_c) > 2.0f) {
 				DF_LOG_ERR(
 					"FIFO corrupt, temp difference: %f, last temp: %f, current temp: %f",
-					fabs(temp_c - _last_temp_c), (double)_last_temp_c, (double)temp_c);
+					fabsf(temp_c - _last_temp_c), (double)_last_temp_c, (double)temp_c);
 				reset_fifo();
 				_temp_initialized = false;
 				++m_sensor_data.fifo_corruption_counter;
