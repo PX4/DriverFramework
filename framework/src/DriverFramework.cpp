@@ -330,7 +330,7 @@ static int setRealtimeSched()
 	int policy = SCHED_FIFO;
 	sched_param param {};
 
-	param.sched_priority = 10;
+	param.sched_priority = sched_get_priority_max(SCHED_FIFO);
 
 	int ret = pthread_setschedparam(pthread_self(), policy, &param);
 
