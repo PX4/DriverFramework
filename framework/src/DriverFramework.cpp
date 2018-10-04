@@ -34,7 +34,6 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 #include <stdio.h>
-#include <pthread.h>
 #include <errno.h>
 #include <time.h>
 #include "DriverFramework.hpp"
