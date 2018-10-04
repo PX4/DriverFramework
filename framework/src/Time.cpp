@@ -39,6 +39,10 @@
 #endif
 #include <time.h>
 
+#if defined(__PX4_POSIX) || defined(__PX4__QURT)
+#include <px4_time.h>
+#endif
+
 #if defined(__DF_APPLE_LEGACY)
 #include <sys/time.h>
 static int clock_gettime(int clk_id, struct timespec *t)
@@ -69,7 +73,11 @@ int DriverFramework::absoluteTime(struct timespec &ts)
 	// CLOCK_MONOTONIC not available on NuttX or OSX
 	return clock_gettime(0, &ts);
 #else
+#if defined(__PX4_POSIX) || defined(__PX4__QURT)
+	return px4_clock_gettime(CLOCK_MONOTONIC, &ts);
+#else
 	return clock_gettime(CLOCK_MONOTONIC, &ts);
+#endif
 #endif
 }
 

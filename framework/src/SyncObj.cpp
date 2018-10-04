@@ -38,6 +38,14 @@
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
 
+#if defined(__PX4_POSIX) || defined(__PX4_QURT)
+#include <px4_time.h>
+#define df_pthread_cond_timedwait px4_pthread_cond_timedwait
+#else
+#include <pthread.h>
+#define df_pthread_cond_timedwait pthread_cond_timedwait
+#endif
+
 #define DEBUG(FMT, ...)
 //#define DEBUG(FMT, ...) printf(FMT, __VA_ARGS__)
 
@@ -88,7 +96,7 @@ int SyncObj::waitOnSignal(unsigned long timeout_us)
 	if (timeout_us) {
 		struct timespec ts {};
 		ret = absoluteTimeInFuture(timeout_us, ts);
-		ret = ret ? ret : pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
+		ret = ret ? ret : df_pthread_cond_timedwait(&m_new_data_cond, &m_lock, &ts);
 
 	} else {
 		ret = pthread_cond_wait(&m_new_data_cond, &m_lock);
