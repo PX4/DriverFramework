@@ -33,6 +33,7 @@
 * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
+
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
@@ -53,6 +54,7 @@
 #endif
 
 #define SHOW_STATS 0
+
 
 namespace DriverFramework
 {
@@ -121,26 +123,6 @@ static uint64_t TsToAbstime(struct timespec *ts)
 	return result;
 }
 
-static uint64_t starttime = 0;
-
-static void initStartTime()
-{
-	struct timespec ts = {};
-	int ret = absoluteTime(ts);
-
-	if (ret != 0) {
-		printf("ERROR: absoluteTime returned (%d)\n", ret);
-		return;
-	}
-
-	starttime = TsToAbstime(&ts);
-}
-
-static inline uint64_t getStartTime()
-{
-	return starttime;
-}
-
 //-----------------------------------------------------------------------
 // Global Functions
 //-----------------------------------------------------------------------
@@ -157,18 +139,14 @@ uint64_t DriverFramework::offsetTime()
 		return 0;
 	}
 
-	// Time is in microseconds
-	uint64_t result = TsToAbstime(&ts) - getStartTime();
-
-	return result;
+	return TsToAbstime(&ts);
 }
 
 timespec DriverFramework::offsetTimeToAbsoluteTime(uint64_t offset_time)
 {
 	struct timespec ts = {};
-	uint64_t abs_time = offset_time + getStartTime();
-	ts.tv_sec = abs_time / 1000000;
-	ts.tv_nsec = (abs_time % 1000000) * 1000;
+	ts.tv_sec = offset_time / 1000000;
+	ts.tv_nsec = (offset_time % 1000000) * 1000;
 
 	return ts;
 }
@@ -238,8 +216,6 @@ void Framework::shutdown()
 
 int Framework::initialize()
 {
-	initStartTime(); // must be initialized before any other timing methods are called
-
 	DF_LOG_DEBUG("Framework::initialize");
 
 	g_framework = new SyncObj;
