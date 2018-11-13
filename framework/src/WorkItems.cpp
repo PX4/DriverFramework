@@ -296,7 +296,7 @@ void WorkItems::_processExpiredWorkItems(uint64_t &next)
 
 			now = offsetTime();
 			elapsed = now - item->m_queue_time;
-			//DF_LOG_DEBUG("now = %lu elapsed = %lu delay = %luusec\n", now, elapsed, item.m_delay_usec);
+			DF_LOG_DEBUG("now = %lu elapsed = %lu queue_time = %luusec", now, elapsed, item->m_queue_time);
 
 			if (elapsed >= item->m_delay_usec) {
 				DF_LOG_DEBUG("WorkItems::processExpiredWorkItems  do work: (%p) (%u)", item, item->m_delay_usec);

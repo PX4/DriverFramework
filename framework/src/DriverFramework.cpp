@@ -292,7 +292,7 @@ void Framework::waitForShutdown()
 {
 	// Block until shutdown requested
 	g_framework->lock();
-	g_framework->waitOnSignal(0);
+	g_framework->waitOnSignal(nullptr);
 	g_framework->unlock();
 
 	delete g_framework;
@@ -470,8 +470,8 @@ void HRTWorkQueue::process()
 
 		WorkItems::processExpiredWorkItems(next);
 
-		now = offsetTime();
-		DF_LOG_DEBUG("now=%" PRIu64, now);
+		struct timespec next_ts = offsetTimeToAbsoluteTime(next);
+
 #ifdef __DF_QURT
 
 		// to accomodate sleep inaccuracy in the platform
@@ -480,12 +480,10 @@ void HRTWorkQueue::process()
 
 		if (next > now) {
 #endif
-			uint64_t wait_time_usec = next - now;
-
-			DF_LOG_DEBUG("HRTWorkQueue::process waiting for work (%" PRIi64 "usec)", wait_time_usec);
+			DF_LOG_DEBUG("HRTWorkQueue::process waiting until (%" PRIi64 "usec)", next);
 			// Wait until next expiry or until a new item is rescheduled
 			m_reschedule.lock();
-			m_reschedule.waitOnSignal(wait_time_usec);
+			m_reschedule.waitOnSignal(&next_ts);
 			m_reschedule.unlock();
 			DF_LOG_DEBUG("HRTWorkQueue::process done wait");
 		}

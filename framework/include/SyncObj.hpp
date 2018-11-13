@@ -53,8 +53,8 @@ public:
 	void unlock();
 
 	// Returns 0 on success, ETIMEDOUT on timeout
-	// Use timeout_us = 0 for blocking wait
-	int waitOnSignal(unsigned long timeout_us);
+	// Use nullptr for blocking wait
+	int waitOnSignal(const struct timespec *ts);
 
 	void signal();
 
