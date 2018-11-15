@@ -44,7 +44,7 @@
 #endif
 
 // Only used for macOS unit test, not for SITL.
-#if defined(__DF_APPLE_LEGACY)
+#if defined(__DF_APPLE_LEGACY) && !defined(__PX4_DARWIN)
 #include <sys/time.h>
 static int clock_gettime(int clk_id, struct timespec *t)
 {
