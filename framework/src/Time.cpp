@@ -76,7 +76,7 @@ int DriverFramework::absoluteTime(struct timespec &ts)
 #elif defined(__PX4_POSIX) || defined(__PX4__QURT) || defined(__PX4_DARWIN)
 	return px4_clock_gettime(CLOCK_MONOTONIC, &ts);
 #else
-	return clock_gettime(CLOCK_REALTIME, &ts);
+	return clock_gettime(CLOCK_MONOTONIC, &ts);
 #endif
 }
 
