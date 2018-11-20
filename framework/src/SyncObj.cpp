@@ -38,7 +38,7 @@
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
 
-#if defined(__PX4_POSIX) || defined(__PX4_QURT)
+#if defined(__PX4_POSIX_SITL)
 #include <px4_time.h>
 #define df_pthread_cond_timedwait px4_pthread_cond_timedwait
 #else

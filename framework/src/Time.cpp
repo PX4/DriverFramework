@@ -39,7 +39,7 @@
 #endif
 #include <time.h>
 
-#if defined(__PX4_POSIX) || defined(__PX4__QURT)
+#if defined(__PX4_POSIX) || defined(__PX4_QURT)
 #include <px4_time.h>
 #endif
 
@@ -73,7 +73,7 @@ int DriverFramework::absoluteTime(struct timespec &ts)
 #if defined(__DF_NUTTX)
 	// CLOCK_MONOTONIC not available on NuttX or OSX
 	return clock_gettime(0, &ts);
-#elif defined(__PX4_POSIX) || defined(__PX4__QURT) || defined(__PX4_DARWIN)
+#elif (defined(__PX4_POSIX) || defined(__PX4_DARWIN)) && !defined(__PX4_QURT)
 	return px4_clock_gettime(CLOCK_MONOTONIC, &ts);
 #else
 	return clock_gettime(CLOCK_MONOTONIC, &ts);
