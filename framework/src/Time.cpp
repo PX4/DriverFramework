@@ -41,6 +41,9 @@
 
 #if defined(__PX4_POSIX) || defined(__PX4_QURT)
 #include <px4_time.h>
+#define df_clock_gettime px4_clock_gettime
+#else
+#define df_clock_gettime clock_gettime
 #endif
 
 // Only used for macOS unit test, not for SITL.
@@ -70,13 +73,19 @@ using namespace DriverFramework;
 
 int DriverFramework::absoluteTime(struct timespec &ts)
 {
-#if defined(__DF_NUTTX)
+#if defined(__DF_NUTTX) || defined(__DF_APPLE)
+
+#ifndef CLOCK_REALTIME
+#define CLOCK_REALTIME 0
+#endif
 	// CLOCK_MONOTONIC not available on NuttX or OSX
-	return clock_gettime(0, &ts);
-#elif (defined(__PX4_POSIX) || defined(__PX4_DARWIN)) && !defined(__PX4_QURT)
-	return px4_clock_gettime(CLOCK_MONOTONIC, &ts);
+	return df_clock_gettime(CLOCK_REALTIME, &ts);
 #else
-	return clock_gettime(CLOCK_MONOTONIC, &ts);
+
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 1
+#endif
+	return df_clock_gettime(CLOCK_MONOTONIC, &ts);
 #endif
 }
 

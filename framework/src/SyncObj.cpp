@@ -38,7 +38,9 @@
 #include "DriverFramework.hpp"
 #include "SyncObj.hpp"
 
-#if defined(__PX4_POSIX_SITL)
+#if defined(__PX4_POSIX) || defined(__PX4_QURT)
+// If we're building for PX4, we can use the PX4 define and let the PX4
+// build system handle it.
 #include <px4_time.h>
 #define df_pthread_cond_timedwait px4_pthread_cond_timedwait
 #else
@@ -59,9 +61,9 @@ SyncObj::SyncObj()
 	pthread_condattr_t condattr{};
 	pthread_condattr_init(&condattr);
 
-// CLOCK_MONOTONIC is not available on OSX and NuttX
+// CLOCK_MONOTONIC is not available on macOS and NuttX
 // CLOCK_MONOTONIC is the default on QuRT so it need not be explicitly set
-#if !defined(__DF_QURT) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__DF_NUTTX)
+#if !defined(__DF_QURT) && !defined(__DF_APPLE) && !defined(__DF_NUTTX)
 
 	// Configure the pthread_cond_timedwait to use the monotonic clock
 	// because we don't want time skews to influence the scheduling.
