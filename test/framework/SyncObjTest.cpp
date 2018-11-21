@@ -46,7 +46,7 @@ void SyncObjTest::_doTests()
 	so.unlock();
 	reportResult("Simple lock/unlock", passed);
 
-	uint64_t wait_in_us = 9000;
+	uint64_t wait_in_us = 90000;
 
 	uint64_t now = offsetTime();
 	uint64_t then = now + wait_in_us;
