@@ -73,7 +73,10 @@ using namespace DriverFramework;
 
 int DriverFramework::absoluteTime(struct timespec &ts)
 {
-#if defined(__DF_NUTTX) || defined(__DF_APPLE)
+// On NuttX we use CLOCK_REALTIME anyway.
+// On macOS we can only use CLOCK_REALTIME unless we're using the lockstep
+// scheduler.
+#if defined(__DF_NUTTX) || (defined(__DF_APPLE) && !defined(ENABLE_LOCKSTEP_SCHEDULER))
 
 #ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 0
