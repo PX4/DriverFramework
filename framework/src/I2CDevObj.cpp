@@ -47,7 +47,9 @@
 #elif defined(__DF_LINUX)
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
+#ifndef I2C_DEV_H_HAS_I2C_MSG
 #include <linux/i2c.h>
+#endif
 
 #ifdef __DF_BBBLUE
 #include <stdlib.h>
