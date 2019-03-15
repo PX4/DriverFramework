@@ -31,6 +31,8 @@
 #
 ############################################################################
 
+add_compile_options(-Wno-cast-align)
+
 include(../../cmake/df_common.cmake)
 
 include_directories(
