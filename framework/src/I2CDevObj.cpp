@@ -173,7 +173,7 @@ int I2CDevObj::_readReg(uint8_t address, uint8_t *out_buffer, size_t length)
 
 	ssize_t bytes_read = 0;
 
-	bytes_read = rc_i2c_read_data(m_bus_num, address, length, out_buffer);
+	bytes_read = rc_i2c_read_bytes(m_bus_num, address, length, out_buffer);
 
 	if (bytes_read != (ssize_t)length) {
 		DF_LOG_ERR("error: I2CDevObj::_readReg reports a read of %zd bytes at address 0x%X, but attempted to read %zd bytes",
